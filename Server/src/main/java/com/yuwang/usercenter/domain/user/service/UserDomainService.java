@@ -1,9 +1,13 @@
 package com.yuwang.usercenter.domain.user.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.yuwang.usercenter.domain.user.dto.UserPageQuery;
 import com.yuwang.usercenter.domain.user.entity.User;
 import com.yuwang.usercenter.domain.user.entity.UserStatus;
 import com.yuwang.usercenter.domain.user.repository.UserMapper;
+import com.yuwang.usercenter.infrastructure.common.BasePageResult;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -80,7 +84,26 @@ public class UserDomainService {
         return Optional.ofNullable(userMapper.selectOne(new LambdaQueryWrapper<User>().eq(User::getPhone, phone)));
     }
 
+    public Optional<User> findById(Long userId) {
+        return Optional.ofNullable(userMapper.selectById(userId));
+    }
+
     public boolean verifyPassword(User user, String rawPassword) {
         return passwordEncoder.matches(rawPassword, user.getPasswordHash());
+    }
+
+    public BasePageResult<User> findUserPage(UserPageQuery query) {
+        Page<User> page = new Page<>(query.getPageNum(), query.getPageSize());
+        LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
+        
+        // 添加查询条件
+        wrapper.like(StringUtils.isNotBlank(query.getUsername()), User::getUsername, query.getUsername())
+               .like(StringUtils.isNotBlank(query.getEmail()), User::getEmail, query.getEmail())
+               .like(StringUtils.isNotBlank(query.getPhone()), User::getPhone, query.getPhone())
+               .eq(query.getStatus() != null, User::getStatus, query.getStatus())
+               .orderByDesc(User::getCreatedAt);
+        
+        Page<User> userPage = userMapper.selectPage(page, wrapper);
+        return BasePageResult.success(userPage.getRecords(), query.getPageNum(), query.getPageSize(), userPage.getTotal());
     }
 }

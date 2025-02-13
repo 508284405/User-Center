@@ -13,6 +13,8 @@ public class Role {
     @TableField("role_name")
     private String roleName;
 
+    private Integer status;
+
     @TableField
     private String description;
 

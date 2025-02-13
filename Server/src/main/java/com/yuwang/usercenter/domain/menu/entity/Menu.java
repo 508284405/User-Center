@@ -16,6 +16,9 @@ public class Menu {
     @TableField("menu_name")
     private String menuName;
 
+    @TableField("menu_code")
+    private String menuCode;
+
     @TableField("menu_url")
     private String menuUrl;
 

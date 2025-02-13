@@ -1,0 +1,45 @@
+{
+  "outPath": "./doc",
+  "serverUrl": "http://localhost:8080",
+  "isStrict": true,
+  "allInOne": true,
+  "coverOld": true,
+  "packageFilters": "com.yuwang.usercenter",
+  "style": "xt256",
+  "createDebugPage": true,
+  "revisionLogs": [
+    {
+      "version": "1.0.0",
+      "revisionTime": "2024-01-01",
+      "status": "创建",
+      "author": "yuwang",
+      "remarks": "初始版本"
+    }
+  ],
+  "requestHeaders": [
+    {
+      "name": "Authorization",
+      "type": "string",
+      "desc": "认证token",
+      "required": true,
+      "since": "-"
+    }
+  ],
+  "responseHeaders": [
+    {
+      "name": "token",
+      "type": "string",
+      "desc": "更新后的token"
+    }
+  ],
+  "errorCodeDictionaries": [
+    {
+      "code": "0",
+      "desc": "成功"
+    },
+    {
+      "code": "1",
+      "desc": "失败"
+    }
+  ]
+}

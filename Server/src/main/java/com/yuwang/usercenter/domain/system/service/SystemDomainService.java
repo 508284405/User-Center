@@ -1,10 +1,14 @@
 package com.yuwang.usercenter.domain.system.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.yuwang.usercenter.domain.system.dto.SystemPageQuery;
 import com.yuwang.usercenter.domain.system.entity.System;
 import com.yuwang.usercenter.domain.system.repository.SystemMapper;
+import com.yuwang.usercenter.infrastructure.common.BasePageResult;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.util.List;
 import java.util.Optional;
@@ -33,8 +37,8 @@ public class SystemDomainService {
             throw new IllegalArgumentException("系统不存在");
         }
 
-        if (!existingSystem.getSystemCode().equals(system.getSystemCode()) 
-            && systemMapper.existsBySystemCode(system.getSystemCode())) {
+        if (!existingSystem.getSystemCode().equals(system.getSystemCode())
+                && systemMapper.existsBySystemCode(system.getSystemCode())) {
             throw new IllegalArgumentException("系统编码已存在");
         }
 
@@ -60,5 +64,21 @@ public class SystemDomainService {
 
     public List<System> findAllSystems() {
         return systemMapper.selectList(null);
+    }
+
+    public BasePageResult<System> findSystemPage(SystemPageQuery query) {
+        LambdaQueryWrapper<System> wrapper = new LambdaQueryWrapper<>();
+
+        if (StringUtils.hasText(query.getSystemCode())) {
+            wrapper.like(System::getSystemCode, query.getSystemCode());
+        }
+        if (StringUtils.hasText(query.getSystemName())) {
+            wrapper.like(System::getSystemName, query.getSystemName());
+        }
+
+        Page<System> page = new Page<>(query.getPageNum(), query.getPageSize());
+        page = systemMapper.selectPage(page, wrapper);
+
+        return BasePageResult.success(page.getRecords(), page.getTotal(), query.getPageNum(), query.getPageSize());
     }
 }

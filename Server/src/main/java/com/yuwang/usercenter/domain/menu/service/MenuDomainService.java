@@ -1,8 +1,12 @@
 package com.yuwang.usercenter.domain.menu.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.yuwang.usercenter.domain.menu.dto.MenuPageQuery;
 import com.yuwang.usercenter.domain.menu.entity.Menu;
 import com.yuwang.usercenter.domain.menu.repository.MenuMapper;
+import com.yuwang.usercenter.infrastructure.common.BasePageResult;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -60,5 +64,20 @@ public class MenuDomainService {
 
     public List<Menu> findAllMenus() {
         return menuMapper.selectList(null);
+    }
+
+    public BasePageResult<Menu> findMenuPage(MenuPageQuery query) {
+        Page<Menu> page = new Page<>(query.getPageNum(), query.getPageSize());
+        LambdaQueryWrapper<Menu> wrapper = new LambdaQueryWrapper<>();
+        
+        // 添加查询条件
+        wrapper.like(StringUtils.isNotBlank(query.getMenuName()), Menu::getMenuName, query.getMenuName())
+               .like(StringUtils.isNotBlank(query.getMenuCode()), Menu::getMenuCode, query.getMenuCode())
+               .eq(query.getSystemId() != null, Menu::getSystemId, query.getSystemId())
+               .eq(query.getParentId() != null, Menu::getParentId, query.getParentId())
+               .orderByDesc(Menu::getCreatedAt);
+        
+        Page<Menu> menuPage = menuMapper.selectPage(page, wrapper);
+        return BasePageResult.success(menuPage.getRecords(), query.getPageNum(), query.getPageSize(), menuPage.getTotal());
     }
 }
