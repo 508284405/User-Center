@@ -1,22 +1,42 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Form as VeeForm, Field, ErrorMessage } from 'vee-validate'
-import * as yup from 'yup'
+import { User, Lock } from '@element-plus/icons-vue'
 
 const router = useRouter()
-const rememberMe = ref(false)
-
-const schema = yup.object({
-  username: yup.string().required('用户名不能为空').min(3, '用户名至少3个字符'),
-  password: yup.string().required('密码不能为空').min(6, '密码至少6个字符')
+const loginForm = reactive({
+  username: '',
+  password: '',
+  rememberMe: false
 })
 
-const onSubmit = (values) => {
-  console.log('Form submitted', values)
-  ElMessage.success('登录成功')
-  // TODO: 实现实际的登录逻辑
+const rules = {
+  username: [
+    { required: true, message: '用户名不能为空', trigger: 'blur' },
+    { min: 3, message: '用户名至少3个字符', trigger: 'blur' }
+  ],
+  password: [
+    { required: true, message: '密码不能为空', trigger: 'blur' },
+    { min: 6, message: '密码至少6个字符', trigger: 'blur' }
+  ]
+}
+
+const loginFormRef = ref()
+
+const onSubmit = async () => {
+  if (!loginFormRef.value) return
+
+  await loginFormRef.value.validate((valid, fields) => {
+    if (valid) {
+      console.log('Form submitted', loginForm)
+      ElMessage.success('登录成功')
+      router.push('/')
+      // TODO: 实现实际的登录逻辑
+    } else {
+      console.log('验证失败', fields)
+    }
+  })
 }
 </script>
 
@@ -32,34 +52,40 @@ const onSubmit = (values) => {
     </header>
 
     <main class="main-content">
-      <div class="form-container">
+      <el-card class="form-container">
         <h1>欢迎登录</h1>
-        <VeeForm :validation-schema="schema" @submit="onSubmit" class="login-form">
-          <div class="form-group">
-            <Field name="username" type="text" class="form-input" placeholder="请输入用户名/邮箱/手机号" />
-            <ErrorMessage name="username" class="error-message" />
-          </div>
+        <el-form :model="loginForm" :rules="rules" ref="loginFormRef" class="login-form">
+          <el-form-item prop="username">
+            <el-input
+              v-model="loginForm.username"
+              :prefix-icon="User"
+              placeholder="请输入用户名/邮箱/手机号"
+            />
+          </el-form-item>
 
-          <div class="form-group">
-            <Field name="password" type="password" class="form-input" placeholder="请输入密码" />
-            <ErrorMessage name="password" class="error-message" />
-          </div>
+          <el-form-item prop="password">
+            <el-input
+              v-model="loginForm.password"
+              type="password"
+              :prefix-icon="Lock"
+              placeholder="请输入密码"
+              show-password
+            />
+          </el-form-item>
 
           <div class="form-options">
-            <label class="remember-me">
-              <input type="checkbox" v-model="rememberMe"> 记住我
-            </label>
+            <el-checkbox v-model="loginForm.rememberMe">记住我</el-checkbox>
             <a href="#" class="forgot-password">忘记密码？</a>
           </div>
 
-          <button type="submit" class="submit-btn">登录</button>
+          <el-button type="primary" class="submit-btn" @click="onSubmit">登录</el-button>
 
           <div class="register-link">
             还没有账号？
             <router-link to="/register" class="register-btn">立即注册</router-link>
           </div>
-        </VeeForm>
-      </div>
+        </el-form>
+      </el-card>
     </main>
 
     <footer class="footer">

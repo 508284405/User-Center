@@ -1,28 +1,77 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Form as VeeForm, Field, ErrorMessage } from 'vee-validate'
-import * as yup from 'yup'
+import { User, Message, Lock } from '@element-plus/icons-vue'
 
 const router = useRouter()
 
-const schema = yup.object({
-  username: yup.string().required('用户名不能为空').min(3, '用户名至少3个字符'),
-  email: yup.string().required('邮箱不能为空').email('请输入有效的邮箱地址'),
-  password: yup.string().required('密码不能为空').min(6, '密码至少6个字符')
-    .matches(/[A-Z]/, '密码必须包含至少一个大写字母')
-    .matches(/[0-9]/, '密码必须包含至少一个数字')
-    .matches(/[!@#$%^&*]/, '密码必须包含至少一个特殊字符'),
-  confirmPassword: yup.string().required('请确认密码')
-    .oneOf([yup.ref('password')], '两次输入的密码不一致')
+const registerForm = reactive({
+  username: '',
+  email: '',
+  password: '',
+  confirmPassword: '',
+  agreeTerms: false
 })
 
-const onSubmit = (values) => {
-  console.log('Form submitted', values)
-  ElMessage.success('注册成功')
-  router.push('/login')
-  // TODO: 实现实际的注册逻辑
+const rules = {
+  username: [
+    { required: true, message: '用户名不能为空', trigger: 'blur' },
+    { min: 3, message: '用户名至少3个字符', trigger: 'blur' }
+  ],
+  email: [
+    { required: true, message: '邮箱不能为空', trigger: 'blur' },
+    { type: 'email', message: '请输入有效的邮箱地址', trigger: 'blur' }
+  ],
+  password: [
+    { required: true, message: '密码不能为空', trigger: 'blur' },
+    { min: 6, message: '密码至少6个字符', trigger: 'blur' },
+    { pattern: /[A-Z]/, message: '密码必须包含至少一个大写字母', trigger: 'blur' },
+    { pattern: /[0-9]/, message: '密码必须包含至少一个数字', trigger: 'blur' },
+    { pattern: /[!@#$%^&*]/, message: '密码必须包含至少一个特殊字符', trigger: 'blur' }
+  ],
+  confirmPassword: [
+    { required: true, message: '请确认密码', trigger: 'blur' },
+    {
+      validator: (rule, value, callback) => {
+        if (value !== registerForm.password) {
+          callback(new Error('两次输入的密码不一致'))
+        } else {
+          callback()
+        }
+      },
+      trigger: 'blur'
+    }
+  ],
+  agreeTerms: [
+    {
+      validator: (rule, value, callback) => {
+        if (!value) {
+          callback(new Error('请阅读并同意服务条款和隐私政策'))
+        } else {
+          callback()
+        }
+      },
+      trigger: 'change'
+    }
+  ]
+}
+
+const registerFormRef = ref()
+
+const onSubmit = async () => {
+  if (!registerFormRef.value) return
+  
+  await registerFormRef.value.validate((valid, fields) => {
+    if (valid) {
+      console.log('Form submitted', registerForm)
+      ElMessage.success('注册成功')
+      router.push('/login')
+      // TODO: 实现实际的注册逻辑
+    } else {
+      console.log('验证失败', fields)
+    }
+  })
 }
 </script>
 
@@ -40,42 +89,56 @@ const onSubmit = (values) => {
     <main class="main-content">
       <div class="form-container">
         <h1>创建账号</h1>
-        <VeeForm :validation-schema="schema" @submit="onSubmit" class="register-form">
-          <div class="form-group">
-            <Field name="username" type="text" class="form-input" placeholder="请输入用户名" />
-            <ErrorMessage name="username" class="error-message" />
-          </div>
+        <el-form :model="registerForm" :rules="rules" ref="registerFormRef" class="register-form">
+          <el-form-item prop="username">
+            <el-input
+              v-model="registerForm.username"
+              :prefix-icon="User"
+              placeholder="请输入用户名"
+            />
+          </el-form-item>
 
-          <div class="form-group">
-            <Field name="email" type="email" class="form-input" placeholder="请输入邮箱地址" />
-            <ErrorMessage name="email" class="error-message" />
-          </div>
+          <el-form-item prop="email">
+            <el-input
+              v-model="registerForm.email"
+              :prefix-icon="Message"
+              placeholder="请输入邮箱"
+            />
+          </el-form-item>
 
-          <div class="form-group">
-            <Field name="password" type="password" class="form-input" placeholder="请输入密码" />
-            <ErrorMessage name="password" class="error-message" />
-          </div>
+          <el-form-item prop="password">
+            <el-input
+              v-model="registerForm.password"
+              type="password"
+              :prefix-icon="Lock"
+              placeholder="请输入密码"
+              show-password
+            />
+          </el-form-item>
 
-          <div class="form-group">
-            <Field name="confirmPassword" type="password" class="form-input" placeholder="请确认密码" />
-            <ErrorMessage name="confirmPassword" class="error-message" />
-          </div>
+          <el-form-item prop="confirmPassword">
+            <el-input
+              v-model="registerForm.confirmPassword"
+              type="password"
+              :prefix-icon="Lock"
+              placeholder="请确认密码"
+              show-password
+            />
+          </el-form-item>
 
-          <div class="terms">
-            <label class="terms-label">
-              <input type="checkbox" required> 我已阅读并同意
-              <a href="#" class="terms-link">服务条款</a>和
-              <a href="#" class="terms-link">隐私政策</a>
-            </label>
-          </div>
+          <el-form-item prop="agreeTerms">
+            <el-checkbox v-model="registerForm.agreeTerms">我已阅读并同意</el-checkbox>
+            <a href="#" class="terms-link">服务条款</a>和
+            <a href="#" class="terms-link">隐私政策</a>
+          </el-form-item>
 
-          <button type="submit" class="submit-btn">注册</button>
+          <el-button type="primary" class="submit-btn" @click="onSubmit">注册</el-button>
 
           <div class="login-link">
             已有账号？
             <router-link to="/login" class="login-btn">立即登录</router-link>
           </div>
-        </VeeForm>
+        </el-form>
       </div>
     </main>
 
