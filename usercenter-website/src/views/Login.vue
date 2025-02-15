@@ -5,6 +5,7 @@ import { ElMessage } from 'element-plus'
 import { User, Lock } from '@element-plus/icons-vue'
 
 const router = useRouter()
+const loading = ref(false)
 const loginForm = reactive({
   username: '',
   password: '',
@@ -27,16 +28,39 @@ const loginFormRef = ref()
 const onSubmit = async () => {
   if (!loginFormRef.value) return
 
-  await loginFormRef.value.validate((valid, fields) => {
-    if (valid) {
-      console.log('Form submitted', loginForm)
-      ElMessage.success('登录成功')
-      router.push('/')
-      // TODO: 实现实际的登录逻辑
-    } else {
-      console.log('验证失败', fields)
+  try {
+    const valid = await loginFormRef.value.validate()
+    if (!valid) return
+
+    loading.value = true
+    const formData = new FormData()
+    formData.append('username', loginForm.username)
+    formData.append('password', loginForm.password)
+    formData.append('rememberMe', loginForm.rememberMe)
+
+    const response = await fetch('http://localhost:8080/api/auth/login', {
+      method: 'POST',
+      body: formData,
+      credentials: 'include'
+    })
+
+    const data = await response.json()
+    
+    if (!response.ok || data.code !== 200) {
+      throw new Error(data.message || '登录失败')
     }
-  })
+
+    // 存储token
+    localStorage.setItem('token', data.token)
+    
+    ElMessage.success('登录成功')
+    router.push('/dashboard')
+  } catch (error) {
+    console.error('登录错误:', error)
+    ElMessage.error(error.message || '登录失败，请重试')
+  } finally {
+    loading.value = false
+  }
 }
 </script>
 
@@ -54,12 +78,19 @@ const onSubmit = async () => {
     <main class="main-content">
       <el-card class="form-container">
         <h1>欢迎登录</h1>
-        <el-form :model="loginForm" :rules="rules" ref="loginFormRef" class="login-form">
+        <el-form
+          :model="loginForm"
+          :rules="rules"
+          ref="loginFormRef"
+          class="login-form"
+          @submit.prevent="onSubmit"
+        >
           <el-form-item prop="username">
             <el-input
               v-model="loginForm.username"
               :prefix-icon="User"
               placeholder="请输入用户名/邮箱/手机号"
+              @keyup.enter="onSubmit"
             />
           </el-form-item>
 
@@ -70,6 +101,7 @@ const onSubmit = async () => {
               :prefix-icon="Lock"
               placeholder="请输入密码"
               show-password
+              @keyup.enter="onSubmit"
             />
           </el-form-item>
 
@@ -78,7 +110,14 @@ const onSubmit = async () => {
             <a href="#" class="forgot-password">忘记密码？</a>
           </div>
 
-          <el-button type="primary" class="submit-btn" @click="onSubmit">登录</el-button>
+          <el-button
+            type="primary"
+            class="submit-btn"
+            :loading="loading"
+            @click="onSubmit"
+          >
+            {{ loading ? '登录中...' : '登录' }}
+          </el-button>
 
           <div class="register-link">
             还没有账号？
@@ -103,30 +142,17 @@ const onSubmit = async () => {
 <style scoped>
 .login-container {
   min-height: 100vh;
-  display: -webkit-flex;
-  display: -ms-flexbox;
   display: flex;
-  -webkit-flex-direction: column;
-  -ms-flex-direction: column;
   flex-direction: column;
-  background: -webkit-linear-gradient(315deg, #f5f7fa 0%, #c3cfe2 100%);
-  background: -ms-linear-gradient(315deg, #f5f7fa 0%, #c3cfe2 100%);
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
 }
 
 .header {
-  display: -webkit-flex;
-  display: -ms-flexbox;
   display: flex;
-  -webkit-justify-content: space-between;
-  -ms-flex-pack: justify;
   justify-content: space-between;
-  -webkit-align-items: center;
-  -ms-flex-align: center;
   align-items: center;
   padding: 1rem 2rem;
   background: rgba(255, 255, 255, 0.9);
-  -webkit-box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
@@ -148,28 +174,20 @@ nav a:hover {
 }
 
 .main-content {
-  -webkit-flex: 1;
-  -ms-flex: 1;
   flex: 1;
-  display: -webkit-flex;
-  display: -ms-flexbox;
   display: flex;
-  -webkit-justify-content: center;
-  -ms-flex-pack: center;
   justify-content: center;
-  -webkit-align-items: center;
-  -ms-flex-align: center;
   align-items: center;
   padding: 2rem;
 }
 
 .form-container {
-  background: white;
-  padding: 2rem;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   width: 100%;
   max-width: 400px;
+}
+
+.login-form {
+  margin-top: 2rem;
 }
 
 h1 {
@@ -178,75 +196,34 @@ h1 {
   margin-bottom: 2rem;
 }
 
-.form-group {
-  margin-bottom: 1.5rem;
-}
-
-.form-input {
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid #dcdfe6;
-  border-radius: 4px;
-  transition: border-color 0.3s;
-  font-size: 1rem;
-}
-
-.form-input:focus {
-  border-color: #409EFF;
-  outline: none;
-}
-
-.error-message {
-  color: #f56c6c;
-  font-size: 0.875rem;
-  margin-top: 0.5rem;
-}
-
 .form-options {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
-}
-
-.remember-me {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: #606266;
+  margin: 1rem 0;
 }
 
 .forgot-password {
   color: #409EFF;
   text-decoration: none;
+  font-size: 0.875rem;
 }
 
 .submit-btn {
   width: 100%;
-  padding: 0.75rem;
-  background-color: #409EFF;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: background-color 0.3s;
-}
-
-.submit-btn:hover {
-  background-color: #66b1ff;
+  margin-top: 1rem;
 }
 
 .register-link {
   text-align: center;
   margin-top: 1.5rem;
   color: #606266;
+  font-size: 0.875rem;
 }
 
 .register-btn {
   color: #409EFF;
   text-decoration: none;
-  margin-left: 0.5rem;
 }
 
 .footer {

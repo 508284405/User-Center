@@ -61,17 +61,35 @@ const registerFormRef = ref()
 
 const onSubmit = async () => {
   if (!registerFormRef.value) return
-  
-  await registerFormRef.value.validate((valid, fields) => {
-    if (valid) {
-      console.log('Form submitted', registerForm)
-      ElMessage.success('注册成功')
-      router.push('/login')
-      // TODO: 实现实际的注册逻辑
-    } else {
-      console.log('验证失败', fields)
+
+  try {
+    const valid = await registerFormRef.value.validate()
+    if (!valid) return
+
+    const response = await fetch('http://localhost:8080/api/auth/register', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        username: registerForm.username,
+        email: registerForm.email,
+        password: registerForm.password
+      })
+    })
+
+    const data = await response.json()
+
+    if (!response.ok || data.code !== 200) {
+      throw new Error(data.message || '注册失败')
     }
-  })
+
+    ElMessage.success('注册成功')
+    router.push('/login')
+  } catch (error) {
+    console.error('注册错误:', error)
+    ElMessage.error(error.message || '注册失败，请重试')
+  }
 }
 </script>
 

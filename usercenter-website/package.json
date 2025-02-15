@@ -10,8 +10,10 @@
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.1",
+    "@types/axios": "^0.14.4",
     "@vee-validate/rules": "^4.15.0",
     "@vee-validate/yup": "^4.15.0",
+    "axios": "^1.7.9",
     "element-plus": "^2.9.4",
     "vue": "^3.4.15",
     "vue-router": "^4.2.5",
