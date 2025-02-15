@@ -1,6 +1,8 @@
 package com.yuwang.usercenter.infrastructure.exception;
 
 import com.yuwang.usercenter.infrastructure.common.BaseResult;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
@@ -13,6 +15,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+    private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     /**
      * 处理自定义业务异常
@@ -21,6 +24,7 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(BusinessException.class)
     public BaseResult<Object> handleBusinessException(BusinessException e) {
+        logger.warn("业务异常: {}", e.getMessage(), e);
         return BaseResult.error(e.getCode(), e.getMessage());
     }
 
@@ -39,6 +43,7 @@ public class GlobalExceptionHandler {
                 message = fieldError.getField()+fieldError.getDefaultMessage();
             }
         }
+        logger.warn("参数校验异常: {}", message == null ? "参数校验错误" : message, e);
         return BaseResult.error(400, message == null ? "参数校验错误" : message);
     }
 
@@ -57,6 +62,7 @@ public class GlobalExceptionHandler {
                 message = fieldError.getField()+fieldError.getDefaultMessage();
             }
         }
+        logger.warn("参数绑定异常: {}", message == null ? "参数绑定错误" : message, e);
         return BaseResult.error(400, message == null ? "参数绑定错误" : message);
     }
 
@@ -67,6 +73,7 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(Exception.class)
     public BaseResult<Object> handleException(Exception e) {
+        logger.error("系统异常: {}", e.getMessage(), e);
         return BaseResult.error(500, "系统内部错误");
     }
 }

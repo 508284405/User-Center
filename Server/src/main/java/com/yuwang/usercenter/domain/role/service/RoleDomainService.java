@@ -6,6 +6,7 @@ import com.yuwang.usercenter.domain.role.dto.RolePageQuery;
 import com.yuwang.usercenter.domain.role.entity.Role;
 import com.yuwang.usercenter.domain.role.repository.RoleMapper;
 import com.yuwang.usercenter.infrastructure.common.BasePageResult;
+import com.yuwang.usercenter.infrastructure.exception.BusinessException;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,7 +25,7 @@ public class RoleDomainService {
     @Transactional
     public Role createRole(Role role) {
         if (roleMapper.exists(new LambdaQueryWrapper<Role>().eq(Role::getRoleName, role.getRoleName()))) {
-            throw new IllegalArgumentException("角色名称已存在");
+            throw new BusinessException("角色名称已存在");
         }
         roleMapper.insert(role);
         return role;

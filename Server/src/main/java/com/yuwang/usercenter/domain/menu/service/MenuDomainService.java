@@ -6,6 +6,7 @@ import com.yuwang.usercenter.domain.menu.dto.MenuPageQuery;
 import com.yuwang.usercenter.domain.menu.entity.Menu;
 import com.yuwang.usercenter.domain.menu.repository.MenuMapper;
 import com.yuwang.usercenter.infrastructure.common.BasePageResult;
+import com.yuwang.usercenter.infrastructure.exception.BusinessException;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,7 +27,7 @@ public class MenuDomainService {
         if (menuMapper.exists(new LambdaQueryWrapper<Menu>()
                 .eq(Menu::getMenuName, menu.getMenuName())
                 .eq(Menu::getSystemId, menu.getSystemId()))) {
-            throw new IllegalArgumentException("该系统下已存在相同名称的菜单");
+            throw new BusinessException("该系统下已存在相同名称的菜单");
         }
         menuMapper.insert(menu);
         return menu;

@@ -1,7 +1,19 @@
 package com.yuwang.usercenter.domain.user.entity;
 
+/**
+ * 用户状态枚举
+ */
 public enum UserStatus {
-    ACTIVE,    // 正常状态
-    INACTIVE,  // 未激活
-    LOCKED     // 已锁定
+    /**
+     * 正常状态
+     */
+    ACTIVE,
+    /**
+     * 未激活
+     */
+    INACTIVE,
+    /**
+     * 已锁定
+     */
+    LOCKED
 }

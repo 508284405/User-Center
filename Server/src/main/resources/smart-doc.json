@@ -4,7 +4,7 @@
   "isStrict": true,
   "allInOne": true,
   "coverOld": true,
-  "packageFilters": "com.yuwang.usercenter",
+  "packageFilters": "com.yuwang.usercenter.interfaces.controller",
   "style": "xt256",
   "createDebugPage": true,
   "revisionLogs": [

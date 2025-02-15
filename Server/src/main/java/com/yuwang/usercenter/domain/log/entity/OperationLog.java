@@ -1,12 +1,13 @@
 package com.yuwang.usercenter.domain.log.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
+import com.yuwang.usercenter.domain.BaseEntity;
 import lombok.Data;
 import java.time.LocalDateTime;
 
 @Data
 @TableName("operation_logs")
-public class OperationLog {
+public class OperationLog extends BaseEntity {
     @TableId(type = IdType.AUTO)
     private Long id;
 
@@ -30,7 +31,4 @@ public class OperationLog {
 
     @TableField("ip_address")
     private String ipAddress;  // 操作者IP地址
-
-    @TableField(value = "created_at", fill = FieldFill.INSERT)
-    private LocalDateTime createdAt;  // 操作时间
 }

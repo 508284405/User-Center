@@ -47,6 +47,16 @@ public class OperationLogDomainService {
         );
     }
 
+    @Transactional
+    public void recordOperation(String operationType, String module, Long targetId, String description) {
+        OperationLog log = new OperationLog();
+        log.setOperationType(operationType);
+        log.setModule(module);
+        log.setTargetId(targetId);
+        log.setDescription(description);
+        createLog(log);
+    }
+
     public List<OperationLog> findByOperationType(String operationType) {
         return operationLogMapper.selectList(
             new LambdaQueryWrapper<OperationLog>()

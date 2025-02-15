@@ -1,12 +1,13 @@
 package com.yuwang.usercenter.domain.role.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
+import com.yuwang.usercenter.domain.BaseEntity;
 import lombok.Data;
 import java.time.LocalDateTime;
 
 @Data
 @TableName("roles")
-public class Role {
+public class Role extends BaseEntity {
     @TableId(type = IdType.AUTO)
     private Long id;
 
@@ -23,12 +24,4 @@ public class Role {
 
     @TableField("system_id")
     private Long systemId;  // 关联的系统ID
-
-    @TableField(value = "created_at", fill = FieldFill.INSERT)
-    private LocalDateTime createdAt;
-
-    @TableField(value = "updated_at", fill = FieldFill.INSERT_UPDATE)
-    private LocalDateTime updatedAt;
-
-
 }

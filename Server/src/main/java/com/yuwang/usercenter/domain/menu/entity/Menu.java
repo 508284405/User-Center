@@ -1,12 +1,13 @@
 package com.yuwang.usercenter.domain.menu.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
+import com.yuwang.usercenter.domain.BaseEntity;
 import lombok.Data;
 import java.time.LocalDateTime;
 
 @Data
 @TableName("menu_permissions")
-public class Menu {
+public class Menu extends BaseEntity {
     @TableId(type = IdType.AUTO)
     private Long id;
 
@@ -39,12 +40,4 @@ public class Menu {
 
     @TableField
     private Boolean visible = true;  // 是否可见
-
-    @TableField(value = "created_at", fill = FieldFill.INSERT)
-    private LocalDateTime createdAt;
-
-    @TableField(value = "updated_at", fill = FieldFill.INSERT_UPDATE)
-    private LocalDateTime updatedAt;
-
-
 }

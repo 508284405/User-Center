@@ -1,7 +1,19 @@
 package com.yuwang.usercenter.domain.user.entity;
 
+/**
+ * 审核状态枚举
+ */
 public enum AuditStatus {
-    PENDING,   // 待审核
-    APPROVED,  // 已通过
-    REJECTED   // 已拒绝
+    /**
+     * 待审核
+     */
+    PENDING,
+    /**
+     * 已通过
+     */
+    APPROVED,
+    /**
+     * 已拒绝
+     */
+    REJECTED
 }

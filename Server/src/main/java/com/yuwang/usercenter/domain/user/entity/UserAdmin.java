@@ -1,13 +1,17 @@
 package com.yuwang.usercenter.domain.user.entity;
 
-import com.baomidou.mybatisplus.annotation.*;
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
 import com.yuwang.usercenter.domain.BaseEntity;
 import lombok.Data;
+
 import java.time.LocalDateTime;
 
 @Data
-@TableName("users")
-public class User extends BaseEntity {
+@TableName("user_admins")
+public class UserAdmin extends BaseEntity {
     @TableId(type = IdType.AUTO)
     private Long id;
 

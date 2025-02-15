@@ -1,12 +1,13 @@
 package com.yuwang.usercenter.domain.system.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
+import com.yuwang.usercenter.domain.BaseEntity;
 import lombok.Data;
 import java.time.LocalDateTime;
 
 @Data
 @TableName(value = "systems")
-public class System {
+public class System extends BaseEntity {
     @TableId(type = IdType.AUTO)
     private Long id;
 
@@ -33,16 +34,4 @@ public class System {
 
     @TableField
     private String description;
-
-    @TableField("created_by")
-    private String createdBy;
-
-    @TableField("updated_by")
-    private String updatedBy;
-
-    @TableField(value = "created_at", fill = FieldFill.INSERT)
-    private LocalDateTime createdAt;
-
-    @TableField(value = "updated_at", fill = FieldFill.INSERT_UPDATE)
-    private LocalDateTime updatedAt;
 }

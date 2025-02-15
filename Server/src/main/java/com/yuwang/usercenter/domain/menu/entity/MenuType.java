@@ -1,7 +1,19 @@
 package com.yuwang.usercenter.domain.menu.entity;
 
+/**
+ * 菜单类型枚举
+ */
 public enum MenuType {
-    MENU,      // 菜单
-    BUTTON,    // 按钮
-    DIRECTORY  // 目录
+    /**
+     * 菜单
+     */
+    MENU,
+    /**
+     * 按钮
+     */
+    BUTTON,
+    /**
+     * 目录
+     */
+    DIRECTORY
 }
