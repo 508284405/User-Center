@@ -1,0 +1,46 @@
+---
+description: 涉及到localStorage时候使用该规格
+globs: 
+alwaysApply: false
+---
+# localStorage 使用规范
+
+## 统一 key 约定
+- 用户信息：`userInfo`，内容为 JSON 字符串，结构与后端返回一致。
+- 访问令牌：`token`，内容为字符串。
+- 刷新令牌：`refreshToken`，内容为字符串。
+- 其他业务相关 key 命名采用小写驼峰风格。
+
+## 存储方式
+- 用户信息、对象类数据必须使用 `JSON.stringify` 序列化后存储。
+- 仅存储必要信息，禁止存储明文密码、敏感数据。
+
+## 读取方式
+- 读取对象类数据时，需使用 `JSON.parse` 反序列化。
+- 读取前需判断 key 是否存在，避免异常。
+
+  ```js
+  const userInfoStr = localStorage.getItem('userInfo')
+  const userInfo = userInfoStr ? JSON.parse(userInfoStr) : null
+  ```
+
+## 清理方式
+- 登出、登录失败、token 失效等场景，需调用如下清理方法：
+
+  ```js
+  localStorage.removeItem('token')
+  localStorage.removeItem('refreshToken')
+  localStorage.removeItem('userInfo')
+  ```
+
+## 典型场景
+- 登录成功后，需同时存储 token、refreshToken、userInfo。
+- 退出登录、token 失效时，需清理上述所有 key。
+
+## 安全建议
+- 禁止存储明文密码、敏感信息。
+- 仅在必要时存储用户信息，避免泄露。
+
+## 参考文件
+- [src/views/Login.vue](mdc:smartcs-web/src/views/Login.vue)
+- [src/views/customer-service/ChatView.vue](mdc:smartcs-web/src/views/customer-service/ChatView.vue)

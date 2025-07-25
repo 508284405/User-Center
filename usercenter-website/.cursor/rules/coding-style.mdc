@@ -1,0 +1,37 @@
+---
+description: "TypeScript/Vue 编码风格与 lint 规则"
+globs:
+  - "**/*.vue"
+  - "**/*.ts"
+  - "**/*.js"
+alwaysApply: true
+---
+# 编码风格与 Lint 规则
+
+## 通用格式
+- 缩进：2 空格
+- 行长：建议不超过 100 字符
+- 引号：JS/TS 单引号，HTML 属性双引号
+- 分号：行尾必须加分号
+
+## Vue <script setup lang="ts">
+- 必须使用 <script setup lang="ts"> 语法，且类型声明清晰。
+
+## 组件
+- 命名：PascalCase
+- 导出：默认导出根组件
+
+## Props & Emits
+- 使用 defineProps、defineEmits 并声明类型接口。
+
+## Composition API
+- 优先使用 Composition API。
+
+## 异步
+- 使用 async/await，并捕获异常。
+
+## 导入排序
+- 外部依赖 → 别名路径 → 相对路径
+
+## 样式
+- BEM 命名规范，写在对应组件同名 .scss 文件中。

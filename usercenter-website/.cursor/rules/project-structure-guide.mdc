@@ -1,0 +1,32 @@
+---
+description: "项目文件和目录结构指南"
+globs:
+  - "*"
+alwaysApply: true
+---
+# 项目结构指南
+
+## 概述
+此指南描述了项目的整体文件和目录结构。
+
+## 根目录
+- [index.html](mdc:index.html): 入口 HTML 文件。
+- [package.json](mdc:package.json): 项目依赖和脚本配置。
+- [vite.config.ts](mdc:vite.config.ts): Vite 构建工具配置。
+- [tsconfig.json](mdc:tsconfig.json)、[tsconfig.node.json](mdc:tsconfig.node.json): TypeScript 配置。
+
+## src/ 目录
+- [src/App.vue](mdc:src/App.vue): 根组件。
+- [src/main.js](mdc:src/main.js): 应用入口脚本。
+- [src/router/](mdc:src/router): 应用路由定义。
+- [src/components/](mdc:src/components): 可复用组件。
+- [src/views/](mdc:src/views): 页面视图组件。
+- [src/utils/](mdc:src/utils): 工具函数模块。
+- [src/api/](mdc:src/api): 后端接口封装。
+- [src/assets/](mdc:src/assets): 静态资源。
+
+## 其他目录
+- public/: 静态资源目录。
+- dist/: 项目构建输出目录。
+- doc/: 项目相关文档。
+- .idea/, .vscode/, .cursor/: IDE 和工具配置文件。

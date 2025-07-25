@@ -1,0 +1,25 @@
+---
+description: "项目中文件命名规范"
+globs:
+  - "**/*.vue"
+  - "**/*.ts"
+  - "**/*.tsx"
+  - "**/*.mdc"
+alwaysApply: true
+---
+# 文件命名规范
+
+## Vue 组件
+- 使用 PascalCase，文件名与组件名保持一致，如 `Login.vue`、`UserProfile.vue`。
+
+## 组合式函数
+- 前缀 `use`，采用 CamelCase，如 `useAuth.ts`。
+
+## 工具模块
+- 采用 camelCase，如 `permission.ts`。
+
+## 规则文件
+- 采用 kebab-case，扩展名为 .mdc，如 project-structure-guide.mdc。
+
+## 静态资源
+- 小写加短横线，如 logo.png、background-image.jpg。
