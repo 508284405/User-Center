@@ -76,7 +76,7 @@ const allMenuItems: MenuItem[] = [
       { key: 'KnowledgeIndex', label: '索引管理', permission: 'knowledge:index:view' },
       { key: 'provider-management', label: '模型提供商管理', permission: 'knowledge:provider:view' },
       { key: 'model-management', label: '模型管理', permission: 'knowledge:model:view' },
-      { key: 'prompt-template-management', label: '模板管理', permission: 'knowledge:template:view' },
+      
       { key: 'chat-test', label: '智能聊天', permission: 'knowledge:chat:view' }
     ]
   },
@@ -123,7 +123,7 @@ const menuKeyToIdMap: Record<string, number> = {
   'KnowledgeIndex': 58, // 索引管理
   'provider-management': 62, // 模型提供商管理
   'model-management': 63, // 模型管理
-  'prompt-template-management': 60, // 模板管理
+  
   'chat-test': 61, // 智能聊天
   'seckill-management': 70, // 秒杀管理
   'seckill-activity': 71, // 秒杀活动管理
@@ -296,14 +296,7 @@ const setActiveMenu = () => {
         knowledgeSubMenu.classList.add('is-opened');
       }
     }, 100);
-  } else if (path.includes('/dashboard/knowledge/prompt-template')) {
-    activeMenu.value = 'prompt-template-management';
-    setTimeout(() => {
-      const knowledgeSubMenu = document.querySelector('.el-sub-menu[data-menu-key="knowledge-management-parent"]');
-      if (knowledgeSubMenu) {
-        knowledgeSubMenu.classList.add('is-opened');
-      }
-    }, 100);
+  
   } else if (path.includes('/dashboard/knowledge/chat')) {
     activeMenu.value = 'chat-test';
     setTimeout(() => {
@@ -461,17 +454,9 @@ function handleMenuClick(key: string) {
     case 'model-management':
       router.push('/dashboard/knowledge/model').catch(err => console.error('路由跳转失败:', err));
       break;
-    case 'prompt-template-management':
-      router.push('/dashboard/knowledge/prompt-template').catch(err => console.error('路由跳转失败:', err));
-      break;
+    
     case 'chat-test':
       router.push('/dashboard/knowledge/chat').catch(err => console.error('路由跳转失败:', err));
-      break;
-    case 'seckill-activity':
-      router.push('/seckill/activities').catch(err => console.error('路由跳转失败:', err));
-      break;
-    case 'seckill-order':
-      router.push('/seckill/orders').catch(err => console.error('路由跳转失败:', err));
       break;
     case 'seckill-activity':
       router.push('/seckill/activities').catch(err => console.error('路由跳转失败:', err));

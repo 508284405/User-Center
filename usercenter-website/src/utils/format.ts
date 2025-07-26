@@ -51,3 +51,36 @@ export function formatDate(
   }
   return result;
 }
+
+/**
+ * 格式化时间为 yyyy-MM-dd HH:mm:ss
+ * @param input Date | number | string
+ * @returns string
+ */
+export function formatTime(input: Date | number | string): string {
+  console.log("input",input)
+  if (!input) return '--';
+  
+  let date: Date;
+  if (input instanceof Date) {
+    date = input;
+  } else if (typeof input === 'number' || typeof input === 'string') {
+    date = new Date(input);
+  } else {
+    return '--';
+  }
+  
+  // 检查日期是否有效
+  if (isNaN(date.getTime())) {
+    return '--';
+  }
+  
+  const pad = (n: number) => n.toString().padStart(2, '0');
+  const yyyy = date.getFullYear();
+  const MM = pad(date.getMonth() + 1);
+  const dd = pad(date.getDate());
+  const HH = pad(date.getHours());
+  const mm = pad(date.getMinutes());
+  const ss = pad(date.getSeconds());
+  return `${yyyy}-${MM}-${dd} ${HH}:${mm}:${ss}`;
+}

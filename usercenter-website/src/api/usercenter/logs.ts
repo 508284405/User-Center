@@ -86,41 +86,41 @@ export const logsApi = {
 
   // 获取操作日志详情
   getDetail: (id: number) =>
-    request.get<ApiResponse<LogEntry>>(`/usercenter/api/operation-logs/${id}`),
+    request.get<ApiResponse<LogEntry>>(`/user-center/api/operation-logs/${id}`),
 
   // 获取操作链
   getChain: (relatedOperationId: number) =>
-    request.get<ApiResponse<LogEntry[]>>(`/usercenter/api/operation-logs/chain/${relatedOperationId}`),
+    request.get<ApiResponse<LogEntry[]>>(`/user-center/api/operation-logs/chain/${relatedOperationId}`),
 
   // 获取用户操作统计
   getUserStatistics: (userId: number, params?: { startTime?: string, endTime?: string }) =>
-    request.get<ApiResponse<Record<string, any>>>(`/usercenter/api/operation-logs/statistics/user/${userId}`, { params }),
+    request.get<ApiResponse<Record<string, any>>>(`/user-center/api/operation-logs/statistics/user/${userId}`, { params }),
 
   // 获取模块操作统计
   getModuleStatistics: (params: { modules: string[], startTime?: string, endTime?: string }) =>
-    request.get<ApiResponse<StatisticData[]>>('/usercenter/api/operation-logs/statistics/module', { params }),
+    request.get<ApiResponse<StatisticData[]>>('/user-center/api/operation-logs/statistics/module', { params }),
 
   // 获取操作类型统计
   getOperationTypeStatistics: (params: { operationTypes: string[], startTime?: string, endTime?: string }) =>
-    request.get<ApiResponse<StatisticData[]>>('/usercenter/api/operation-logs/statistics/operation-type', { params }),
+    request.get<ApiResponse<StatisticData[]>>('/user-center/api/operation-logs/statistics/operation-type', { params }),
 
   // 导出操作日志
   export: (format: 'CSV' | 'EXCEL' | 'PDF', params: LogPageQuery) =>
-    request.post<ApiResponse<string>>(`/usercenter/api/operation-logs/export?format=${format}`, params),
+    request.post<ApiResponse<string>>(`/user-center/api/operation-logs/export?format=${format}`, params),
 
   // 归档操作日志
   archive: (params: { startTime: string, endTime: string }) =>
-    request.post<ApiResponse<void>>('/usercenter/api/operation-logs/archive', params),
+    request.post<ApiResponse<void>>('/user-center/api/operation-logs/archive', params),
 
   // 清理过期操作日志
   clean: (retentionDays: number) =>
-    request.post<ApiResponse<void>>('/usercenter/api/operation-logs/clean', { retentionDays }),
+    request.post<ApiResponse<void>>('/user-center/api/operation-logs/clean', { retentionDays }),
 
   // 获取资源操作历史
   getHistory: (params: { module: string, targetId: number }) =>
-    request.get<ApiResponse<LogEntry[]>>('/usercenter/api/operation-logs/history', { params }),
+    request.get<ApiResponse<LogEntry[]>>('/user-center/api/operation-logs/history', { params }),
 
   // 检测异常操作行为
   detectAbnormal: (userId: number, timeRangeMinutes: number) =>
-    request.get<ApiResponse<LogEntry[]>>(`/usercenter/api/operation-logs/abnormal/${userId}?timeRangeMinutes=${timeRangeMinutes}`)
+    request.get<ApiResponse<LogEntry[]>>(`/user-center/api/operation-logs/abnormal/${userId}?timeRangeMinutes=${timeRangeMinutes}`)
 }

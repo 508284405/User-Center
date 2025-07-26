@@ -379,16 +379,7 @@ const routes = [
                             title: '向量列表'
                         }
                     },
-                    {
-                        path: 'prompt-template',
-                        name: 'PromptTemplateManagement',
-                        component: () => import('../views/knowledge/PromptTemplateManagement.vue'),
-                        meta: {
-                            requiresAuth: true,
-                            permission: 'knowledge:template:view',
-                            title: '模板管理'
-                        }
-                    },
+                    
                     {
                         path: 'chat',
                         name: 'ChatTest',

@@ -39,7 +39,8 @@ instance.interceptors.request.use(
 // 响应拦截器
 instance.interceptors.response.use(
   (response: AxiosResponse) => {
-    const { success, errCode, errMessage, data } = response.data;
+    const { success, errCode, errMessage, data ,totalCount} = response.data;
+    // 是分页数据
     if (success === true) {
       return response.data;
     } else {

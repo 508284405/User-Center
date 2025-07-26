@@ -10,12 +10,19 @@
     <div class="search-bar">
       <el-form :model="searchForm" inline>
         <el-form-item label="提供商名称">
-          <el-input
-            v-model="searchForm.label"
-            placeholder="请输入提供商名称"
+          <el-select
+            v-model="searchForm.providerType"
+            placeholder="请选择提供商"
             clearable
-            @keyup.enter="handleSearch"
-          />
+            @change="handleSearch"
+          >
+            <el-option
+              v-for="option in providerTypeOptions"
+              :key="option.value"
+              :label="option.label"
+              :value="option.value"
+            />
+          </el-select>
         </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="handleSearch" :icon="Search">搜索</el-button>
@@ -26,8 +33,11 @@
 
     <el-table :data="tableData" v-loading="loading" stripe>
       <el-table-column prop="id" label="ID" width="80" />
-      <el-table-column prop="label" label="提供商名称" />
-      <el-table-column prop="providerKey" label="标识Key" />
+      <el-table-column prop="providerType" label="提供商名称">
+        <template #default="{ row }">
+          {{ getProviderTypeLabel(row.providerType) }}
+        </template>
+      </el-table-column>
       <el-table-column label="图标" width="120">
         <template #default="{ row }">
           <div class="icon-display">
@@ -81,13 +91,17 @@
         ref="formRef"
         :model="form"
         :rules="formRules"
-        label-width="120px"
+        label-width="140px"
       >
-        <el-form-item label="标识Key" prop="providerKey">
-          <el-input v-model="form.providerKey" placeholder="请输入唯一标识" />
-        </el-form-item>
-        <el-form-item label="提供商名称" prop="label">
-          <el-input v-model="form.label" placeholder="请输入提供商名称" />
+        <el-form-item label="模型提供商" prop="providerType">
+          <el-select v-model="form.providerType" placeholder="请选择模型提供商">
+            <el-option
+              v-for="option in providerTypeOptions"
+              :key="option.value"
+              :label="option.label"
+              :value="option.value"
+            />
+          </el-select>
         </el-form-item>
         <el-form-item label="小图标URL" prop="iconSmall">
           <el-input v-model="form.iconSmall" placeholder="请输入小图标URL" />
@@ -129,7 +143,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Search, Refresh, Edit, Delete } from '@element-plus/icons-vue'
-import { providerApi, type Provider, type CreateProviderRequest, type UpdateProviderRequest } from '@/api/smartcs/provider'
+import { providerApi, type Provider, type CreateProviderRequest, type UpdateProviderRequest, providerTypeOptions } from '@/api/smartcs/provider'
 import { formatTime } from '@/utils/format'
 
 const loading = ref(false)
@@ -141,7 +155,7 @@ const tableData = ref<Provider[]>([])
 const formRef = ref()
 
 const searchForm = reactive({
-  label: ''
+  providerType: ''
 })
 
 const pagination = reactive({
@@ -151,8 +165,7 @@ const pagination = reactive({
 })
 
 const form = reactive<CreateProviderRequest & { id?: number }>({
-  providerKey: '',
-  label: '',
+  providerType: '',
   iconSmall: '',
   iconLarge: '',
   apiKey: '',
@@ -161,11 +174,8 @@ const form = reactive<CreateProviderRequest & { id?: number }>({
 })
 
 const formRules = {
-  providerKey: [
-    { required: true, message: '请输入标识Key', trigger: 'blur' }
-  ],
-  label: [
-    { required: true, message: '请输入提供商名称', trigger: 'blur' }
+  providerType: [
+    { required: true, message: '请选择模型提供商', trigger: 'change' }
   ],
   apiKey: [
     { required: true, message: '请输入API Key', trigger: 'blur' }
@@ -180,7 +190,7 @@ const fetchData = async () => {
       pageIndex: pagination.pageIndex,
       pageSize: pagination.pageSize,
       needTotalCount: true,
-      label: searchForm.label || undefined
+      providerType: searchForm.providerType || undefined
     }
     const response = await providerApi.getPage(params)
     if (response.success) {
@@ -202,7 +212,7 @@ const handleSearch = () => {
 
 // 重置
 const handleReset = () => {
-  searchForm.label = ''
+  searchForm.providerType = ''
   pagination.pageIndex = 1
   fetchData()
 }
@@ -238,7 +248,7 @@ const handleEdit = (row: Provider) => {
 const handleDelete = async (row: Provider) => {
   try {
     await ElMessageBox.confirm(
-      `确定要删除提供商 "${row.label}" 吗？`,
+      `确定要删除提供商 "${getProviderTypeLabel(row.providerType)}" 吗？`,
       '确认删除',
       {
         confirmButtonText: '确定',
@@ -248,7 +258,7 @@ const handleDelete = async (row: Provider) => {
     )
     
     const response = await providerApi.delete(row.id!)
-    if (response.success) {
+    if (response.success && response.data) {
       ElMessage.success('删除成功')
       fetchData()
     }
@@ -294,8 +304,7 @@ const handleDialogClose = () => {
 const resetForm = () => {
   Object.assign(form, {
     id: undefined,
-    providerKey: '',
-    label: '',
+    providerType: '',
     iconSmall: '',
     iconLarge: '',
     apiKey: '',
@@ -309,6 +318,12 @@ const maskApiKey = (apiKey: string) => {
   if (!apiKey) return '-'
   if (apiKey.length <= 8) return '*'.repeat(apiKey.length)
   return apiKey.substring(0, 4) + '*'.repeat(apiKey.length - 8) + apiKey.substring(apiKey.length - 4)
+}
+
+// 获取提供商类型标签
+const getProviderTypeLabel = (providerType: string) => {
+  const option = providerTypeOptions.find(opt => opt.value === providerType)
+  return option ? option.label : providerType
 }
 
 onMounted(() => {
@@ -359,5 +374,9 @@ onMounted(() => {
 
 .dialog-footer {
   text-align: right;
+}
+
+.el-select {
+  width: 100%;
 }
 </style>

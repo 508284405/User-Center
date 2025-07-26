@@ -58,41 +58,41 @@ interface MenuPageResponse {
 export const menuApi = {
   // 创建菜单
   create: (params: CreateMenuParams) => {
-    return request.post<any, MenuResponse>('/usercenter/api/menus/create', params);
+    return request.post<any, MenuResponse>('/user-center/api/menus/create', params);
   },
 
   // 更新菜单
   update: (id: number, params: UpdateMenuParams) => {
-    return request.put<any, MenuResponse>(`/usercenter/api/menus/${id}`, params);
+    return request.put<any, MenuResponse>(`/user-center/api/menus/${id}`, params);
   },
 
   // 删除菜单
   delete: (id: number) => {
-    return request.delete<any, void>(`/usercenter/api/menus/${id}`);
+    return request.delete<any, void>(`/user-center/api/menus/${id}`);
   },
 
   // 根据ID查询菜单
   getById: (id: number) => {
-    return request.get<any, MenuResponse>(`/usercenter/api/menus/${id}`);
+    return request.get<any, MenuResponse>(`/user-center/api/menus/${id}`);
   },
 
   // 查询系统下的所有菜单
   getBySystem: (systemId: number) => {
-    return request.get<any, MenuResponse[]>(`/usercenter/api/menus/system/${systemId}`);
+    return request.get<any, MenuResponse[]>(`/user-center/api/menus/system/${systemId}`);
   },
 
   // 查询子菜单
   getByParent: (parentId: number) => {
-    return request.get<any, MenuResponse[]>(`/usercenter/api/menus/parent/${parentId}`);
+    return request.get<any, MenuResponse[]>(`/user-center/api/menus/parent/${parentId}`);
   },
 
   // 查询所有菜单
   getAll: () => {
-    return request.get<any, any>('/usercenter/api/menus');
+    return request.get<any, any>('/user-center/api/menus');
   },
 
   // 分页查询菜单（已改为查询全部菜单，不分页）
   page: () => {
-    return request.get<any, MenuResponse[]>('/usercenter/api/menus');
+    return request.get<any, MenuResponse[]>('/user-center/api/menus');
   }
 };

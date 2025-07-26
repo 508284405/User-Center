@@ -42,46 +42,46 @@ interface RolePageResponse {
 export const roleApi = {
   // 创建角色
   create: (params: CreateRoleParams) => {
-    return request.post<any, RoleResponse>('/usercenter/api/roles/create', params);
+    return request.post<any, RoleResponse>('/user-center/api/roles/create', params);
   },
 
   // 更新角色
   update: (id: number, params: UpdateRoleParams) => {
-    return request.put<any, RoleResponse>(`/usercenter/api/roles/${id}`, params);
+    return request.put<any, RoleResponse>(`/user-center/api/roles/${id}`, params);
   },
 
   // 删除角色
   delete: (id: number) => {
-    return request.delete<any, void>(`/usercenter/api/roles/${id}`);
+    return request.delete<any, void>(`/user-center/api/roles/${id}`);
   },
 
   // 根据ID查询角色
   getById: (id: number) => {
-    return request.get<any, RoleResponse>(`/usercenter/api/roles/${id}`);
+    return request.get<any, RoleResponse>(`/user-center/api/roles/${id}`);
   },
 
   // 根据角色名称查询角色
   getByName: (roleName: string) => {
-    return request.get<any, RoleResponse>(`/usercenter/api/roles/name/${roleName}`);
+    return request.get<any, RoleResponse>(`/user-center/api/roles/name/${roleName}`);
   },
 
   // 查询系统下的所有角色
   getBySystem: (systemId: number) => {
-    return request.get<any, RoleResponse[]>(`/usercenter/api/roles/system/${systemId}`);
+    return request.get<any, RoleResponse[]>(`/user-center/api/roles/system/${systemId}`);
   },
 
   // 查询指定级别的角色
   getByLevel: (level: number) => {
-    return request.get<any, RoleResponse[]>(`/usercenter/api/roles/level/${level}`);
+    return request.get<any, RoleResponse[]>(`/user-center/api/roles/level/${level}`);
   },
 
   // 查询所有角色
   getAll: () => {
-    return request.post<any, any>('/usercenter/api/roles/list');
+    return request.post<any, any>('/user-center/api/roles/list');
   },
 
   // 分页查询角色
   page: (params: RolePageParams) => {
-    return request.post<any, RolePageResponse>('/usercenter/api/roles/page', params);
+    return request.post<any, RolePageResponse>('/user-center/api/roles/page', params);
   }
 };
