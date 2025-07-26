@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.leyue.usercenter.infrastructure.log.mapper.OperationLogArchiveMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.leyue.usercenter.infrastructure.log.dataobject.OperationLogArchiveDO">
+        <id column="id" property="id" />
+        <result column="is_deleted" property="isDeleted" />
+        <result column="created_by" property="createdBy" />
+        <result column="updated_by" property="updatedBy" />
+        <result column="created_at" property="createdAt" />
+        <result column="updated_at" property="updatedAt" />
+        <result column="user_id" property="userId" />
+        <result column="username" property="username" />
+        <result column="operation_type" property="operationType" />
+        <result column="module" property="module" />
+        <result column="target_id" property="targetId" />
+        <result column="description" property="description" />
+        <result column="operation_content" property="operationContent" typeHandler="com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler" />
+        <result column="operation_result" property="operationResult" />
+        <result column="related_operation_id" property="relatedOperationId" />
+        <result column="severity_level" property="severityLevel" />
+        <result column="is_sensitive" property="isSensitive" />
+        <result column="approval_info" property="approvalInfo" typeHandler="com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler" />
+        <result column="ip_address" property="ipAddress" />
+        <result column="archived_at" property="archivedAt" />
+    </resultMap>
+
+    <!-- 分页查询归档日志 -->
+    <select id="pageQuery" resultMap="BaseResultMap">
+        SELECT * FROM operation_logs_archive
+        <where>
+            is_deleted = 0
+            <if test="params.userId != null">
+                AND user_id = #{params.userId}
+            </if>
+            <if test="params.username != null and params.username != ''">
+                AND username LIKE CONCAT('%', #{params.username}, '%')
+            </if>
+            <if test="params.operationType != null and params.operationType != ''">
+                AND operation_type = #{params.operationType}
+            </if>
+            <if test="params.module != null and params.module != ''">
+                AND module = #{params.module}
+            </if>
+            <if test="params.targetId != null">
+                AND target_id = #{params.targetId}
+            </if>
+            <if test="params.operationResult != null and params.operationResult != ''">
+                AND operation_result = #{params.operationResult}
+            </if>
+            <if test="params.severityLevel != null and params.severityLevel != ''">
+                AND severity_level = #{params.severityLevel}
+            </if>
+            <if test="params.isSensitive != null">
+                AND is_sensitive = #{params.isSensitive}
+            </if>
+            <if test="params.relatedOperationId != null">
+                AND related_operation_id = #{params.relatedOperationId}
+            </if>
+            <if test="params.startTime != null">
+                AND created_at &gt;= #{params.startTime}
+            </if>
+            <if test="params.endTime != null">
+                AND created_at &lt;= #{params.endTime}
+            </if>
+            <if test="params.archiveStartTime != null">
+                AND archived_at &gt;= #{params.archiveStartTime}
+            </if>
+            <if test="params.archiveEndTime != null">
+                AND archived_at &lt;= #{params.archiveEndTime}
+            </if>
+        </where>
+        ORDER BY created_at DESC
+    </select>
+
+    <!-- 根据归档时间范围查询 -->
+    <select id="findByArchiveTime" resultMap="BaseResultMap">
+        SELECT * FROM operation_logs_archive
+        WHERE is_deleted = 0 AND archived_at BETWEEN #{startTime} AND #{endTime}
+        ORDER BY archived_at DESC
+    </select>
+
+    <!-- 根据模块和目标ID查询归档操作历史 -->
+    <select id="findByModuleAndTargetId" resultMap="BaseResultMap">
+        SELECT * FROM operation_logs_archive
+        WHERE is_deleted = 0 AND module = #{module} AND target_id = #{targetId}
+        ORDER BY created_at DESC
+    </select>
+
+    <!-- 批量插入归档记录 -->
+    <insert id="batchInsert" parameterType="java.util.List">
+        INSERT INTO operation_logs_archive (
+            user_id, username, operation_type, module, target_id, description,
+            operation_content, operation_result, related_operation_id, severity_level,
+            is_sensitive, approval_info, ip_address, created_at, updated_at, archived_at
+        )
+        VALUES
+        <foreach collection="archiveList" item="item" separator=",">
+            (
+                #{item.userId}, #{item.username}, #{item.operationType}, #{item.module},
+                #{item.targetId}, #{item.description}, #{item.operationContent, typeHandler=com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler},
+                #{item.operationResult}, #{item.relatedOperationId}, #{item.severityLevel},
+                #{item.isSensitive}, #{item.approvalInfo, typeHandler=com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler},
+                #{item.ipAddress}, #{item.createdAt}, NOW(), #{item.archivedAt}
+            )
+        </foreach>
+    </insert>
+
+    <!-- 删除早于指定日期的归档日志 -->
+    <update id="deleteExpiredArchives">
+        UPDATE operation_logs_archive
+        SET is_deleted = 1, updated_at = NOW()
+        WHERE archived_at &lt; #{expiryDate} AND is_deleted = 0
+    </update>
+
+</mapper>

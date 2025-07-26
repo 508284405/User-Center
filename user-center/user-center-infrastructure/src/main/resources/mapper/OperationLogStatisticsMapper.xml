@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.leyue.usercenter.infrastructure.log.mapper.OperationLogStatisticsMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.leyue.usercenter.infrastructure.log.dataobject.OperationLogStatisticsDO">
+        <id column="id" property="id" />
+        <result column="is_deleted" property="isDeleted" />
+        <result column="created_by" property="createdBy" />
+        <result column="updated_by" property="updatedBy" />
+        <result column="created_at" property="createdAt" />
+        <result column="updated_at" property="updatedAt" />
+        <result column="statistic_date" property="statisticDate" />
+        <result column="module" property="module" />
+        <result column="operation_type" property="operationType" />
+        <result column="user_count" property="userCount" />
+        <result column="operation_count" property="operationCount" />
+        <result column="success_count" property="successCount" />
+        <result column="fail_count" property="failCount" />
+    </resultMap>
+
+    <!-- 获取指定日期范围的模块操作统计 -->
+    <select id="findByDateRange" resultMap="BaseResultMap">
+        SELECT * FROM operation_logs_statistics
+        WHERE is_deleted = 0 AND statistic_date BETWEEN #{startDate} AND #{endDate}
+        ORDER BY statistic_date DESC, operation_count DESC
+    </select>
+
+    <!-- 获取指定模块的操作统计 -->
+    <select id="findByModule" resultMap="BaseResultMap">
+        SELECT * FROM operation_logs_statistics
+        WHERE is_deleted = 0 AND module = #{module}
+        AND statistic_date BETWEEN #{startDate} AND #{endDate}
+        ORDER BY statistic_date DESC
+    </select>
+
+    <!-- 获取指定操作类型的统计 -->
+    <select id="findByOperationType" resultMap="BaseResultMap">
+        SELECT * FROM operation_logs_statistics
+        WHERE is_deleted = 0 AND operation_type = #{operationType}
+        AND statistic_date BETWEEN #{startDate} AND #{endDate}
+        ORDER BY statistic_date DESC
+    </select>
+
+    <!-- 获取指定日期的统计记录 -->
+    <select id="findByDateAndType" resultMap="BaseResultMap">
+        SELECT * FROM operation_logs_statistics
+        WHERE is_deleted = 0 AND statistic_date = #{statisticDate}
+        <if test="module != null and module != ''">
+            AND module = #{module}
+        </if>
+        <if test="operationType != null and operationType != ''">
+            AND operation_type = #{operationType}
+        </if>
+        LIMIT 1
+    </select>
+
+    <!-- 生成每日统计数据 -->
+    <insert id="generateDailyStatistics">
+        INSERT INTO operation_logs_statistics (
+            statistic_date, module, operation_type, user_count,
+            operation_count, success_count, fail_count, created_at, updated_at
+        )
+        SELECT
+            DATE(created_at) AS statistic_date,
+            module,
+            operation_type,
+            COUNT(DISTINCT user_id) AS user_count,
+            COUNT(*) AS operation_count,
+            SUM(CASE WHEN operation_result = '成功' THEN 1 ELSE 0 END) AS success_count,
+            SUM(CASE WHEN operation_result = '失败' THEN 1 ELSE 0 END) AS fail_count,
+            NOW() AS created_at,
+            NOW() AS updated_at
+        FROM
+            operation_logs
+        WHERE
+            is_deleted = 0
+            AND DATE(created_at) = DATE(#{statisticDate})
+        GROUP BY
+            DATE(created_at), module, operation_type
+    </insert>
+
+    <!-- 删除过期统计数据 -->
+    <update id="deleteExpiredStatistics">
+        UPDATE operation_logs_statistics
+        SET is_deleted = 1, updated_at = NOW()
+        WHERE statistic_date &lt; #{expiryDate} AND is_deleted = 0
+    </update>
+
+</mapper>

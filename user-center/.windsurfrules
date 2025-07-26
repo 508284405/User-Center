@@ -1,0 +1,2 @@
+1. 该系统是基于角色的权限控制(RBAC)支持到菜单级别以及功能按钮级别的精细化授权。
+2. 该系统代码结构是基于DDD的COLA架构, adapter: 通过 DTO 、client 与 app 交互，并结合 MultiResponse, SingleResponse, PageQuery, PageResponse 等基础 DTO 返回 DTO 数据。client: 提供 service 接口给 adapter 交互。app: 实现 service 接口；通过 executor 与 domian 和 infra 层交互。如果是 qry executor 则通过 mapper 直接调用 infra. 如果是 cmd executor 则通过 Gateway 接口与 infra 交互。infra: 通过 convertor 接口实现 领域对象和 DO 对象的转换。通过GatewayImpl 实现Gateway 接口完善数据库修改数据逻辑；通过提供 mapper 接口完善数据库查询数据逻辑。

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.leyue.usercenter.infrastructure.role.mapper.RoleMapper">
+    <select id="selectByUserId" resultType="com.leyue.usercenter.infrastructure.role.dataobject.RoleDO">
+        SELECT r.* FROM role r
+        INNER JOIN user_role ur ON r.id = ur.role_id and ur.is_deleted = 0
+        WHERE ur.user_id = #{userId} and r.is_deleted = 0
+    </select>
+    
+    <insert id="insertUserRole">
+        INSERT INTO user_role (user_id, role_id, create_time)
+        VALUES (#{userId}, #{roleId}, NOW())
+    </insert>
+    
+    <delete id="deleteUserRole">
+        DELETE FROM user_role 
+        WHERE user_id = #{userId} AND role_id = #{roleId}
+    </delete>
+    
+    <delete id="deleteUserRoleByUserId">
+        DELETE FROM user_role WHERE user_id = #{userId}
+    </delete>
+</mapper> 

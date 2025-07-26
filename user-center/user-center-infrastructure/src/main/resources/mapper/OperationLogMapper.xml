@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.leyue.usercenter.infrastructure.log.mapper.OperationLogMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.leyue.usercenter.infrastructure.log.dataobject.OperationLogDO">
+        <id column="id" property="id" />
+        <result column="is_deleted" property="isDeleted" />
+        <result column="created_by" property="createdBy" />
+        <result column="updated_by" property="updatedBy" />
+        <result column="created_at" property="createdAt" />
+        <result column="updated_at" property="updatedAt" />
+        <result column="user_id" property="userId" />
+        <result column="username" property="username" />
+        <result column="operation_type" property="operationType" />
+        <result column="module" property="module" />
+        <result column="target_id" property="targetId" />
+        <result column="description" property="description" />
+        <result column="operation_content" property="operationContent" typeHandler="com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler" />
+        <result column="operation_result" property="operationResult" />
+        <result column="related_operation_id" property="relatedOperationId" />
+        <result column="severity_level" property="severityLevel" />
+        <result column="is_sensitive" property="isSensitive" />
+        <result column="approval_info" property="approvalInfo" typeHandler="com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler" />
+        <result column="ip_address" property="ipAddress" />
+    </resultMap>
+
+    <!-- 分页查询 -->
+    <select id="pageQuery" resultMap="BaseResultMap">
+        SELECT * FROM operation_logs
+        <where>
+            is_deleted = 0
+            <if test="params.userId != null">
+                AND user_id = #{params.userId}
+            </if>
+            <if test="params.username != null and params.username != ''">
+                AND username LIKE CONCAT('%', #{params.username}, '%')
+            </if>
+            <if test="params.operationType != null and params.operationType != ''">
+                AND operation_type = #{params.operationType}
+            </if>
+            <if test="params.module != null and params.module != ''">
+                AND module = #{params.module}
+            </if>
+            <if test="params.targetId != null">
+                AND target_id = #{params.targetId}
+            </if>
+            <if test="params.operationResult != null and params.operationResult != ''">
+                AND operation_result = #{params.operationResult}
+            </if>
+            <if test="params.severityLevel != null and params.severityLevel != ''">
+                AND severity_level = #{params.severityLevel}
+            </if>
+            <if test="params.isSensitive != null">
+                AND is_sensitive = #{params.isSensitive}
+            </if>
+            <if test="params.relatedOperationId != null">
+                AND related_operation_id = #{params.relatedOperationId}
+            </if>
+            <if test="params.startTime != null">
+                AND created_at &gt;= #{params.startTime}
+            </if>
+            <if test="params.endTime != null">
+                AND created_at &lt;= #{params.endTime}
+            </if>
+        </where>
+        ORDER BY created_at DESC
+    </select>
+
+    <!-- 根据关联操作ID查询操作链 -->
+    <select id="findByRelatedOperationId" resultMap="BaseResultMap">
+        SELECT * FROM operation_logs
+        WHERE is_deleted = 0 AND related_operation_id = #{relatedOperationId}
+        ORDER BY created_at ASC
+    </select>
+
+    <!-- 根据模块和目标ID查询操作历史 -->
+    <select id="findByModuleAndTargetId" resultMap="BaseResultMap">
+        SELECT * FROM operation_logs
+        WHERE is_deleted = 0 AND module = #{module} AND target_id = #{targetId}
+        ORDER BY created_at DESC
+    </select>
+
+    <!-- 查询指定时间范围内的日志 -->
+    <select id="findBetweenDates" resultMap="BaseResultMap">
+        SELECT * FROM operation_logs
+        WHERE is_deleted = 0 AND created_at BETWEEN #{startTime} AND #{endTime}
+        ORDER BY created_at DESC
+    </select>
+
+    <!-- 根据ID列表批量删除日志 -->
+    <update id="deleteByIds">
+        UPDATE operation_logs
+        SET is_deleted = 1, updated_at = NOW()
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+    <!-- 删除早于指定日期的日志 -->
+    <update id="deleteExpiredLogs">
+        UPDATE operation_logs
+        SET is_deleted = 1, updated_at = NOW()
+        WHERE created_at &lt; #{expiryDate} AND is_deleted = 0
+    </update>
+
+    <!-- 获取用户操作统计 -->
+    <select id="getUserOperationStatistics" resultType="java.util.HashMap">
+        SELECT
+            COUNT(*) AS total_count,
+            COUNT(DISTINCT module) AS module_count,
+            COUNT(DISTINCT operation_type) AS operation_type_count,
+            SUM(CASE WHEN operation_result = '成功' THEN 1 ELSE 0 END) AS success_count,
+            SUM(CASE WHEN operation_result = '失败' THEN 1 ELSE 0 END) AS fail_count,
+            SUM(CASE WHEN is_sensitive = 1 THEN 1 ELSE 0 END) AS sensitive_count,
+            MAX(created_at) AS last_operation_time
+        FROM operation_logs
+        WHERE is_deleted = 0 AND user_id = #{userId}
+        <if test="startTime != null">
+            AND created_at &gt;= #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND created_at &lt;= #{endTime}
+        </if>
+    </select>
+
+    <!-- 获取模块操作统计 -->
+    <select id="getModuleStatistics" resultType="java.util.HashMap">
+        SELECT
+            module,
+            operation_type,
+            COUNT(DISTINCT user_id) AS user_count,
+            COUNT(*) AS operation_count,
+            SUM(CASE WHEN operation_result = '成功' THEN 1 ELSE 0 END) AS success_count,
+            SUM(CASE WHEN operation_result = '失败' THEN 1 ELSE 0 END) AS fail_count
+        FROM operation_logs
+        WHERE is_deleted = 0
+        <if test="modules != null and modules.size() > 0">
+            AND module IN
+            <foreach collection="modules" item="module" open="(" separator="," close=")">
+                #{module}
+            </foreach>
+        </if>
+        <if test="startTime != null">
+            AND created_at &gt;= #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND created_at &lt;= #{endTime}
+        </if>
+        GROUP BY module, operation_type
+        ORDER BY operation_count DESC
+    </select>
+
+    <!-- 获取操作类型统计 -->
+    <select id="getOperationTypeStatistics" resultType="java.util.HashMap">
+        SELECT
+            operation_type,
+            module,
+            COUNT(DISTINCT user_id) AS user_count,
+            COUNT(*) AS operation_count,
+            SUM(CASE WHEN operation_result = '成功' THEN 1 ELSE 0 END) AS success_count,
+            SUM(CASE WHEN operation_result = '失败' THEN 1 ELSE 0 END) AS fail_count
+        FROM operation_logs
+        WHERE is_deleted = 0
+        <if test="operationTypes != null and operationTypes.size() > 0">
+            AND operation_type IN
+            <foreach collection="operationTypes" item="type" open="(" separator="," close=")">
+                #{type}
+            </foreach>
+        </if>
+        <if test="startTime != null">
+            AND created_at &gt;= #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND created_at &lt;= #{endTime}
+        </if>
+        GROUP BY operation_type, module
+        ORDER BY operation_count DESC
+    </select>
+
+    <!-- 查找异常操作行为 -->
+    <select id="findAbnormalOperations" resultMap="BaseResultMap">
+        SELECT *
+        FROM operation_logs
+        WHERE is_deleted = 0 AND user_id = #{userId}
+        AND created_at BETWEEN #{startTime} AND #{endTime}
+        AND (
+            SELECT COUNT(*)
+            FROM operation_logs as inner_logs
+            WHERE inner_logs.user_id = operation_logs.user_id
+            AND inner_logs.created_at BETWEEN DATE_ADD(operation_logs.created_at, INTERVAL -1 MINUTE)
+            AND operation_logs.created_at
+        ) > #{threshold}
+        ORDER BY created_at DESC
+    </select>
+
+</mapper>

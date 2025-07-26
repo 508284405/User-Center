@@ -1,0 +1,7 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+1. 该项目是基于DDD的COLA架构，项目应该保持DDD代码规范。
+2. API接口规范，参数应该是cmd或qry，分页请求参数为PageQuery，返回值分为：SingleResponse(单个响应值)，PageResponse(分页响应值)，MultiResponse(列表响应值)。
