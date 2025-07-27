@@ -3,9 +3,8 @@ import request from '../config'
 export interface Model {
   id?: number
   providerId: number
-  modelKey: string
   label: string
-  modelType: string
+  modelType: string[]
   features?: string
   fetchFrom?: string
   modelProperties?: string
@@ -20,9 +19,8 @@ export interface Model {
 
 export interface CreateModelRequest {
   providerId: number
-  modelKey: string
   label: string
-  modelType: string
+  modelType: string[]
   features?: string
   fetchFrom?: string
   modelProperties?: string
@@ -43,7 +41,7 @@ export interface ModelPageQuery {
   groupBy?: string
   needTotalCount?: boolean
   providerId?: number
-  modelType?: string
+  modelType?: string[]
   status?: string
 }
 

@@ -2,8 +2,10 @@
 import { ref, onMounted, reactive, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { ElMessage, ElMessageBox, ElLoading } from 'element-plus';
-import { Search, Filter, Edit, Delete, Check, Close } from '@element-plus/icons-vue';
+import { Search, Filter, Edit, Delete, Check, Close, Plus } from '@element-plus/icons-vue';
 import { contentApi, type ContentDTO, type ContentListQuery } from '@/api/smartcs/content';
+import { uploadImage } from '@/api/client-web/file';
+import StepWizardDialog from '@/components/knowledge/StepWizardDialog.vue';
 
 // 路由参数
 const route = useRoute();
@@ -25,6 +27,21 @@ const tableData = ref<ContentDTO[]>([]);
 const totalCount = ref(0);
 const loading = ref(false);
 
+// 分步创建对话框
+const stepWizardVisible = ref(false);
+const stepWizardEditMode = ref(false);
+const stepWizardEditData = ref<any>(null);
+
+// 文件扩展名到文件类型的映射
+const fileTypeMapping: { [key: string]: string } = {
+  '.pdf': 'PDF',
+  '.txt': 'TXT',
+  '.doc': 'DOC',
+  '.docx': 'DOCX',
+  '.md': 'MD',
+  '.html': 'HTML',
+};
+
 // 过滤选项
 const contentTypeOptions = [
   { value: '', label: '全部类型' },
@@ -35,9 +52,6 @@ const contentTypeOptions = [
 
 const statusOptions = [
   { value: '', label: '全部状态' },
-  { value: 'uploaded', label: '已上传' },
-  { value: 'parsed', label: '已解析' },
-  { value: 'vectorized', label: '已向量化' },
   { value: 'enabled', label: '启用' },
   { value: 'disabled', label: '禁用' },
 ];
@@ -52,23 +66,31 @@ const segmentModeOptions = [
 const fetchContents = async () => {
   loading.value = true;
   try {
-    const response = await contentApi.listContents(searchParams);
+    const validSearchParams: Record<string, any> = {};
+    for (const key in searchParams) {
+      const value = (searchParams as any)[key];
+      if (value !== undefined && value !== null && value !== '') {
+        validSearchParams[key] = value;
+      }
+    }
+
+    const response = await contentApi.listContents(validSearchParams);
     
     if (response && response.success) {
       tableData.value = response.data || [];
       totalCount.value = response.totalCount || 0;
     } else {
-      ElMessage.error(response?.errMessage || '获取内容列表失败');
+      ElMessage.error('获取文档列表失败');
     }
   } catch (error) {
-    console.error('获取内容列表出错:', error);
-    ElMessage.error('获取内容列表出错');
+    console.error('获取文档列表出错:', error);
+    ElMessage.error('获取文档列表出错');
   } finally {
     loading.value = false;
   }
 };
 
-// 搜索内容
+// 搜索
 const handleSearch = () => {
   searchParams.pageIndex = 1;
   fetchContents();
@@ -96,44 +118,154 @@ const handleSizeChange = (size: number) => {
   fetchContents();
 };
 
-// 状态切换
-const handleStatusToggle = async (row: ContentDTO) => {
+// 打开新建文档对话框
+const openCreateDialog = () => {
+  stepWizardEditMode.value = false;
+  stepWizardEditData.value = null;
+  stepWizardVisible.value = true;
+};
+
+// 打开编辑文档对话框
+const openEditDialog = async (row: ContentDTO) => {
+  const loadingInstance = ElLoading.service({
+    lock: true,
+    text: '加载文档信息...',
+    background: 'rgba(0, 0, 0, 0.7)'
+  });
+
+  try {
+    const response = await contentApi.getById(row.id);
+    
+    if (response && response.success && response.data) {
+      stepWizardEditMode.value = true;
+      stepWizardEditData.value = response.data;
+      stepWizardVisible.value = true;
+    } else {
+      ElMessage.error('获取文档信息失败');
+    }
+  } catch (error) {
+    console.error('获取文档信息出错:', error);
+    ElMessage.error('获取文档信息出错');
+  } finally {
+    loadingInstance.close();
+  }
+};
+
+// 处理分步创建提交
+const handleStepWizardSubmit = async (data: any) => {
+  const loadingInstance = ElLoading.service({
+    lock: true,
+    text: stepWizardEditMode.value ? '更新文档中...' : '创建文档中...',
+    background: 'rgba(0, 0, 0, 0.7)'
+  });
+
+  try {
+    if (stepWizardEditMode.value) {
+      // 编辑模式：更新文档
+      const response = await contentApi.updateContent({
+        id: stepWizardEditData.value.id,
+        knowledgeBaseId: knowledgeBaseId.value,
+        title: stepWizardEditData.value.title,
+        segmentMode: data.segmentMode,
+        segmentSettings: data.segmentSettings,
+        parentChildSettings: data.parentChildSettings
+      });
+
+      if (response && response.success) {
+        ElMessage.success('文档更新成功');
+        fetchContents();
+      } else {
+        ElMessage.error(response?.errMessage || '文档更新失败');
+      }
+    } else {
+      // 创建模式：先上传文件
+      if (data.uploadedFiles.length === 0) {
+        ElMessage.warning('请选择文件');
+        loadingInstance.close();
+        return;
+      }
+
+      const file = data.uploadedFiles[0];
+      const ossUrl = await uploadImage(file);
+
+      // 创建文档
+      const response = await contentApi.create({
+        knowledgeBaseId: knowledgeBaseId.value,
+        title: file.name.substring(0, file.name.lastIndexOf('.')) || file.name,
+        contentType: 'document',
+        ossUrl: ossUrl,
+        fileSize: file.size,
+        fileType: fileTypeMapping[file.name.substring(file.name.lastIndexOf('.')).toLowerCase()] || 'UNKNOWN',
+      });
+
+      if (response && response.success) {
+        ElMessage.success('文档创建成功');
+        fetchContents();
+      } else {
+        ElMessage.error(response?.errMessage || '文档创建失败');
+      }
+    }
+  } catch (error: any) {
+    console.error(stepWizardEditMode.value ? '更新文档出错:' : '创建文档出错:', error);
+    ElMessage.error((stepWizardEditMode.value ? '更新文档出错:' : '创建文档出错:') + error.message);
+  } finally {
+    loadingInstance.close();
+  }
+};
+
+// 启用/禁用文档
+const handleToggleStatus = async (row: ContentDTO) => {
   const newStatus = row.status === 'enabled' ? 'disabled' : 'enabled';
   const actionText = newStatus === 'enabled' ? '启用' : '禁用';
   
   try {
-    await ElMessageBox.confirm(`确定要${actionText}这个内容吗？`, '提示', {
+    await ElMessageBox.confirm(`确定要${actionText}这个文档吗？`, '提示', {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
       type: 'warning'
     });
     
-    const loadingInstance = ElLoading.service({
-      lock: true,
-      text: `${actionText}中...`,
-      background: 'rgba(0, 0, 0, 0.7)'
+    const response = await contentApi.updateContentStatus({
+      contentId: row.id,
+      status: newStatus
     });
     
-    try {
-      const response = await contentApi.updateContentStatus({
-        contentId: row.id,
-        status: newStatus
-      });
-      
-      if (response && response.success) {
-        ElMessage.success(`${actionText}成功`);
-        fetchContents();
-      } else {
-        ElMessage.error(response?.errMessage || `${actionText}失败`);
-      }
-    } catch (error) {
-      console.error(`${actionText}出错:`, error);
-      ElMessage.error(`${actionText}出错`);
-    } finally {
-      loadingInstance.close();
+    if (response && response.success) {
+      ElMessage.success(`文档${actionText}成功`);
+      row.status = newStatus;
+    } else {
+      ElMessage.error(`文档${actionText}失败`);
     }
-  } catch {
-    // 取消操作
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error(`${actionText}文档出错:`, error);
+      ElMessage.error(`${actionText}文档出错`);
+    }
+  }
+};
+
+// 删除文档
+const handleDelete = async (row: ContentDTO) => {
+  try {
+    await ElMessageBox.confirm('确定要删除这个文档吗？', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    });
+    
+    const response = await contentApi.delete(row.id);
+    
+    if (response && response.success) {
+      ElMessage.success('文档删除成功');
+      fetchContents();
+    } else {
+      ElMessage.error('文档删除失败');
+    }
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('删除文档出错:', error);
+      ElMessage.error('删除文档出错');
+    }
   }
 };
 
@@ -145,11 +277,6 @@ const formatNumber = (num: number): string => {
   return num.toString();
 };
 
-// 格式化时间
-const formatTime = (timestamp: number): string => {
-  return new Date(timestamp).toLocaleString();
-};
-
 // 获取状态标签类型
 const getStatusTagType = (status: string): string => {
   switch (status) {
@@ -157,14 +284,8 @@ const getStatusTagType = (status: string): string => {
       return 'success';
     case 'disabled':
       return 'danger';
-    case 'vectorized':
-      return 'primary';
-    case 'parsed':
-      return 'warning';
-    case 'uploaded':
-      return 'info';
     default:
-      return '';
+      return 'info';
   }
 };
 
@@ -175,12 +296,6 @@ const getStatusText = (status: string): string => {
       return '启用';
     case 'disabled':
       return '禁用';
-    case 'vectorized':
-      return '已向量化';
-    case 'parsed':
-      return '已解析';
-    case 'uploaded':
-      return '已上传';
     default:
       return status;
   }
@@ -263,6 +378,7 @@ onMounted(() => {
           <el-icon><Filter /></el-icon>
           重置
         </el-button>
+        <el-button type="primary" icon="Plus" @click="openCreateDialog">新建文档</el-button>
       </div>
     </div>
 
@@ -302,37 +418,35 @@ onMounted(() => {
         </el-table-column>
         <el-table-column prop="updatedAt" label="更新时间" width="180">
           <template #default="{ row }">
-            <span>{{ formatTime(row.updatedAt) }}</span>
+            <span>{{ new Date(row.updatedAt).toLocaleString() }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="200" fixed="right">
+        <el-table-column label="操作" width="280" fixed="right">
           <template #default="{ row }">
-            <el-button
-              v-if="row.status === 'vectorized' || row.status === 'disabled'"
-              type="success"
-              size="small"
-              @click="handleStatusToggle(row)"
-            >
-              <el-icon><Check /></el-icon>
-              启用
-            </el-button>
-            <el-button
-              v-if="row.status === 'enabled'"
-              type="danger"
-              size="small"
-              @click="handleStatusToggle(row)"
-            >
-              <el-icon><Close /></el-icon>
-              禁用
-            </el-button>
-            <el-button type="primary" size="small">
-              <el-icon><Edit /></el-icon>
-              编辑
-            </el-button>
-            <el-button type="danger" size="small">
-              <el-icon><Delete /></el-icon>
-              删除
-            </el-button>
+            <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+              <el-button 
+                type="primary" 
+                size="small" 
+                @click="openEditDialog(row)"
+              >
+                <el-icon><Edit /></el-icon>
+                编辑
+              </el-button>
+              <el-button 
+                :type="row.status === 'enabled' ? 'danger' : 'success'"
+                size="small"
+                @click="handleToggleStatus(row)"
+              >
+                <el-icon>
+                  <component :is="row.status === 'enabled' ? Close : Check" />
+                </el-icon>
+                {{ row.status === 'enabled' ? '禁用' : '启用' }}
+              </el-button>
+              <el-button type="danger" size="small" @click="handleDelete(row)">
+                <el-icon><Delete /></el-icon>
+                删除
+              </el-button>
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -350,12 +464,27 @@ onMounted(() => {
         @current-change="handleCurrentChange"
       />
     </div>
+
+    <!-- 分步创建对话框 -->
+    <StepWizardDialog
+      v-model:visible="stepWizardVisible"
+      :title="stepWizardEditMode ? '编辑文档' : '新建文档'"
+      mode="document"
+      :edit-mode="stepWizardEditMode"
+      :edit-data="stepWizardEditData"
+      :knowledge-base-id="knowledgeBaseId"
+      @submit="handleStepWizardSubmit"
+      @cancel="stepWizardVisible = false"
+    />
   </div>
 </template>
 
 <style scoped>
 .content-list-view {
   padding: 20px;
+  background: #fff;
+  border-radius: 8px;
+  min-height: calc(100vh - 120px);
 }
 
 .page-header {
@@ -366,6 +495,7 @@ onMounted(() => {
   margin: 0 0 8px 0;
   font-size: 24px;
   font-weight: 600;
+  color: #303133;
 }
 
 .page-header p {
@@ -380,14 +510,15 @@ onMounted(() => {
   align-items: center;
   margin-bottom: 20px;
   padding: 16px;
-  background: #f5f5f5;
-  border-radius: 8px;
+  background: #f5f7fa;
+  border-radius: 6px;
 }
 
 .toolbar-left {
   display: flex;
   align-items: center;
   gap: 12px;
+  flex: 1;
 }
 
 .toolbar-right {
@@ -397,11 +528,11 @@ onMounted(() => {
 }
 
 .search-input {
-  width: 280px;
+  width: 250px;
 }
 
 .filter-select {
-  width: 140px;
+  width: 120px;
 }
 
 .table-container {
@@ -410,6 +541,28 @@ onMounted(() => {
 
 .pagination {
   display: flex;
-  justify-content: center;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+/* 分步弹窗样式 */
+:deep(.el-dialog__body) {
+  padding: 20px;
+}
+
+:deep(.el-steps) {
+  margin-bottom: 30px;
+}
+
+:deep(.el-step__title) {
+  font-size: 14px;
+}
+
+:deep(.el-step__head.is-process) {
+  color: #409eff;
+}
+
+:deep(.el-step__head.is-finish) {
+  color: #67c23a;
 }
 </style> 

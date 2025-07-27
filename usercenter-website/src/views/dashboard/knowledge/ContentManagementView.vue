@@ -2,10 +2,11 @@
 import { ref, onMounted, reactive } from 'vue';
 import { ElMessage, ElMessageBox, ElLoading } from 'element-plus';
 import { Search, Plus, Edit, Delete, Upload, Document, View } from '@element-plus/icons-vue';
-import { contentApi } from '@/api/smartcs/content';
+import { contentApi, DocumentSearchRequest, DocumentSearchResultDTO } from '@/api/smartcs/content';
 import { knowledgeBaseApi } from '@/api/smartcs/knowledgeBase';
 import { uploadImage } from '@/api/client-web/file';
 import { useRouter } from 'vue-router';
+import StepWizardDialog from '@/components/knowledge/StepWizardDialog.vue';
 
 // 定义内容数据类型
 interface Content {
@@ -27,21 +28,6 @@ interface KnowledgeBase {
   id: number;
   name: string;
   code: string;
-}
-
-// 定义向量检索请求类型
-interface DocumentSearchRequest {
-  query: string;
-  contentId?: number;
-  topK?: number;
-}
-
-// 定义向量检索结果类型
-interface DocumentSearchResultDTO {
-  id?: number;
-  text?: string;
-  score?: number;
-  metadata?: any;
 }
 
 // 查询参数
@@ -88,7 +74,8 @@ const vectorSearchForm = reactive({
 });
 const vectorSearchResults = ref<DocumentSearchResultDTO[]>([]);
 
-
+// 分步创建对话框
+const stepWizardVisible = ref(false);
 
 // 内容类型选项
 const contentTypeOptions = [
@@ -99,12 +86,9 @@ const contentTypeOptions = [
 
 // 状态选项
 const statusOptions = [
-  { value: 'uploaded', label: '已上传' },
-  { value: 'parsed', label: '已解析' },
-  { value: 'vectorized', label: '已向量化' },
+  { value: 'enabled', label: '启用' },
+  { value: 'disabled', label: '禁用' },
 ];
-
-
 
 // 路由
 const router = useRouter();
@@ -148,7 +132,7 @@ const fetchContents = async () => {
       }
     }
 
-    const response = await contentApi.list(validSearchParams);
+    const response = await contentApi.listContents(validSearchParams);
     
     if (response && response.success) {
       tableData.value = response.data || [];
@@ -194,17 +178,50 @@ const handleSizeChange = (size: number) => {
 
 // 打开新增对话框
 const openCreateDialog = () => {
-  dialogTitle.value = '新增内容';
-  isEdit.value = false;
-  contentForm.id = undefined;
-  contentForm.knowledgeBaseId = undefined;
-  contentForm.title = '';
-  contentForm.contentType = 'document';
-  contentForm.file = null;
-  contentForm.ossUrl = '';
-  contentForm.fileSize = 0;
-  contentForm.fileType = '';
-  dialogVisible.value = true;
+  stepWizardVisible.value = true;
+};
+
+// 处理分步创建提交
+const handleStepWizardSubmit = async (data: any) => {
+  const loadingInstance = ElLoading.service({
+    lock: true,
+    text: '创建文档中...',
+    background: 'rgba(0, 0, 0, 0.7)'
+  });
+
+  try {
+    // 先上传文件
+    if (data.uploadedFiles.length === 0) {
+      ElMessage.warning('请选择文件');
+      loadingInstance.close();
+      return;
+    }
+
+    const file = data.uploadedFiles[0];
+    const ossUrl = await uploadImage(file);
+
+    // 创建文档
+    const response = await contentApi.create({
+      knowledgeBaseId: data.knowledgeBaseId || searchParams.knowledgeBaseId,
+      title: file.name.substring(0, file.name.lastIndexOf('.')) || file.name,
+      contentType: 'document',
+      ossUrl: ossUrl,
+      fileSize: file.size,
+      fileType: fileTypeMapping[file.name.substring(file.name.lastIndexOf('.')).toLowerCase()] || 'UNKNOWN',
+    });
+
+    if (response && response.success) {
+      ElMessage.success('文档创建成功');
+      fetchContents();
+    } else {
+      ElMessage.error(response?.errMessage || '文档创建失败');
+    }
+  } catch (error: any) {
+    console.error('创建文档出错:', error);
+    ElMessage.error('创建文档出错:' + error.message);
+  } finally {
+    loadingInstance.close();
+  }
 };
 
 // 打开编辑对话框
@@ -351,8 +368,6 @@ const handleParse = async (row: Content) => {
     loadingInstance.close();
   }
 };
-
-
 
 // 格式化文件大小
 const formatFileSize = (bytes: number | undefined) => {
@@ -501,7 +516,7 @@ onMounted(() => {
       </el-select>
       <el-button type="primary" @click="handleSearch">搜索</el-button>
       <el-button @click="resetSearch">重置</el-button>
-      <el-button type="primary" icon="Plus" @click="openCreateDialog">新增内容</el-button>
+      <el-button type="primary" icon="Plus" @click="openCreateDialog">新建文档</el-button>
     </div>
 
     <!-- 内容表格 -->
@@ -527,12 +542,10 @@ onMounted(() => {
       <el-table-column label="状态" width="100">
         <template #default="scope">
           <el-tag 
-            :type="scope.row.status === 'vectorized' ? 'success' : 
-                   scope.row.status === 'parsed' ? 'warning' : 'info'"
+            :type="scope.row.status === 'enabled' ? 'success' : 'danger'"
           >
-            {{ scope.row.status === 'uploaded' ? '已上传' : 
-               scope.row.status === 'parsed' ? '已解析' : 
-               scope.row.status === 'vectorized' ? '已向量化' : scope.row.status }}
+            {{ scope.row.status === 'enabled' ? '启用' : 
+               scope.row.status === 'disabled' ? '禁用' : scope.row.status }}
           </el-tag>
         </template>
       </el-table-column>
@@ -728,6 +741,16 @@ onMounted(() => {
       </template>
     </el-dialog>
 
+    <!-- 分步创建对话框 -->
+    <StepWizardDialog
+      v-model:visible="stepWizardVisible"
+      title="新建文档"
+      mode="document"
+      :knowledge-base-id="searchParams.knowledgeBaseId"
+      @submit="handleStepWizardSubmit"
+      @cancel="stepWizardVisible = false"
+    />
+
   </div>
 </template>
 
@@ -895,6 +918,27 @@ onMounted(() => {
 .no-results {
   text-align: center;
   padding: 40px 0;
+}
+
+/* 分步弹窗样式 */
+:deep(.el-dialog__body) {
+  padding: 20px;
+}
+
+:deep(.el-steps) {
+  margin-bottom: 30px;
+}
+
+:deep(.el-step__title) {
+  font-size: 14px;
+}
+
+:deep(.el-step__head.is-process) {
+  color: #409eff;
+}
+
+:deep(.el-step__head.is-finish) {
+  color: #67c23a;
 }
 
 

@@ -312,7 +312,7 @@ const routes = [
                     {
                         path: 'index',
                         name: 'KnowledgeIndex',
-                        component: () => import('../views/knowledge/index/IndexListView.vue'),
+                        component: () => import('../views/dashboard/infrastructure/index/IndexListView.vue'),
                         meta: {
                             requiresAuth: true,
                             permission: 'knowledge:index:view',

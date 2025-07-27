@@ -20,7 +20,7 @@
           </el-select>
         </el-form-item>
         <el-form-item label="模型类型">
-          <el-select v-model="searchForm.modelType" placeholder="请选择模型类型" clearable>
+          <el-select v-model="searchForm.modelType" placeholder="请选择模型类型" clearable multiple>
             <el-option
               v-for="type in modelTypeOptions"
               :key="type.value"
@@ -49,17 +49,25 @@
     <el-table :data="tableData" v-loading="loading" stripe>
       <el-table-column prop="id" label="ID" width="80" />
       <el-table-column prop="label" label="模型名称" />
-      <el-table-column prop="modelKey" label="模型Key" />
       <el-table-column prop="providerId" label="提供商" width="120">
         <template #default="{ row }">
           {{ getProviderName(row.providerId) }}
         </template>
       </el-table-column>
-      <el-table-column prop="modelType" label="模型类型" width="120">
+      <el-table-column prop="modelType" label="模型类型" width="200">
         <template #default="{ row }">
-          <el-tag :type="getModelTypeTagType(row.modelType)">
-            {{ getModelTypeLabel(row.modelType) }}
-          </el-tag>
+          <div v-if="row.modelType && row.modelType.length > 0">
+            <el-tag
+              v-for="type in row.modelType"
+              :key="type"
+              :type="getModelTypeTagType(type)"
+              size="small"
+              class="model-type-tag"
+            >
+              {{ getModelTypeLabel(type) }}
+            </el-tag>
+          </div>
+          <span v-else>-</span>
         </template>
       </el-table-column>
       <el-table-column prop="features" label="能力标签" show-overflow-tooltip>
@@ -155,14 +163,11 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="模型Key" prop="modelKey">
-          <el-input v-model="form.modelKey" placeholder="请输入模型唯一标识" />
-        </el-form-item>
         <el-form-item label="模型名称" prop="label">
           <el-input v-model="form.label" placeholder="请输入模型名称" />
         </el-form-item>
         <el-form-item label="模型类型" prop="modelType">
-          <el-select v-model="form.modelType" placeholder="请选择模型类型">
+          <el-select v-model="form.modelType" placeholder="请选择模型类型" multiple>
             <el-option
               v-for="type in modelTypeOptions"
               :key="type.value"
@@ -241,7 +246,7 @@ const formRef = ref()
 
 const searchForm = reactive({
   providerId: undefined as number | undefined,
-  modelType: '',
+  modelType: [] as string[],
   status: ''
 })
 
@@ -253,9 +258,8 @@ const pagination = reactive({
 
 const form = reactive<CreateModelRequest & { id?: number }>({
   providerId: 0,
-  modelKey: '',
   label: '',
-  modelType: '',
+  modelType: [] as string[],
   features: '',
   fetchFrom: '',
   modelProperties: '',
@@ -268,14 +272,11 @@ const formRules = {
   providerId: [
     { required: true, message: '请选择提供商', trigger: 'change' }
   ],
-  modelKey: [
-    { required: true, message: '请输入模型Key', trigger: 'blur' }
-  ],
   label: [
     { required: true, message: '请输入模型名称', trigger: 'blur' }
   ],
   modelType: [
-    { required: true, message: '请选择模型类型', trigger: 'change' }
+    { required: true, message: '请选择模型类型', trigger: 'change', type: 'array', min: 1 }
   ]
 }
 
@@ -319,7 +320,7 @@ const fetchData = async () => {
       pageSize: pagination.pageSize,
       needTotalCount: true,
       providerId: searchForm.providerId,
-      modelType: searchForm.modelType || undefined,
+      modelType: searchForm.modelType.length > 0 ? searchForm.modelType : undefined,
       status: searchForm.status || undefined
     }
     const response = await modelApi.getPage(params)
@@ -343,7 +344,7 @@ const handleSearch = () => {
 // 重置
 const handleReset = () => {
   searchForm.providerId = undefined
-  searchForm.modelType = ''
+  searchForm.modelType = []
   searchForm.status = ''
   pagination.pageIndex = 1
   fetchData()
@@ -480,9 +481,8 @@ const resetForm = () => {
   Object.assign(form, {
     id: undefined,
     providerId: 0,
-    modelKey: '',
     label: '',
-    modelType: '',
+    modelType: [],
     features: '',
     fetchFrom: '',
     modelProperties: '',
@@ -563,6 +563,11 @@ onMounted(() => {
 }
 
 .feature-tag {
+  margin-right: 5px;
+  margin-bottom: 5px;
+}
+
+.model-type-tag {
   margin-right: 5px;
   margin-bottom: 5px;
 }
