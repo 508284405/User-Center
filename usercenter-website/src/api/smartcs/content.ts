@@ -55,6 +55,33 @@ export interface ContentEditRequest {
   parentChildSettings?: any;
 }
 
+// 新增：文档处理请求接口
+export interface DocumentProcessRequest {
+  knowledgeBaseId: number;
+  title: string;
+  fileUrl: string;
+  fileType: string;
+  fileSize: number;
+  segmentMode: 'general' | 'parent_child';
+  segmentSettings: any;
+  parentChildSettings?: any;
+  indexMethod: string;
+  retrievalSettings: any;
+  editMode: boolean;
+  editData?: any;
+}
+
+// 新增：文档处理结果接口
+export interface DocumentProcessResult {
+  contentId: number;
+  chunkCount: number;
+  processingTime: number;
+  tokenCount: number;
+  embeddingCost: number;
+  charCount: number;
+  recallCount: number;
+}
+
 export interface DocumentSearchRequest {
   query: string;
   contentId?: number;
@@ -66,40 +93,6 @@ export interface DocumentSearchResultDTO {
   text?: string;
   score?: number;
   metadata?: any;
-}
-
-export interface DocumentProcessRequest {
-  knowledgeBaseId: number;
-  files: string[];
-  segmentMode: 'general' | 'parent_child';
-  segmentSettings?: {
-    identifier: string;
-    maxLength: number;
-    overlapLength: number;
-    replaceConsecutiveSpaces: boolean;
-    removeAllUrls: boolean;
-    useQASegmentation: boolean;
-    qaLanguage: string;
-  };
-  parentChildSettings?: {
-    parentIdentifier: string;
-    parentMaxLength: number;
-    childIdentifier: string; 
-    childMaxLength: number;
-    replaceConsecutiveSpaces: boolean;
-    removeAllUrls: boolean;
-  };
-  indexMethod: string;
-  retrievalSettings: {
-    method: string;
-    rerankModel: string;
-    topK: number;
-    scoreThreshold: number;
-    fullTextSearch: boolean;
-    hybridSearch: boolean;
-  };
-  editMode?: boolean;
-  editData?: any;
 }
 
 export interface DocumentProcessResponse {
@@ -223,11 +216,11 @@ export const contentApi = {
   },
 
   /**
-   * 文档处理 - 完整的文档分块和向量化流程
+   * 文档处理（包含分块和向量化）
    */
-  processDocument: (data: DocumentProcessRequest): Promise<Response & { data?: DocumentProcessResponse }> => {
+  processDocument: (data: DocumentProcessRequest): Promise<Response & { data?: DocumentProcessResult }> => {
     return request({
-      url: '/smartcs/api/admin/knowledge/content/process',
+      url: '/smartcs/api/admin/content/process',
       method: 'POST',
       data,
     });

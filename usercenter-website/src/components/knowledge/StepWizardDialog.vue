@@ -4,6 +4,9 @@ import { ElMessage, ElLoading } from 'element-plus';
 import { Search, Plus, Edit, Delete, Upload, Document, Link, Filter, Loading, Warning, Check } from '@element-plus/icons-vue';
 import { uploadDocument } from '@/api/client-web/file';
 import { knowledgeBaseApi } from '@/api/smartcs/knowledgeBase';
+import { contentApi } from '@/api/smartcs/content';
+import { modelApi, ModelType, ModelStatus, type Model } from '@/api/smartcs/model';
+import { useRouter } from 'vue-router';
 
 // Props 定义
 interface StepWizardProps {
@@ -28,10 +31,28 @@ const emit = defineEmits<{
   'cancel': [];
 }>();
 
+// Router
+const router = useRouter();
+
 // 响应式数据
 const currentStep = ref(1);
 const selectedDataSource = ref('text');
 const uploadedFiles = ref<File[]>([]);
+
+// 模型相关数据
+const selectedModelId = ref<number | null>(null);
+const modelOptions = ref<Model[]>([]);
+const modelLoading = ref(false);
+const modelRequest = reactive({
+  modelId: null as number | null,
+  modelName: '',
+  temperature: 0.5,
+  topP: null as number | null,
+  topK: null as number | null,
+  frequencyPenalty: 0.0,
+  presencePenalty: 0.0,
+  maxOutputTokens: 1024
+});
 
 // 分段设置
 const segmentMode = ref('general');
@@ -94,12 +115,54 @@ const canProceed = computed(() => {
   if (currentStep.value === 1) {
     return props.editMode || uploadedFiles.value.length > 0;
   }
+  if (currentStep.value === 2) {
+    // 第二步需要选择模型
+    return selectedModelId.value !== null;
+  }
   return true;
 });
 
 // 工具函数
 const getFileIdentifier = (file: File): string => {
   return `${file.name}_${file.size}_${file.lastModified}`;
+};
+
+// 获取模型列表
+const fetchModelList = async () => {
+  try {
+    modelLoading.value = true;
+    const response = await modelApi.getPage({
+      pageSize: 1000, // 获取所有模型
+      status: ModelStatus.ACTIVE, // 只获取激活状态的模型
+      modelType: [ModelType.LLM] // 只获取LLM类型的模型
+    });
+    
+    if (response.success && response.data) {
+      modelOptions.value = response.data;
+      
+      // 如果当前没有选中的模型且有可用模型，选择第一个
+      if (!selectedModelId.value && response.data.length > 0) {
+        const firstModel = response.data[0];
+        selectedModelId.value = firstModel.id!;
+        modelRequest.modelId = firstModel.id!;
+        modelRequest.modelName = firstModel.label;
+      }
+    }
+  } catch (error) {
+    console.error('获取模型列表失败:', error);
+    ElMessage.error('获取模型列表失败');
+  } finally {
+    modelLoading.value = false;
+  }
+};
+
+// 处理模型选择变化
+const handleModelChange = (modelId: number) => {
+  const selectedModel = modelOptions.value.find(model => model.id === modelId);
+  if (selectedModel) {
+    modelRequest.modelId = modelId;
+    modelRequest.modelName = selectedModel.label;
+  }
 };
 
 const getCacheStatusText = (fileId: string): string => {
@@ -123,8 +186,11 @@ const getCacheTagType = (fileId: string): string => {
 };
 
 // 监听弹窗显示状态
-watch(() => props.visible, (newVal) => {
+watch(() => props.visible, async (newVal) => {
   if (newVal) {
+    // 获取模型列表
+    await fetchModelList();
+    
     if (props.editMode && props.editData) {
       // 编辑模式：直接进入第二步，加载现有数据
       currentStep.value = 2;
@@ -214,6 +280,10 @@ const handleNext = () => {
     }
     currentStep.value = 2;
   } else if (currentStep.value === 2) {
+    if (!selectedModelId.value) {
+      ElMessage.warning('请先选择模型');
+      return;
+    }
     currentStep.value = 3;
   } else {
     handleSubmit();
@@ -237,6 +307,11 @@ const handleCancel = () => {
 const handlePreviewChunks = async () => {
   if (!props.editMode && uploadedFiles.value.length === 0) {
     ElMessage.warning('请先上传文件');
+    return;
+  }
+  
+  if (!selectedModelId.value) {
+    ElMessage.warning('请先选择模型');
     return;
   }
 
@@ -297,7 +372,8 @@ const handlePreviewChunks = async () => {
         stripWhitespace: segmentSettings.replaceConsecutiveSpaces,
         removeAllUrls: segmentSettings.removeAllUrls,
         useQASegmentation: segmentSettings.useQASegmentation,
-        qaLanguage: segmentSettings.qaLanguage
+        qaLanguage: segmentSettings.qaLanguage,
+        modelRequest: modelRequest
       };
       
       chunkProgress.value = '执行通用分块策略...';
@@ -314,7 +390,8 @@ const handlePreviewChunks = async () => {
         maxChunkSize: 5000,
         keepSeparator: true,
         stripWhitespace: parentChildSettings.replaceConsecutiveSpaces,
-        removeAllUrls: parentChildSettings.removeAllUrls
+        removeAllUrls: parentChildSettings.removeAllUrls,
+        modelRequest: modelRequest
       };
       
       chunkProgress.value = '执行父子分块策略...';
@@ -355,6 +432,11 @@ const handleSubmit = async () => {
     ElMessage.warning('正在处理中，请等待完成');
     return;
   }
+  
+  if (!selectedModelId.value) {
+    ElMessage.warning('请先选择模型');
+    return;
+  }
 
   processingStatus.value = 'uploading';
   processingProgress.value = 0;
@@ -363,43 +445,50 @@ const handleSubmit = async () => {
 
   try {
     // 第一步：文件上传（如果需要）
-    let fileUrls: string[] = [];
+    let fileUrl: string = '';
     if (!props.editMode && uploadedFiles.value.length > 0) {
       processingProgress.value = 10;
-      for (const file of uploadedFiles.value) {
-        const fileId = getFileIdentifier(file);
-        
-        // 检查缓存
-        if (uploadedFileUrls.value.has(fileId)) {
-          fileUrls.push(uploadedFileUrls.value.get(fileId)!);
-        } else {
-          // 上传文件
-          const fileUrl = await uploadDocument(file);
-          uploadedFileUrls.value.set(fileId, fileUrl);
-          fileUrls.push(fileUrl);
-        }
+      const file = uploadedFiles.value[0]; // 目前只处理第一个文件
+      const fileId = getFileIdentifier(file);
+      
+      // 检查缓存
+      if (uploadedFileUrls.value.has(fileId)) {
+        fileUrl = uploadedFileUrls.value.get(fileId)!;
+      } else {
+        // 上传文件
+        fileUrl = await uploadDocument(file);
+        uploadedFileUrls.value.set(fileId, fileUrl);
       }
     } else if (props.editMode && props.editData?.fileUrl) {
-      fileUrls = [props.editData.fileUrl];
+      fileUrl = props.editData.fileUrl;
     }
 
     processingProgress.value = 30;
     processingStatus.value = 'chunking';
 
-    // 第二步：调用文档处理API
+    // 第二步：调用新的文档处理API
     const processData = {
-      knowledgeBaseId: props.knowledgeBaseId,
-      files: fileUrls,
-      segmentMode: segmentMode.value,
-      segmentSettings: segmentMode.value === 'general' ? segmentSettings : undefined,
+      knowledgeBaseId: props.knowledgeBaseId!,
+      title: props.editMode ? props.editData?.title : uploadedFiles.value[0]?.name || '新文档',
+      fileUrl: fileUrl,
+      fileType: props.editMode ? props.editData?.fileType : (uploadedFiles.value[0]?.name.split('.').pop() || ''),
+      fileSize: props.editMode ? props.editData?.fileSize || 0 : uploadedFiles.value[0]?.size || 0,
+      segmentMode: segmentMode.value as 'general' | 'parent_child',
+      segmentSettings: segmentMode.value === 'general' ? segmentSettings : {},
       parentChildSettings: segmentMode.value === 'parent_child' ? parentChildSettings : undefined,
       indexMethod: indexMethod.value,
       retrievalSettings: retrievalSettings,
-      editMode: props.editMode,
-      editData: props.editData
+      editMode: props.editMode || false,
+      editData: props.editData,
+      modelId: modelRequest.modelId,
+      modelRequest: modelRequest
     };
 
-    const response = await processDocument(processData);
+    processingProgress.value = 50;
+    processingStatus.value = 'vectorizing';
+
+    // 调用新的 processDocument API
+    const response = await contentApi.processDocument(processData);
     
     if (response && response.success) {
       processingProgress.value = 100;
@@ -408,15 +497,33 @@ const handleSubmit = async () => {
       
       ElMessage.success('文档处理完成');
       
-      // 延迟关闭弹窗，让用户看到完成状态
-      setTimeout(() => {
-        emit('submit', {
-          ...processData,
-          results: response.data
-        });
-        emit('update:visible', false);
-        resetProcessingState();
-      }, 2000);
+      // 处理成功后的跳转逻辑
+      if (response.data?.contentId) {
+        // 延迟关闭弹窗，然后跳转到分块管理页面
+        setTimeout(() => {
+          emit('submit', {
+            ...processData,
+            results: response.data
+          });
+          emit('update:visible', false);
+          resetProcessingState();
+          
+          // 跳转到分块管理页面
+          if (response.data?.contentId) {
+            navigateToChunkPage(response.data.contentId);
+          }
+        }, 2000);
+      } else {
+        // 没有 contentId 时，直接关闭弹窗
+        setTimeout(() => {
+          emit('submit', {
+            ...processData,
+            results: response.data
+          });
+          emit('update:visible', false);
+          resetProcessingState();
+        }, 2000);
+      }
     } else {
       throw new Error(response?.errMessage || '文档处理失败');
     }
@@ -437,31 +544,20 @@ const resetProcessingState = () => {
   processingResults.value = null;
 };
 
-// 文档处理API调用
-const processDocument = async (data: any) => {
-  return new Promise((resolve, reject) => {
-    // 模拟进度更新
-    const progressInterval = setInterval(() => {
-      if (processingProgress.value < 90) {
-        processingProgress.value += Math.random() * 10;
-        
-        if (processingProgress.value >= 60 && processingStatus.value === 'chunking') {
-          processingStatus.value = 'vectorizing';
-        }
+// 跳转到分块管理页面
+const navigateToChunkPage = (contentId: number) => {
+  try {
+    router.push({
+      path: `/dashboard/knowledge/chunk/${contentId}`,
+      query: {
+        from: 'upload'
       }
-    }, 500);
-
-    // 实际API调用
-    import('@/api/smartcs/content').then(({ contentApi }) => {
-      return contentApi.processDocument(data);
-    }).then(response => {
-      clearInterval(progressInterval);
-      resolve(response);
-    }).catch(error => {
-      clearInterval(progressInterval);
-      reject(error);
     });
-  });
+    ElMessage.success('已跳转到分块管理页面');
+  } catch (error) {
+    console.error('页面跳转失败:', error);
+    ElMessage.warning('文档处理完成，但跳转失败，请手动查看分块列表');
+  }
 };
 
 // 获取处理状态文本
@@ -634,6 +730,102 @@ const getProgressDetail = () => {
                   </div>
                 </div>
                 
+                <!-- 模型选择和参数配置 -->
+                <div class="setting-item">
+                  <label>模型配置</label>
+                  <div class="model-config-section">
+                    <div class="model-selection">
+                      <label class="model-label">选择模型</label>
+                      <el-select 
+                        v-model="selectedModelId" 
+                        placeholder="请选择模型"
+                        :loading="modelLoading"
+                        @change="handleModelChange"
+                        style="width: 100%;"
+                      >
+                        <el-option
+                          v-for="model in modelOptions"
+                          :key="model.id"
+                          :label="model.label"
+                          :value="model.id"
+                        />
+                      </el-select>
+                    </div>
+                    
+                    <div v-if="selectedModelId" class="model-parameters">
+                      <div class="parameter-row">
+                        <div class="parameter-item">
+                          <label>温度 (Temperature)</label>
+                          <el-slider 
+                            v-model="modelRequest.temperature" 
+                            :min="0" 
+                            :max="2" 
+                            :step="0.1" 
+                            show-input
+                            :show-input-controls="false"
+                          />
+                        </div>
+                        <div class="parameter-item">
+                          <label>Top P</label>
+                          <el-input-number 
+                            v-model="modelRequest.topP" 
+                            :min="0" 
+                            :max="1" 
+                            :step="0.1" 
+                            :precision="2"
+                            placeholder="可选参数"
+                          />
+                        </div>
+                      </div>
+                      
+                      <div class="parameter-row">
+                        <div class="parameter-item">
+                          <label>Top K</label>
+                          <el-input-number 
+                            v-model="modelRequest.topK" 
+                            :min="1" 
+                            :max="100" 
+                            placeholder="可选参数"
+                          />
+                        </div>
+                        <div class="parameter-item">
+                          <label>最大输出Token</label>
+                          <el-input-number 
+                            v-model="modelRequest.maxOutputTokens" 
+                            :min="1" 
+                            :max="4096" 
+                          />
+                        </div>
+                      </div>
+                      
+                      <div class="parameter-row">
+                        <div class="parameter-item">
+                          <label>频率惩罚 (Frequency Penalty)</label>
+                          <el-slider 
+                            v-model="modelRequest.frequencyPenalty" 
+                            :min="0" 
+                            :max="2" 
+                            :step="0.1" 
+                            show-input
+                            :show-input-controls="false"
+                          />
+                        </div>
+                        <div class="parameter-item">
+                          <label>存在惩罚 (Presence Penalty)</label>
+                          <el-slider 
+                            v-model="modelRequest.presencePenalty" 
+                            :min="0" 
+                            :max="2" 
+                            :step="0.1" 
+                            show-input
+                            :show-input-controls="false"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
                 <div class="setting-item">
                   <el-checkbox v-model="segmentSettings.useQASegmentation">
                     使用 Q&A 分段，适合
@@ -714,6 +906,102 @@ const getProgressDetail = () => {
                         <el-checkbox v-model="parentChildSettings.removeAllUrls">
                           删除所有 URL 和电子邮件地址
                         </el-checkbox>
+                      </div>
+                    </div>
+                    
+                    <!-- 模型选择和参数配置 -->
+                    <div class="setting-item">
+                      <label>模型配置</label>
+                      <div class="model-config-section">
+                        <div class="model-selection">
+                          <label class="model-label">选择模型</label>
+                          <el-select 
+                            v-model="selectedModelId" 
+                            placeholder="请选择模型"
+                            :loading="modelLoading"
+                            @change="handleModelChange"
+                            style="width: 100%;"
+                          >
+                            <el-option
+                              v-for="model in modelOptions"
+                              :key="model.id"
+                              :label="model.label"
+                              :value="model.id"
+                            />
+                          </el-select>
+                        </div>
+                        
+                        <div v-if="selectedModelId" class="model-parameters">
+                          <div class="parameter-row">
+                            <div class="parameter-item">
+                              <label>温度 (Temperature)</label>
+                              <el-slider 
+                                v-model="modelRequest.temperature" 
+                                :min="0" 
+                                :max="2" 
+                                :step="0.1" 
+                                show-input
+                                :show-input-controls="false"
+                              />
+                            </div>
+                            <div class="parameter-item">
+                              <label>Top P</label>
+                              <el-input-number 
+                                v-model="modelRequest.topP" 
+                                :min="0" 
+                                :max="1" 
+                                :step="0.1" 
+                                :precision="2"
+                                placeholder="可选参数"
+                              />
+                            </div>
+                          </div>
+                          
+                          <div class="parameter-row">
+                            <div class="parameter-item">
+                              <label>Top K</label>
+                              <el-input-number 
+                                v-model="modelRequest.topK" 
+                                :min="1" 
+                                :max="100" 
+                                placeholder="可选参数"
+                              />
+                            </div>
+                            <div class="parameter-item">
+                              <label>最大输出Token</label>
+                              <el-input-number 
+                                v-model="modelRequest.maxOutputTokens" 
+                                :min="1" 
+                                :max="4096" 
+                              />
+                            </div>
+                          </div>
+                          
+                          <div class="parameter-row">
+                            <div class="parameter-item">
+                              <label>频率惩罚 (Frequency Penalty)</label>
+                              <el-slider 
+                                v-model="modelRequest.frequencyPenalty" 
+                                :min="0" 
+                                :max="2" 
+                                :step="0.1" 
+                                show-input
+                                :show-input-controls="false"
+                              />
+                            </div>
+                            <div class="parameter-item">
+                              <label>存在惩罚 (Presence Penalty)</label>
+                              <el-slider 
+                                v-model="modelRequest.presencePenalty" 
+                                :min="0" 
+                                :max="2" 
+                                :step="0.1" 
+                                show-input
+                                :show-input-controls="false"
+                              />
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -870,7 +1158,7 @@ const getProgressDetail = () => {
               <span class="status-text">{{ getProcessingStatusText() }}</span>
             </div>
             
-            <div v-if="processingStatus !== 'error' && processingStatus !== 'completed'" class="progress-container">
+            <div v-if="processingStatus !== 'completed'" class="progress-container">
               <el-progress :percentage="Math.round(processingProgress)" :status="processingStatus === 'error' ? 'exception' : undefined" />
               <p class="progress-detail">{{ getProgressDetail() }}</p>
             </div>
@@ -1685,5 +1973,58 @@ const getProgressDetail = () => {
 .result-item .value {
   color: #67c23a;
   font-weight: 500;
+}
+
+/* 模型配置样式 */
+.model-config-section {
+  background: #f9f9f9;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 16px;
+  margin-top: 8px;
+}
+
+.model-selection {
+  margin-bottom: 16px;
+}
+
+.model-label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #333;
+  font-size: 14px;
+}
+
+.model-parameters {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.parameter-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.parameter-item {
+  flex: 1;
+}
+
+.parameter-item label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #333;
+  font-size: 13px;
+}
+
+.parameter-item .el-slider {
+  margin: 8px 0;
+}
+
+.parameter-item .el-input-number {
+  width: 100%;
 }
 </style>

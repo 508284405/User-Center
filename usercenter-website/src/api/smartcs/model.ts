@@ -95,8 +95,37 @@ export const modelApi = {
     request.post<ApiResponse<Model>>('/smartcs/api/admin/model', data),
 
   // 分页查询模型实例列表
-  getPage: (params: ModelPageQuery) => 
-    request.get<PageResponse<Model>>('/smartcs/api/admin/model/page', { params }),
+  getPage: (params: ModelPageQuery) => {
+    // 使用URLSearchParams手动构建查询参数以确保正确的URL编码
+    const searchParams = new URLSearchParams();
+    
+    // 过滤并添加非数组参数
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        if (Array.isArray(value)) {
+          // 对数组参数进行特殊处理
+          if (key === 'modelType') {
+            value.forEach(item => {
+              searchParams.append('modelType', item);
+            });
+          } else {
+            // 其他数组参数的通用处理
+            value.forEach(item => {
+              searchParams.append(key, String(item));
+            });
+          }
+        } else {
+          // 非数组参数直接添加
+          searchParams.append(key, String(value));
+        }
+      }
+    });
+    
+    const queryString = searchParams.toString();
+    const url = queryString ? `/smartcs/api/admin/model/page?${queryString}` : '/smartcs/api/admin/model/page';
+    
+    return request.get<PageResponse<Model>>(url);
+  },
 
   // 获取模型实例详情
   getDetail: (id: number) => 
