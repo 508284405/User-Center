@@ -25,6 +25,18 @@ export interface ContentDTO {
   createdBy: number;
   createdAt: number;
   updatedAt: number;
+  metadata?: string;
+  originalFileName?: string;
+  fileSize?: number;
+  source?: string;
+  processingTime?: number;
+  embeddingTime?: number;
+  embeddingCost?: number;
+  averageChunkLength?: number;
+  chunkCount?: number;
+  processingStatus?: string;
+  processingErrorMessage?: string;
+  recallRate?: number;
 }
 
 export interface ContentCreateRequest {
@@ -36,80 +48,35 @@ export interface ContentCreateRequest {
   fileType: string;
 }
 
-export interface ContentStatusUpdateRequest {
-  contentId: number;
-  status: string;
-}
-
 export interface ContentUpdateRequest {
   id: number;
   title: string;
 }
 
-export interface ContentEditRequest {
+export interface ContentStatusUpdateRequest {
   id: number;
-  knowledgeBaseId: number;
-  title: string;
-  segmentMode: string;
-  segmentSettings: any;
-  parentChildSettings?: any;
-}
-
-// 新增：文档处理请求接口
-export interface DocumentProcessRequest {
-  knowledgeBaseId: number;
-  title: string;
-  fileUrl: string;
-  fileType: string;
-  fileSize: number;
-  segmentMode: 'general' | 'parent_child';
-  segmentSettings: any;
-  parentChildSettings?: any;
-  indexMethod: string;
-  retrievalSettings: any;
-  editMode: boolean;
-  editData?: any;
-}
-
-// 新增：文档处理结果接口
-export interface DocumentProcessResult {
-  contentId: number;
-  chunkCount: number;
-  processingTime: number;
-  tokenCount: number;
-  embeddingCost: number;
-  charCount: number;
-  recallCount: number;
+  status: 'enabled' | 'disabled';
 }
 
 export interface DocumentSearchRequest {
   query: string;
   contentId?: number;
   topK?: number;
+  scoreThreshold?: number;
 }
 
 export interface DocumentSearchResultDTO {
-  id?: number;
-  text?: string;
-  score?: number;
+  chunkId: number;
+  content: string;
+  score: number;
   metadata?: any;
 }
 
-export interface DocumentProcessResponse {
-  contentCount: number;
-  chunkCount: number;
-  vectorCount: number;
-  contentIds: number[];
-}
-
 export interface PageResponse<T> {
-  success: boolean;
   data: T[];
-  totalCount: number;
+  total: number;
   pageSize: number;
   pageIndex: number;
-  errCode?: string;
-  errMessage?: string;
 }
 
 export interface Response {
@@ -225,4 +192,45 @@ export const contentApi = {
       data,
     });
   },
-}; 
+};
+
+export interface ContentEditRequest {
+  id: number;
+  knowledgeBaseId: number;
+  title: string;
+  segmentMode: string;
+  segmentSettings: any;
+  parentChildSettings?: any;
+}
+
+// 新增：文档处理请求接口
+export interface DocumentProcessRequest {
+  knowledgeBaseId: number;
+  title: string;
+  fileUrl: string;
+  fileType: string;
+  fileSize: number;
+  originalFileName?: string;
+  source?: string;
+  metadata?: string;
+  segmentMode: 'general' | 'parent_child';
+  segmentSettings: any;
+  parentChildSettings?: any;
+  indexMethod: string;
+  retrievalSettings: any;
+  editMode: boolean;
+  editData?: any;
+}
+
+// 新增：文档处理结果接口
+export interface DocumentProcessResult {
+  contentId: number;
+  chunkCount: number;
+  processingTime: number;
+  tokenCount: number;
+  embeddingCost: number;
+  charCount: number;
+  recallCount: number;
+  status: string;
+  errorMessage?: string;
+} 

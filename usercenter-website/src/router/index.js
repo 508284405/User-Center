@@ -409,6 +409,26 @@ const routes = [
                             permission: 'knowledge:model:view',
                             title: '模型管理'
                         }
+                    },
+                    {
+                        path: 'app',
+                        name: 'AppManagement',
+                        component: () => import('../views/dashboard/knowledge/AppManagementView.vue'),
+                        meta: {
+                            requiresAuth: true,
+                            permission: 'app:view',
+                            title: 'APP管理'
+                        }
+                    },
+                    {
+                        path: 'app/:id',
+                        name: 'AppDetail',
+                        component: () => import('../views/dashboard/knowledge/AppDetailView.vue'),
+                        meta: {
+                            requiresAuth: true,
+                            permission: 'app:edit',
+                            title: '应用编辑'
+                        }
                     }
                 ]
             },

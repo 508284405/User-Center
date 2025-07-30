@@ -78,15 +78,15 @@ export enum ModelType {
 
 // 模型状态枚举
 export enum ModelStatus {
-  ACTIVE = 'active',
-  INACTIVE = 'inactive',
-  DISABLED = 'disabled'
+  ACTIVE = 'ACTIVE',
+  INACTIVE = 'INACTIVE',
+  DISABLED = 'DISABLED'
 }
 
 // 模型来源枚举
 export enum FetchFrom {
-  PREDEFINED_MODEL = 'predefined-model',
-  CUSTOM_MODEL = 'custom-model'
+  PREDEFINED_MODEL = 'PREDEFINED_MODEL',
+  CUSTOM_MODEL = 'CUSTOM_MODEL'
 }
 
 export const modelApi = {

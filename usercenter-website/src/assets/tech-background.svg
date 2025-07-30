@@ -1,0 +1,132 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <!-- 渐变定义 -->
+    <radialGradient id="mainGradient" cx="0.3" cy="0.3" r="0.8">
+      <stop offset="0%" stop-color="#1e1b4b" stop-opacity="1"/>
+      <stop offset="30%" stop-color="#312e81" stop-opacity="0.9"/>
+      <stop offset="60%" stop-color="#1e293b" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#0f172a" stop-opacity="1"/>
+    </radialGradient>
+    
+    <linearGradient id="gridGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8b5cf6" stop-opacity="0.1"/>
+      <stop offset="50%" stop-color="#3b82f6" stop-opacity="0.05"/>
+      <stop offset="100%" stop-color="#8b5cf6" stop-opacity="0.1"/>
+    </linearGradient>
+    
+    <radialGradient id="lightGradient1" cx="0.2" cy="0.2" r="0.4">
+      <stop offset="0%" stop-color="#8b5cf6" stop-opacity="0.3"/>
+      <stop offset="50%" stop-color="#a78bfa" stop-opacity="0.1"/>
+      <stop offset="100%" stop-color="transparent" stop-opacity="0"/>
+    </radialGradient>
+    
+    <radialGradient id="lightGradient2" cx="0.8" cy="0.7" r="0.5">
+      <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.2"/>
+      <stop offset="50%" stop-color="#60a5fa" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="transparent" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- 滤镜效果 -->
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge> 
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    
+    <!-- 网格图案 -->
+    <pattern id="grid" width="100" height="100" patternUnits="userSpaceOnUse">
+      <path d="M 100 0 L 0 0 0 100" fill="none" stroke="url(#gridGradient)" stroke-width="0.5" opacity="0.3"/>
+    </pattern>
+    
+    <!-- 六边形图案 -->
+    <pattern id="hexagons" width="120" height="104" patternUnits="userSpaceOnUse">
+      <polygon points="60,2 100,28 100,76 60,102 20,76 20,28" fill="none" stroke="#8b5cf6" stroke-width="0.5" opacity="0.15"/>
+    </pattern>
+  </defs>
+
+  <!-- 主背景 -->
+  <rect width="1920" height="1080" fill="url(#mainGradient)"/>
+  
+  <!-- 网格层 -->
+  <rect width="1920" height="1080" fill="url(#grid)" opacity="0.4"/>
+  
+  <!-- 六边形图案层 -->
+  <rect width="1920" height="1080" fill="url(#hexagons)" opacity="0.2"/>
+  
+  <!-- 光效层1 -->
+  <ellipse cx="400" cy="300" rx="600" ry="400" fill="url(#lightGradient1)" opacity="0.6"/>
+  
+  <!-- 光效层2 -->
+  <ellipse cx="1500" cy="800" rx="700" ry="500" fill="url(#lightGradient2)" opacity="0.5"/>
+  
+  <!-- 科技感线条 -->
+  <g stroke="#8b5cf6" stroke-width="1" fill="none" opacity="0.2" filter="url(#glow)">
+    <!-- 主要连接线 -->
+    <path d="M200,200 Q400,300 600,250 T1000,300 Q1200,350 1400,300 T1700,250"/>
+    <path d="M100,400 Q300,500 500,450 T900,500 Q1100,550 1300,500 T1600,450"/>
+    <path d="M150,600 Q350,700 550,650 T950,700 Q1150,750 1350,700 T1650,650"/>
+    <path d="M250,800 Q450,900 650,850 T1050,900 Q1250,950 1450,900 T1750,850"/>
+    
+    <!-- 垂直连接线 -->
+    <path d="M400,100 Q450,300 400,500 T450,900"/>
+    <path d="M800,150 Q850,350 800,550 T850,950"/>
+    <path d="M1200,100 Q1250,300 1200,500 T1250,900"/>
+    <path d="M1600,150 Q1650,350 1600,550 T1650,950"/>
+  </g>
+  
+  <!-- 节点点 -->
+  <g fill="#8b5cf6" opacity="0.6" filter="url(#glow)">
+    <circle cx="400" cy="300" r="3"/>
+    <circle cx="600" cy="250" r="2"/>
+    <circle cx="1000" cy="300" r="3"/>
+    <circle cx="1400" cy="300" r="2"/>
+    <circle cx="300" cy="500" r="2"/>
+    <circle cx="500" cy="450" r="3"/>
+    <circle cx="900" cy="500" r="2"/>
+    <circle cx="1300" cy="500" r="3"/>
+    <circle cx="350" cy="700" r="2"/>
+    <circle cx="550" cy="650" r="2"/>
+    <circle cx="950" cy="700" r="3"/>
+    <circle cx="1350" cy="700" r="2"/>
+  </g>
+  
+  <!-- 额外的科技元素 -->
+  <g stroke="#3b82f6" stroke-width="0.8" fill="none" opacity="0.15">
+    <!-- 圆形科技元素 -->
+    <circle cx="300" cy="200" r="80" stroke-dasharray="5,5">
+      <animateTransform attributeName="transform" type="rotate" values="0 300 200;360 300 200" dur="30s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="1500" cy="300" r="60" stroke-dasharray="3,3">
+      <animateTransform attributeName="transform" type="rotate" values="360 1500 300;0 1500 300" dur="25s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="700" cy="800" r="100" stroke-dasharray="8,4">
+      <animateTransform attributeName="transform" type="rotate" values="0 700 800;360 700 800" dur="35s" repeatCount="indefinite"/>
+    </circle>
+    
+    <!-- 多边形元素 -->
+    <polygon points="1200,150 1250,120 1300,150 1280,200 1220,200" stroke-dasharray="2,2"/>
+    <polygon points="500,600 550,570 600,600 580,650 520,650" stroke-dasharray="3,2"/>
+    <polygon points="1600,700 1650,670 1700,700 1680,750 1620,750" stroke-dasharray="2,3"/>
+  </g>
+  
+  <!-- 动态粒子效果 -->
+  <g fill="#8b5cf6" opacity="0.4">
+    <circle cx="150" cy="150" r="1">
+      <animate attributeName="opacity" values="0.2;0.8;0.2" dur="3s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="1750" cy="200" r="1.5">
+      <animate attributeName="opacity" values="0.3;0.9;0.3" dur="4s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="800" cy="100" r="1">
+      <animate attributeName="opacity" values="0.1;0.7;0.1" dur="2.5s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="400" cy="900" r="1.2">
+      <animate attributeName="opacity" values="0.2;0.6;0.2" dur="3.5s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="1400" cy="950" r="1">
+      <animate attributeName="opacity" values="0.4;0.8;0.4" dur="2.8s" repeatCount="indefinite"/>
+    </circle>
+  </g>
+</svg>

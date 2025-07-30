@@ -14,7 +14,7 @@
             <el-option
               v-for="provider in providerOptions"
               :key="provider.id"
-              :label="provider.label"
+              :label="provider.providerType"
               :value="provider.id"
             />
           </el-select>
@@ -158,7 +158,7 @@
             <el-option
               v-for="provider in providerOptions"
               :key="provider.id"
-              :label="provider.label"
+              :label="provider.providerType"
               :value="provider.id"
             />
           </el-select>
@@ -264,7 +264,7 @@ const form = reactive<CreateModelRequest & { id?: number }>({
   fetchFrom: '',
   modelProperties: '',
   deprecated: false,
-  status: 'active',
+  status: 'ACTIVE',
   loadBalancingEnabled: false
 })
 
@@ -324,9 +324,9 @@ const fetchData = async () => {
       status: searchForm.status || undefined
     }
     const response = await modelApi.getPage(params)
-    if (response.success) {
-      tableData.value = response.data
-      pagination.total = response.totalCount
+    if (response.data.success) {
+      tableData.value = response.data.data
+      pagination.total = response.data.totalCount
     }
   } catch (error) {
     console.error('获取数据失败:', error)
@@ -391,7 +391,7 @@ const handleDelete = async (row: Model) => {
     )
     
     const response = await modelApi.delete(row.id!)
-    if (response.success) {
+    if (response.data.success) {
       ElMessage.success('删除成功')
       fetchData()
     }
@@ -404,13 +404,13 @@ const handleDelete = async (row: Model) => {
 
 // 切换状态
 const handleToggleStatus = async (row: Model) => {
-  const newStatus = row.status === 'active' ? 'inactive' : 'active'
+  const newStatus = row.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE'
   try {
     const response = await modelApi.updateStatus(row.id!, {
       id: row.id!,
       status: newStatus
     })
-    if (response.success) {
+    if (response.data.success) {
       ElMessage.success('状态更新成功')
       row.status = newStatus
     }
@@ -423,7 +423,7 @@ const handleToggleStatus = async (row: Model) => {
 const handleLoadBalancingChange = async (row: Model) => {
   try {
     const response = await modelApi.update(row as UpdateModelRequest)
-    if (response.success) {
+    if (response.data.success) {
       ElMessage.success('负载均衡设置已更新')
     } else {
       row.loadBalancingEnabled = !row.loadBalancingEnabled
@@ -458,7 +458,7 @@ const handleSubmit = async () => {
       response = await modelApi.create(form)
     }
     
-    if (response.success) {
+    if (response.data.success) {
       ElMessage.success(isEdit.value ? '更新成功' : '创建成功')
       dialogVisible.value = false
       fetchData()
@@ -487,7 +487,7 @@ const resetForm = () => {
     fetchFrom: '',
     modelProperties: '',
     deprecated: false,
-    status: 'active',
+    status: 'ACTIVE',
     loadBalancingEnabled: false
   })
 }
@@ -495,7 +495,7 @@ const resetForm = () => {
 // 获取提供商名称
 const getProviderName = (providerId: number) => {
   const provider = providerOptions.value.find(p => p.id === providerId)
-  return provider ? provider.label : '-'
+  return provider ? provider.providerType : '-'
 }
 
 // 获取模型类型标签样式

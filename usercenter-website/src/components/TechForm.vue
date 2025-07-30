@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed } from 'vue'
+import { RouterLink } from 'vue-router'
 
 const props = defineProps({
   type: {
@@ -177,13 +178,13 @@ const onGoogleLogin = () => {
     <div class="switch-form">
       <span v-if="type === 'login'">还没有账号？</span>
       <span v-else>已有账号？</span>
-      <router-link 
+      <RouterLink 
         :to="type === 'login' ? '/register' : '/login'" 
         class="switch-link"
         :style="{ color: buttonTheme.primary }"
       >
         {{ type === 'login' ? '立即注册' : '立即登录' }}
-      </router-link>
+      </RouterLink>
     </div>
   </div>
 </template>

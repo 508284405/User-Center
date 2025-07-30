@@ -7,6 +7,7 @@ import { knowledgeBaseApi } from '@/api/smartcs/knowledgeBase';
 import { contentApi } from '@/api/smartcs/content';
 import { modelApi, ModelType, ModelStatus, type Model } from '@/api/smartcs/model';
 import { useRouter } from 'vue-router';
+import DocumentPreviewDialog from './DocumentPreviewDialog.vue';
 
 // Props 定义
 interface StepWizardProps {
@@ -43,6 +44,17 @@ const uploadedFiles = ref<File[]>([]);
 const selectedModelId = ref<number | null>(null);
 const modelOptions = ref<Model[]>([]);
 const modelLoading = ref(false);
+
+// 向量模型相关数据
+const selectedEmbeddingModelId = ref<number | null>(null);
+const embeddingModelOptions = ref<Model[]>([]);
+const embeddingModelLoading = ref(false);
+
+// Rerank模型相关数据
+const selectedRerankModelId = ref<number | null>(null);
+const rerankModelOptions = ref<Model[]>([]);
+const rerankModelLoading = ref(false);
+
 const modelRequest = reactive({
   modelId: null as number | null,
   modelName: '',
@@ -100,6 +112,14 @@ const chunkProgress = ref('');
 const uploadedFileUrls = ref<Map<string, string>>(new Map());
 const cacheStatus = ref<Map<string, 'uploading' | 'cached' | 'processing'>>(new Map());
 
+// 文档预览相关
+const documentPreviewVisible = ref(false);
+const currentPreviewFile = ref<{
+  fileUrl: string;
+  fileName: string;
+  fileType: string;
+} | null>(null);
+
 // 数据源选项
 const dataSourceOptions = [
   { value: 'text', label: '导入已有文本', icon: Document },
@@ -117,7 +137,7 @@ const canProceed = computed(() => {
   }
   if (currentStep.value === 2) {
     // 第二步需要选择模型
-    return selectedModelId.value !== null;
+    return selectedModelId.value !== null && selectedEmbeddingModelId.value !== null;
   }
   return true;
 });
@@ -137,12 +157,12 @@ const fetchModelList = async () => {
       modelType: [ModelType.LLM] // 只获取LLM类型的模型
     });
     
-    if (response.success && response.data) {
-      modelOptions.value = response.data;
+    if (response.data && response.data.success && response.data.data) {
+      modelOptions.value = response.data.data;
       
       // 如果当前没有选中的模型且有可用模型，选择第一个
-      if (!selectedModelId.value && response.data.length > 0) {
-        const firstModel = response.data[0];
+      if (!selectedModelId.value && response.data.data.length > 0) {
+        const firstModel = response.data.data[0];
         selectedModelId.value = firstModel.id!;
         modelRequest.modelId = firstModel.id!;
         modelRequest.modelName = firstModel.label;
@@ -153,6 +173,58 @@ const fetchModelList = async () => {
     ElMessage.error('获取模型列表失败');
   } finally {
     modelLoading.value = false;
+  }
+};
+
+// 获取向量模型列表
+const fetchEmbeddingModels = async () => {
+  try {
+    embeddingModelLoading.value = true;
+    const response = await modelApi.getPage({
+      pageSize: 1000,
+      status: ModelStatus.ACTIVE,
+      modelType: [ModelType.TEXT_EMBEDDING]
+    });
+    
+    if (response.data && response.data.success && response.data.data) {
+      embeddingModelOptions.value = response.data.data;
+      
+      // 如果当前没有选中的向量模型且有可用模型，选择第一个
+      if (!selectedEmbeddingModelId.value && response.data.data.length > 0) {
+        selectedEmbeddingModelId.value = response.data.data[0].id!;
+      }
+    }
+  } catch (error) {
+    console.error('获取向量模型列表失败:', error);
+    ElMessage.error('获取向量模型列表失败');
+  } finally {
+    embeddingModelLoading.value = false;
+  }
+};
+
+// 获取Rerank模型列表
+const fetchRerankModels = async () => {
+  try {
+    rerankModelLoading.value = true;
+    const response = await modelApi.getPage({
+      pageSize: 1000,
+      status: ModelStatus.ACTIVE,
+      modelType: [ModelType.RERANK]
+    });
+    
+    if (response.data && response.data.success && response.data.data) {
+      rerankModelOptions.value = response.data.data;
+      
+      // 如果当前没有选中的Rerank模型且有可用模型，选择第一个
+      if (!selectedRerankModelId.value && response.data.data.length > 0) {
+        selectedRerankModelId.value = response.data.data[0].id!;
+      }
+    }
+  } catch (error) {
+    console.error('获取Rerank模型列表失败:', error);
+    ElMessage.error('获取Rerank模型列表失败');
+  } finally {
+    rerankModelLoading.value = false;
   }
 };
 
@@ -188,8 +260,12 @@ const getCacheTagType = (fileId: string): string => {
 // 监听弹窗显示状态
 watch(() => props.visible, async (newVal) => {
   if (newVal) {
-    // 获取模型列表
-    await fetchModelList();
+    // 获取所有类型的模型列表
+    await Promise.all([
+      fetchModelList(),
+      fetchEmbeddingModels(),
+      fetchRerankModels()
+    ]);
     
     if (props.editMode && props.editData) {
       // 编辑模式：直接进入第二步，加载现有数据
@@ -224,6 +300,20 @@ const loadEditData = () => {
     
     if (props.editData.parentChildSettings) {
       Object.assign(parentChildSettings, props.editData.parentChildSettings);
+    }
+    
+    // 加载模型选择
+    if (props.editData.selectedModelId) {
+      selectedModelId.value = props.editData.selectedModelId;
+      handleModelChange(props.editData.selectedModelId);
+    }
+    
+    if (props.editData.selectedEmbeddingModelId) {
+      selectedEmbeddingModelId.value = props.editData.selectedEmbeddingModelId;
+    }
+    
+    if (props.editData.selectedRerankModelId) {
+      selectedRerankModelId.value = props.editData.selectedRerankModelId;
     }
   }
 };
@@ -312,6 +402,11 @@ const handlePreviewChunks = async () => {
   
   if (!selectedModelId.value) {
     ElMessage.warning('请先选择模型');
+    return;
+  }
+
+  if (!selectedEmbeddingModelId.value) {
+    ElMessage.warning('请先选择向量模型');
     return;
   }
 
@@ -481,7 +576,9 @@ const handleSubmit = async () => {
       editMode: props.editMode || false,
       editData: props.editData,
       modelId: modelRequest.modelId,
-      modelRequest: modelRequest
+      modelRequest: modelRequest,
+      embeddingModelId: selectedEmbeddingModelId.value,
+      rerankModelId: selectedRerankModelId.value
     };
 
     processingProgress.value = 50;
@@ -580,6 +677,44 @@ const getProgressDetail = () => {
     case 'vectorizing': return '正在生成向量并存储到数据库...';
     default: return '';
   }
+};
+
+// 处理文档名称点击事件
+const handleDocumentNameClick = () => {
+  let fileUrl = '';
+  let fileName = '';
+  let fileType = '';
+
+  if (props.editMode && props.editData) {
+    // 编辑模式：使用现有文档信息
+    fileUrl = props.editData.fileUrl;
+    fileName = props.editData.title || '未知文档';
+    fileType = props.editData.fileType || '';
+  } else if (uploadedFiles.value.length > 0) {
+    // 创建模式：使用上传的文件信息
+    const file = uploadedFiles.value[0];
+    const fileId = getFileIdentifier(file);
+    
+    if (uploadedFileUrls.value.has(fileId)) {
+      fileUrl = uploadedFileUrls.value.get(fileId)!;
+    } else {
+      ElMessage.warning('文件尚未上传，无法预览');
+      return;
+    }
+    
+    fileName = file.name;
+    fileType = file.name.split('.').pop() || '';
+  } else {
+    ElMessage.warning('没有可预览的文档');
+    return;
+  }
+
+  currentPreviewFile.value = {
+    fileUrl,
+    fileName,
+    fileType
+  };
+  documentPreviewVisible.value = true;
 };
 </script>
 
@@ -1033,7 +1168,19 @@ const getProgressDetail = () => {
                 <h4>Embedding 模型</h4>
                 <div class="embedding-model">
                   <el-icon><Document /></el-icon>
-                  <span>text-embedding-v1</span>
+                  <el-select 
+                    v-model="selectedEmbeddingModelId" 
+                    placeholder="请选择向量模型"
+                    :loading="embeddingModelLoading"
+                    style="width: 100%;"
+                  >
+                    <el-option
+                      v-for="model in embeddingModelOptions"
+                      :key="model.id"
+                      :label="model.label"
+                      :value="model.id"
+                    />
+                  </el-select>
                 </div>
                 <p>更多改索引方法和 embedding 模型，请转到<a href="#" @click.prevent="ElMessage.info('该功能暂未实现')">知识库设置</a>。</p>
               </div>
@@ -1052,8 +1199,18 @@ const getProgressDetail = () => {
                 <div class="retrieval-options">
                   <div class="option-item">
                     <el-checkbox v-model="retrievalSettings.fullTextSearch">Rerank 模型</el-checkbox>
-                    <el-select v-model="retrievalSettings.rerankModel" style="margin-left: 8px;">
-                      <el-option label="gte-rerank" value="gte-rerank" />
+                    <el-select 
+                      v-model="selectedRerankModelId" 
+                      placeholder="请选择Rerank模型"
+                      :loading="rerankModelLoading"
+                      style="margin-left: 8px; width: 200px;"
+                    >
+                      <el-option
+                        v-for="model in rerankModelOptions"
+                        :key="model.id"
+                        :label="model.label"
+                        :value="model.id"
+                      />
                     </el-select>
                   </div>
                   
@@ -1094,7 +1251,13 @@ const getProgressDetail = () => {
             <div class="file-preview">
               <div class="file-info">
                 <el-icon><Document /></el-icon>
-                <span>{{ props.editMode && props.editData ? props.editData.title : (uploadedFiles[0]?.name || 'rule.txt') }}</span>
+                <span 
+                  class="document-name"
+                  @click="handleDocumentNameClick"
+                  :title="'点击预览原始文档'"
+                >
+                  {{ props.editMode && props.editData ? props.editData.title : (uploadedFiles[0]?.name || 'rule.txt') }}
+                </span>
                 <span class="file-size">{{ previewChunks.length }} 预览块</span>
               </div>
               <div class="preview-content">
@@ -1197,6 +1360,14 @@ const getProgressDetail = () => {
               <span class="value">{{ segmentMode === 'general' ? '通用分段' : '父子分段' }}</span>
             </div>
             <div class="summary-item">
+              <span class="label">向量模型：</span>
+              <span class="value">{{ embeddingModelOptions.find(m => m.id === selectedEmbeddingModelId)?.label || '未选择' }}</span>
+            </div>
+            <div class="summary-item">
+              <span class="label">Rerank模型：</span>
+              <span class="value">{{ rerankModelOptions.find(m => m.id === selectedRerankModelId)?.label || '未选择' }}</span>
+            </div>
+            <div class="summary-item">
               <span class="label">索引方式：</span>
               <span class="value">高质量索引</span>
             </div>
@@ -1242,6 +1413,15 @@ const getProgressDetail = () => {
         </div>
       </div>
     </template>
+    
+    <!-- 文档预览弹窗 -->
+    <DocumentPreviewDialog
+      v-if="currentPreviewFile"
+      v-model:visible="documentPreviewVisible"
+      :file-url="currentPreviewFile.fileUrl"
+      :file-name="currentPreviewFile.fileName"
+      :file-type="currentPreviewFile.fileType"
+    />
   </el-dialog>
 </template>
 
@@ -2026,5 +2206,18 @@ const getProgressDetail = () => {
 
 .parameter-item .el-input-number {
   width: 100%;
+}
+
+/* 文档名称点击样式 */
+.document-name {
+  cursor: pointer;
+  color: #409eff;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.document-name:hover {
+  color: #66b1ff;
+  text-decoration: underline;
 }
 </style>

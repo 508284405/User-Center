@@ -57,6 +57,7 @@ interface KnowledgeGeneralChunkCmd {
   removeAllUrls?: boolean;
   useQASegmentation?: boolean;
   qaLanguage?: string;
+  modelRequest?: any; // 模型请求参数
 }
 
 // 父子分块命令对象

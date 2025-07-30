@@ -76,6 +76,7 @@ const allMenuItems: MenuItem[] = [
       { key: 'KnowledgeIndex', label: '索引管理', permission: 'knowledge:index:view' },
       { key: 'provider-management', label: '模型提供商管理', permission: 'knowledge:provider:view' },
       { key: 'model-management', label: '模型管理', permission: 'knowledge:model:view' },
+      { key: 'app-management', label: 'APP管理', permission: 'app:view' },
       
       { key: 'chat-test', label: '智能聊天', permission: 'knowledge:chat:view' }
     ]
@@ -123,6 +124,7 @@ const menuKeyToIdMap: Record<string, number> = {
   'KnowledgeIndex': 58, // 索引管理
   'provider-management': 62, // 模型提供商管理
   'model-management': 63, // 模型管理
+  'app-management': 64, // APP管理
   
   'chat-test': 61, // 智能聊天
   'seckill-management': 70, // 秒杀管理
@@ -321,6 +323,14 @@ const setActiveMenu = () => {
         knowledgeSubMenu.classList.add('is-opened');
       }
     }, 100);
+  } else if (path.includes('/dashboard/knowledge/app')) {
+    activeMenu.value = 'app-management';
+    setTimeout(() => {
+      const knowledgeSubMenu = document.querySelector('.el-sub-menu[data-menu-key="knowledge-management-parent"]');
+      if (knowledgeSubMenu) {
+        knowledgeSubMenu.classList.add('is-opened');
+      }
+    }, 100);
   } else if (path.includes('/seckill/activities')) {
     activeMenu.value = 'seckill-activity';
     setTimeout(() => {
@@ -453,6 +463,9 @@ function handleMenuClick(key: string) {
       break;
     case 'model-management':
       router.push('/dashboard/knowledge/model').catch(err => console.error('路由跳转失败:', err));
+      break;
+    case 'app-management':
+      router.push('/dashboard/knowledge/app').catch(err => console.error('路由跳转失败:', err));
       break;
     
     case 'chat-test':
