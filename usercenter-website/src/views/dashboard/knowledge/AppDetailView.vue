@@ -15,6 +15,10 @@
         </div>
       </div>
       <div class="header-actions">
+        <div class="save-status" v-if="saving">
+          <el-icon class="is-loading"><Loading /></el-icon>
+          <span>保存中...</span>
+        </div>
         <el-button @click="handleTest">
           <el-icon><VideoPlay /></el-icon>
           测试
@@ -88,10 +92,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, watch } from 'vue'
+import { ref, reactive, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { ArrowLeft, VideoPlay } from '@element-plus/icons-vue'
+import { ArrowLeft, VideoPlay, Loading } from '@element-plus/icons-vue'
 import { getApp, updateApp, updateAppStatus, type AiAppDTO } from '@/api/smartcs/app'
 import AppPromptEditor from './components/AppPromptEditor.vue'
 import AppVariableManager from './components/AppVariableManager.vue'
@@ -104,7 +108,9 @@ const router = useRouter()
 // 状态管理
 const loading = ref(true)
 const publishing = ref(false)
+const saving = ref(false)
 const appData = ref<AiAppDTO | null>(null)
+let saveTimeout: NodeJS.Timeout | null = null
 
 // 配置数据
 const promptConfig = reactive({
@@ -180,11 +186,24 @@ const fetchAppDetail = async () => {
   }
 }
 
+// 防抖保存配置
+const debouncedSaveConfig = () => {
+  if (saveTimeout) {
+    clearTimeout(saveTimeout)
+  }
+  
+  saveTimeout = setTimeout(() => {
+    saveConfig()
+  }, 1000) // 1秒防抖
+}
+
 // 保存配置
 const saveConfig = async () => {
-  if (!appData.value) return
+  if (!appData.value || saving.value) return
 
   try {
+    saving.value = true
+    
     const config = {
       prompt_template: promptConfig.content,
       variables: promptConfig.variables,
@@ -202,13 +221,16 @@ const saveConfig = async () => {
     })
 
     if (response.success) {
-      ElMessage.success('配置保存成功')
+      // 静默保存，不显示成功消息
+      console.log('配置已自动保存')
     } else {
       throw new Error(response.errMessage || '保存失败')
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('保存配置失败:', error)
-    ElMessage.error(error.message || '保存配置失败')
+    ElMessage.error(error.message || '自动保存失败')
+  } finally {
+    saving.value = false
   }
 }
 
@@ -218,20 +240,20 @@ const goBack = () => {
 }
 
 const handlePromptChange = () => {
-  // 自动保存
-  saveConfig()
+  // 防抖自动保存
+  debouncedSaveConfig()
 }
 
 const handleVariableChange = () => {
-  saveConfig()
+  debouncedSaveConfig()
 }
 
 const handleKnowledgeChange = () => {
-  saveConfig()
+  debouncedSaveConfig()
 }
 
 const handleFilterChange = () => {
-  saveConfig()
+  debouncedSaveConfig()
 }
 
 const handleTest = () => {
@@ -241,6 +263,12 @@ const handleTest = () => {
 
 const handlePublish = async () => {
   if (!appData.value) return
+
+  // 发布前先保存当前配置
+  if (saveTimeout) {
+    clearTimeout(saveTimeout)
+    await saveConfig()
+  }
 
   try {
     publishing.value = true
@@ -257,7 +285,7 @@ const handlePublish = async () => {
     } else {
       throw new Error(response.errMessage || '发布失败')
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('发布应用失败:', error)
     ElMessage.error(error.message || '发布应用失败')
   } finally {
@@ -278,6 +306,13 @@ watch(() => route.params.id, () => {
 
 onMounted(() => {
   // 组件挂载时的逻辑
+})
+
+onUnmounted(() => {
+  // 清理定时器
+  if (saveTimeout) {
+    clearTimeout(saveTimeout)
+  }
 })
 </script>
 
@@ -336,7 +371,20 @@ onMounted(() => {
 
     .header-actions {
       display: flex;
+      align-items: center;
       gap: 12px;
+
+      .save-status {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: #6b7280;
+        font-size: 14px;
+
+        .el-icon {
+          font-size: 16px;
+        }
+      }
     }
   }
 
@@ -351,6 +399,7 @@ onMounted(() => {
       border-right: 1px solid #e5e7eb;
       display: flex;
       flex-direction: column;
+      overflow-y: auto;
 
       .panel-header {
         padding: 20px 24px 0;
@@ -400,5 +449,98 @@ onMounted(() => {
 
 :deep(.el-loading-mask) {
   background-color: rgba(255, 255, 255, 0.9);
+}
+
+// 响应式设计
+@media (max-width: 1200px) {
+  .app-detail {
+    .app-content {
+      .config-panel {
+        width: 400px;
+      }
+    }
+  }
+}
+
+@media (max-width: 1024px) {
+  .app-detail {
+    .app-header {
+      padding: 12px 16px;
+
+      .header-left {
+        gap: 12px;
+
+        .app-info {
+          gap: 8px;
+
+          .app-icon {
+            width: 40px;
+            height: 40px;
+            font-size: 24px;
+          }
+
+          .app-meta {
+            .app-name {
+              font-size: 16px;
+            }
+
+            .app-type {
+              font-size: 13px;
+            }
+          }
+        }
+      }
+
+      .header-actions {
+        .save-status {
+          display: none; // 隐藏保存状态
+        }
+      }
+    }
+
+    .app-content {
+      flex-direction: column;
+
+      .config-panel {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid #e5e7eb;
+        max-height: 60vh;
+      }
+
+      .test-panel {
+        flex: 1;
+        min-height: 40vh;
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .app-detail {
+    .app-header {
+      .header-left {
+        .app-info {
+          .app-meta {
+            .app-name {
+              font-size: 14px;
+            }
+
+            .app-type {
+              font-size: 12px;
+            }
+          }
+        }
+      }
+
+      .header-actions {
+        gap: 8px;
+
+        .el-button {
+          padding: 8px 12px;
+        }
+      }
+    }
+  }
 }
 </style>

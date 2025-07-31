@@ -121,7 +121,7 @@
               <div class="kb-description">{{ kb.description || '暂无描述' }}</div>
               <div class="kb-meta">
                 <span class="kb-visibility">{{ kb.visibility === 'public' ? '公开' : '私有' }}</span>
-                <span class="kb-created">{{ formatTime(kb.createdAt) }}</span>
+                <span class="kb-created">{{ formatTime(kb.createdAt || '') }}</span>
               </div>
             </div>
             <div class="selection-indicator">
@@ -153,7 +153,7 @@
 import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Plus, Close, Search, Check } from '@element-plus/icons-vue'
-import { listKnowledgeBases, type KnowledgeBaseDTO } from '@/api/smartcs/knowledgeBase'
+import { knowledgeBaseApi, type KnowledgeBaseDTO } from '@/api/smartcs/knowledgeBase'
 import { formatTime } from '@/utils/format'
 
 interface KnowledgeConfig {
@@ -212,7 +212,7 @@ const selectedKnowledgeBases = computed(() => {
 const fetchKnowledgeBases = async () => {
   try {
     knowledgeLoading.value = true
-    const response = await listKnowledgeBases({
+    const response = await knowledgeBaseApi.list({
       pageIndex: 1,
       pageSize: 100
     })

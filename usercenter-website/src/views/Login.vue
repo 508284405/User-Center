@@ -460,6 +460,8 @@ nav {
   transform-style: preserve-3d;
   animation: earthRotate 20s linear infinite;
   filter: drop-shadow(0 0 50px rgba(139, 92, 246, 0.3));
+  will-change: transform;
+  z-index: 2;
 }
 
 .earth-sphere {
@@ -467,6 +469,9 @@ nav {
   width: 100%;
   height: 100%;
   transform-style: preserve-3d;
+  z-index: 1;
+  will-change: transform;
+  backface-visibility: hidden;
 }
 
 .earth-surface {
@@ -487,6 +492,8 @@ nav {
   animation: earthGlow 4s ease-in-out infinite alternate;
   position: relative;
   overflow: hidden;
+  will-change: box-shadow;
+  backface-visibility: hidden;
 }
 
 .earth-surface::before {
@@ -502,6 +509,8 @@ nav {
     linear-gradient(45deg, transparent 30%, rgba(139, 92, 246, 0.1) 50%, transparent 70%);
   border-radius: 50%;
   animation: surfaceShimmer 6s ease-in-out infinite;
+  will-change: opacity;
+  backface-visibility: hidden;
 }
 
 .earth-surface::after {
@@ -516,6 +525,8 @@ nav {
     radial-gradient(circle at 70% 30%, rgba(167, 139, 250, 0.1) 0%, transparent 40%);
   border-radius: 50%;
   animation: surfaceShimmer 8s ease-in-out infinite reverse;
+  will-change: opacity;
+  backface-visibility: hidden;
 }
 
 .earth-atmosphere {
@@ -528,6 +539,8 @@ nav {
   background: 
     radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, rgba(139, 92, 246, 0.05) 50%, transparent 70%);
   animation: atmospherePulse 3s ease-in-out infinite;
+  will-change: opacity;
+  backface-visibility: hidden;
 }
 
 .earth-glow {
@@ -540,6 +553,8 @@ nav {
   background: 
     radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, rgba(59, 130, 246, 0.1) 30%, transparent 60%);
   animation: glowPulse 5s ease-in-out infinite;
+  will-change: opacity;
+  backface-visibility: hidden;
 }
 
 .earth-orbit {
@@ -551,6 +566,8 @@ nav {
   border: 1px solid rgba(139, 92, 246, 0.3);
   border-radius: 50%;
   animation: orbitRotate 15s linear infinite;
+  will-change: transform;
+  backface-visibility: hidden;
 }
 
 .satellite {
@@ -574,6 +591,8 @@ nav {
   border: 1px solid rgba(139, 92, 246, 0.2);
   border-radius: 50%;
   animation: orbitRotate 25s linear infinite reverse;
+  will-change: transform;
+  backface-visibility: hidden;
 }
 
 .satellite-secondary {
@@ -598,6 +617,8 @@ nav {
   background: 
     conic-gradient(from 0deg, transparent, rgba(139, 92, 246, 0.1), transparent, rgba(59, 130, 246, 0.1), transparent);
   animation: ringsRotate 30s linear infinite;
+  will-change: transform;
+  backface-visibility: hidden;
 }
 
 .earth-particles {
@@ -613,6 +634,8 @@ nav {
     radial-gradient(circle at 40% 80%, rgba(167, 139, 250, 0.25) 0%, transparent 2px),
     radial-gradient(circle at 60% 60%, rgba(139, 92, 246, 0.15) 0%, transparent 1px);
   animation: particlesFloat 8s ease-in-out infinite;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
 }
 
 .energy-field {
@@ -625,6 +648,8 @@ nav {
   background: 
     conic-gradient(from 0deg, transparent, rgba(139, 92, 246, 0.05), transparent, rgba(59, 130, 246, 0.05), transparent);
   animation: energyPulse 4s ease-in-out infinite;
+  will-change: opacity;
+  backface-visibility: hidden;
 }
 
 .data-streams {
@@ -894,6 +919,9 @@ nav {
   0% {
     transform: rotateY(0deg) rotateX(20deg);
   }
+  50% {
+    transform: rotateY(180deg) rotateX(20deg);
+  }
   100% {
     transform: rotateY(360deg) rotateX(20deg);
   }
@@ -917,28 +945,27 @@ nav {
 @keyframes atmospherePulse {
   0%, 100% {
     opacity: 0.3;
-    transform: scale(1);
   }
   50% {
     opacity: 0.5;
-    transform: scale(1.05);
   }
 }
 
 @keyframes glowPulse {
   0%, 100% {
     opacity: 0.2;
-    transform: scale(1);
   }
   50% {
     opacity: 0.4;
-    transform: scale(1.1);
   }
 }
 
 @keyframes orbitRotate {
   0% {
     transform: rotateZ(0deg);
+  }
+  50% {
+    transform: rotateZ(180deg);
   }
   100% {
     transform: rotateZ(360deg);
@@ -957,17 +984,18 @@ nav {
 @keyframes surfaceShimmer {
   0%, 100% {
     opacity: 0.3;
-    transform: scale(1);
   }
   50% {
     opacity: 0.6;
-    transform: scale(1.02);
   }
 }
 
 @keyframes ringsRotate {
   0% {
     transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(180deg);
   }
   100% {
     transform: rotate(360deg);
@@ -976,11 +1004,11 @@ nav {
 
 @keyframes particlesFloat {
   0%, 100% {
-    transform: translateY(0px) scale(1);
+    transform: translateY(0px);
     opacity: 0.5;
   }
   50% {
-    transform: translateY(-10px) scale(1.1);
+    transform: translateY(-10px);
     opacity: 0.8;
   }
 }
@@ -988,11 +1016,9 @@ nav {
 @keyframes energyPulse {
   0%, 100% {
     opacity: 0.2;
-    transform: scale(1);
   }
   50% {
     opacity: 0.4;
-    transform: scale(1.05);
   }
 }
 
@@ -1031,11 +1057,9 @@ nav {
 @keyframes energyField {
   0%, 100% {
     opacity: 0.3;
-    transform: scale(1);
   }
   50% {
     opacity: 0.6;
-    transform: scale(1.1);
   }
 }
 

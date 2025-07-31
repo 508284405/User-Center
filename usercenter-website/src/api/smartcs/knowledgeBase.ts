@@ -87,6 +87,18 @@ interface ApiResponse<T> {
   pageIndex?: number;
 }
 
+// 知识库DTO接口
+export interface KnowledgeBaseDTO {
+  id?: number;
+  name: string;
+  code: string;
+  description?: string;
+  visibility: string;
+  ownerId?: number;
+  createdAt?: number;
+  updatedAt?: number;
+}
+
 export const knowledgeBaseApi = {
   /**
    * 创建知识库
@@ -173,4 +185,27 @@ export const knowledgeBaseApi = {
       }
     });
   }
+};
+
+// 导出具名函数以便兼容现有代码
+export const listKnowledgeBases = (params: KnowledgeBaseQuery): Promise<ApiResponse<KnowledgeBaseDTO[]>> => {
+  return knowledgeBaseApi.list(params);
+};
+
+
+
+export const createKnowledgeBase = (data: KnowledgeBaseCreateCmd): Promise<ApiResponse<any>> => {
+  return knowledgeBaseApi.create(data);
+};
+
+export const updateKnowledgeBase = (data: KnowledgeBaseUpdateCmd): Promise<ApiResponse<any>> => {
+  return knowledgeBaseApi.update(data);
+};
+
+export const getKnowledgeBase = (id: number): Promise<ApiResponse<any>> => {
+  return knowledgeBaseApi.getById(id);
+};
+
+export const deleteKnowledgeBase = (id: number): Promise<ApiResponse<any>> => {
+  return knowledgeBaseApi.delete(id);
 }; 

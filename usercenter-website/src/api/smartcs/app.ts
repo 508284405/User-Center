@@ -55,6 +55,20 @@ export interface AiAppListQuery {
   pageSize?: number
 }
 
+export interface AppChatRequest {
+  appId: number
+  message: string
+  variables?: Record<string, any>
+  sessionId?: string
+}
+
+export interface AppChatResponse {
+  content: string
+  sessionId: string
+  messageId: string
+  timestamp: number
+}
+
 export interface PageResponse<T> {
   data: T[]
   total: number
@@ -176,4 +190,11 @@ export const getAppTypeInfo = (type: string) => {
  */
 export const getAppStatusInfo = (status: string) => {
   return APP_STATUS.find(item => item.value === status)
+}
+
+/**
+ * 应用聊天测试
+ */
+export const chatWithApp = (data: AppChatRequest): Promise<ApiResponse<AppChatResponse>> => {
+  return request.post('/smartcs/api/admin/app/chat', data)
 }

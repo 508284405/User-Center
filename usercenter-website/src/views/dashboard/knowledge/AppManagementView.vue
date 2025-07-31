@@ -60,7 +60,7 @@
     <div class="app-list">
       <el-row :gutter="24" v-loading="loading">
         <el-col :span="6" v-for="app in appList" :key="app.id">
-          <div class="app-card">
+          <div class="app-card" @click="handleEdit(app)">
             <div class="app-icon">
               <span>{{ getAppTypeIcon(app.type) }}</span>
             </div>
@@ -72,7 +72,7 @@
               <div class="app-meta">
                 <el-tag type="info" size="small">{{ app.typeName }}</el-tag>
                 <el-tag 
-                  :type="getStatusTagType(app.status)" 
+                  :type="getStatusTagType(app.status || '')" 
                   size="small"
                 >
                   {{ app.statusName }}
@@ -95,7 +95,7 @@
               </div>
 
               <!-- 操作按钮 -->
-              <div class="app-actions">
+              <div class="app-actions" @click.stop>
                 <el-button 
                   text 
                   type="primary" 
@@ -105,7 +105,7 @@
                 >
                   编辑
                 </el-button>
-                <el-dropdown @command="(command) => handleAction(command, app)">
+                <el-dropdown @command="(command: string) => handleAction(command, app)">
                   <el-button text size="small">
                     更多
                     <el-icon><ArrowDown /></el-icon>
@@ -140,7 +140,7 @@
             <!-- 应用时间信息 -->
             <div class="app-footer">
               <span class="create-time">
-                {{ formatTime(app.createdAt) }}
+                {{ formatTime(app.createdAt || '') }}
               </span>
             </div>
           </div>
@@ -174,22 +174,17 @@
       @success="handleCreateSuccess"
     />
 
-    <!-- 编辑应用对话框 -->
-    <AppEditDialog
-      v-model:visible="editDialogVisible"
-      :app="currentApp"
-      @success="handleEditSuccess"
-    />
+
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Search, ArrowDown } from '@element-plus/icons-vue'
 import { listApps, deleteApp, updateAppStatus, getAppTypeInfo, type AiAppDTO, APP_TYPES, APP_STATUS } from '@/api/smartcs/app'
 import AppCreateDialog from './components/AppCreateDialog.vue'
-import AppEditDialog from './components/AppEditDialog.vue'
 import { formatTime } from '@/utils/format'
 
 // 数据状态
@@ -197,8 +192,7 @@ const loading = ref(false)
 const appList = ref<AiAppDTO[]>([])
 const total = ref(0)
 const createDialogVisible = ref(false)
-const editDialogVisible = ref(false)
-const currentApp = ref<AiAppDTO | null>(null)
+const router = useRouter()
 
 // 搜索表单
 const searchForm = reactive({
@@ -276,15 +270,7 @@ const handleCreateSuccess = () => {
 
 // 编辑应用
 const handleEdit = (app: AiAppDTO) => {
-  currentApp.value = app
-  editDialogVisible.value = true
-}
-
-// 编辑成功回调
-const handleEditSuccess = () => {
-  editDialogVisible.value = false
-  currentApp.value = null
-  handleSearch()
+  router.push(`/dashboard/knowledge/app/${app.id}`)
 }
 
 // 处理应用操作
@@ -411,10 +397,12 @@ onMounted(() => {
       height: 280px;
       display: flex;
       flex-direction: column;
+      cursor: pointer;
 
       &:hover {
         border-color: #3b82f6;
         box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+        transform: translateY(-2px);
       }
 
       .app-icon {

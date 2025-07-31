@@ -170,6 +170,7 @@ import { ref, reactive, computed, nextTick, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Delete, Refresh, VideoPlay, Promotion } from '@element-plus/icons-vue'
 import { formatTime } from '@/utils/format'
+import { chatWithApp, type AppChatRequest } from '@/api/smartcs/app'
 
 interface Variable {
   key: string
@@ -219,6 +220,7 @@ const messages = ref<Message[]>([])
 const currentMessage = ref('')
 const isLoading = ref(false)
 const hasStartedTest = ref(false)
+const sessionId = ref<string>('')
 
 // 模板引用
 const chatContainer = ref<HTMLElement>()
@@ -264,6 +266,7 @@ const clearHistory = () => {
   messages.value = []
   hasStartedTest.value = false
   currentMessage.value = ''
+  sessionId.value = ''
 }
 
 // 开始测试
@@ -328,33 +331,39 @@ const handleSendMessage = async () => {
   })
 
   try {
-    // 模拟API调用
-    await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000))
-    
-    // 模拟AI回复
-    const responses = [
-      '我理解您的问题。基于当前的配置，我会尽力为您提供帮助。',
-      '根据您提供的信息，我建议您可以尝试以下方法...',
-      '这是一个很好的问题。让我为您详细解答...',
-      '感谢您的提问。根据知识库中的信息，我认为...',
-      '我正在处理您的请求，请稍等片刻...'
-    ]
-    
-    const response = responses[Math.floor(Math.random() * responses.length)]
-    
-    messages.value.push({
-      role: 'assistant',
-      content: response,
-      timestamp: Date.now()
-    })
+    // 调用聊天API
+    const chatRequest: AppChatRequest = {
+      appId: props.appData?.id!,
+      message: message,
+      variables: variableValues,
+      sessionId: sessionId.value || undefined
+    }
 
-    nextTick(() => {
-      scrollToBottom()
-      focusInput()
-    })
-  } catch (error) {
+    const response = await chatWithApp(chatRequest)
+    
+    if (response.success && response.data) {
+      // 更新会话ID
+      if (response.data.sessionId) {
+        sessionId.value = response.data.sessionId
+      }
+
+      // 添加AI回复
+      messages.value.push({
+        role: 'assistant',
+        content: response.data.content,
+        timestamp: response.data.timestamp || Date.now()
+      })
+
+      nextTick(() => {
+        scrollToBottom()
+        focusInput()
+      })
+    } else {
+      throw new Error(response.errMessage || 'API调用失败')
+    }
+  } catch (error: any) {
     console.error('发送消息失败:', error)
-    ElMessage.error('发送消息失败，请重试')
+    ElMessage.error(error.message || '发送消息失败，请重试')
   } finally {
     isLoading.value = false
   }
