@@ -141,5 +141,14 @@ export const modelApi = {
 
   // 启用/禁用模型实例
   updateStatus: (id: number, data: EnableModelRequest) => 
-    request.patch<ApiResponse<boolean>>(`/smartcs/api/admin/model/${id}/enable`, data)
+    request.patch<ApiResponse<boolean>>(`/smartcs/api/admin/model/${id}/enable`, data),
+
+  // 获取所有可用模型（用于下拉选择）
+  getAvailableModels: () => 
+    request.get<PageResponse<Model>>('/smartcs/api/model/page', { 
+      params: { 
+        pageSize: 100, 
+        status: 'ACTIVE' 
+      } 
+    })
 }

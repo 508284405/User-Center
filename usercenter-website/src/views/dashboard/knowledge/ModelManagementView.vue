@@ -324,9 +324,9 @@ const fetchData = async () => {
       status: searchForm.status || undefined
     }
     const response = await modelApi.getPage(params)
-    if (response.data.success) {
-      tableData.value = response.data.data
-      pagination.total = response.data.totalCount
+    if (response.success) {
+      tableData.value = response.data
+      pagination.total = response.totalCount
     }
   } catch (error) {
     console.error('获取数据失败:', error)
@@ -391,7 +391,7 @@ const handleDelete = async (row: Model) => {
     )
     
     const response = await modelApi.delete(row.id!)
-    if (response.data.success) {
+    if (response.success) {
       ElMessage.success('删除成功')
       fetchData()
     }
@@ -410,7 +410,7 @@ const handleToggleStatus = async (row: Model) => {
       id: row.id!,
       status: newStatus
     })
-    if (response.data.success) {
+    if (response.success) {
       ElMessage.success('状态更新成功')
       row.status = newStatus
     }
@@ -423,7 +423,7 @@ const handleToggleStatus = async (row: Model) => {
 const handleLoadBalancingChange = async (row: Model) => {
   try {
     const response = await modelApi.update(row as UpdateModelRequest)
-    if (response.data.success) {
+    if (response.success) {
       ElMessage.success('负载均衡设置已更新')
     } else {
       row.loadBalancingEnabled = !row.loadBalancingEnabled
@@ -458,7 +458,7 @@ const handleSubmit = async () => {
       response = await modelApi.create(form)
     }
     
-    if (response.data.success) {
+    if (response.success) {
       ElMessage.success(isEdit.value ? '更新成功' : '创建成功')
       dialogVisible.value = false
       fetchData()

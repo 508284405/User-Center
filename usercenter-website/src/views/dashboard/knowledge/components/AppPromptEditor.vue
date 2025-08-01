@@ -3,10 +3,16 @@
     <div class="editor-header">
       <div class="title-row">
         <span class="title">提示词</span>
-        <el-button text type="primary" @click="showGenerateDialog">
-          <el-icon><MagicStick /></el-icon>
-          生成
-        </el-button>
+        <div class="title-actions">
+          <el-button text type="primary" @click="showOptimizeDialog">
+            <el-icon><MagicStick /></el-icon>
+            优化
+          </el-button>
+          <el-button text type="primary" @click="showGenerateDialog">
+            <el-icon><MagicStick /></el-icon>
+            生成
+          </el-button>
+        </div>
       </div>
       <div class="editor-info">
         <span class="char-count">{{ content.length }}</span>
@@ -69,6 +75,7 @@ interface Emits {
   (e: 'update:content', value: string): void
   (e: 'update:variables', value: Variable[]): void
   (e: 'change'): void
+  (e: 'optimize-prompt'): void
 }
 
 const props = defineProps<Props>()
@@ -90,9 +97,11 @@ const variableRegex = /\{\{([^}]+)\}\}/g
 
 // 高亮显示的内容
 const highlightedContent = computed(() => {
-  if (!content.value) return ''
+  // 确保 content.value 是字符串类型
+  const contentStr = String(content.value || '')
+  if (!contentStr) return ''
   
-  let highlighted = content.value
+  let highlighted = contentStr
     // 转义HTML字符
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -170,6 +179,11 @@ const showGenerateDialog = () => {
   console.log('显示提示词生成对话框')
 }
 
+// 显示优化对话框
+const showOptimizeDialog = () => {
+  emit('optimize-prompt')
+}
+
 // 调整文本域高度
 const adjustTextareaHeight = () => {
   if (editorTextarea.value) {
@@ -219,6 +233,11 @@ onUnmounted(() => {
         font-weight: 500;
         color: #374151;
         font-size: 14px;
+      }
+      
+      .title-actions {
+        display: flex;
+        gap: 8px;
       }
     }
 

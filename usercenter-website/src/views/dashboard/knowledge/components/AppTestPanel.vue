@@ -10,6 +10,18 @@
       </div>
     </div>
 
+    <!-- 模型选择区域 -->
+    <div class="model-selector-section">
+      <ModelSelector
+        v-model="selectedModelId"
+        label="测试模型"
+        :model-types="['LLM']"
+        :show-refresh="false"
+        :clearable="false"
+        @change="handleModelChange"
+      />
+    </div>
+
     <div class="panel-content">
       <!-- 变量输入区域 -->
       <div class="variables-section" v-if="promptConfig.variables.length > 0">
@@ -162,15 +174,31 @@
         </div>
       </div>
     </div>
+
+    <!-- 功能管理按钮 - 固定在右下角 -->
+    <div class="floating-actions">
+      <el-button
+        type="primary"
+        circle
+        size="large"
+        @click="showFunctionManagement"
+        class="management-button"
+        title="功能管理"
+      >
+        <el-icon><Setting /></el-icon>
+      </el-button>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, computed, nextTick, watch } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Delete, Refresh, VideoPlay, Promotion } from '@element-plus/icons-vue'
+import { Delete, Refresh, VideoPlay, Promotion, Setting } from '@element-plus/icons-vue'
 import { formatTime } from '@/utils/format'
 import { chatWithApp, type AppChatRequest } from '@/api/smartcs/app'
+import ModelSelector from '@/components/app/ModelSelector.vue'
+import type { Model } from '@/api/smartcs/model'
 
 interface Variable {
   key: string
@@ -209,6 +237,7 @@ interface Props {
 
 interface Emits {
   (e: 'test', data: any): void
+  (e: 'show-function-management'): void
 }
 
 const props = defineProps<Props>()
@@ -221,6 +250,8 @@ const currentMessage = ref('')
 const isLoading = ref(false)
 const hasStartedTest = ref(false)
 const sessionId = ref<string>('')
+const selectedModelId = ref<number>()
+const selectedModel = ref<Model>()
 
 // 模板引用
 const chatContainer = ref<HTMLElement>()
@@ -386,6 +417,17 @@ const focusInput = () => {
   }
 }
 
+// 处理模型选择变化
+const handleModelChange = (model?: Model) => {
+  selectedModel.value = model
+  console.log('选择的模型:', model)
+}
+
+// 显示功能管理
+const showFunctionManagement = () => {
+  emit('show-function-management')
+}
+
 // 监听变量变化，重新初始化
 watch(() => props.promptConfig.variables, () => {
   initializeVariables()
@@ -398,6 +440,7 @@ watch(() => props.promptConfig.variables, () => {
   display: flex;
   flex-direction: column;
   background: #fff;
+  position: relative;
 
   .panel-header {
     display: flex;
@@ -613,6 +656,31 @@ watch(() => props.promptConfig.variables, () => {
           }
         }
       }
+    }
+  }
+
+  .model-selector-section {
+    padding: 16px 24px;
+    border-bottom: 1px solid #f3f4f6;
+  }
+
+  .floating-actions {
+    position: absolute;
+    bottom: 24px;
+    right: 24px;
+    z-index: 10;
+
+    .management-button {
+      width: 56px;
+      height: 56px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      
+      &:hover {
+        transform: scale(1.05);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+      }
+      
+      transition: all 0.2s ease;
     }
   }
 }

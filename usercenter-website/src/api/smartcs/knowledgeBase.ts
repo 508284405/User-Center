@@ -76,6 +76,64 @@ interface KnowledgeParentChildChunkCmd {
   removeAllUrls?: boolean;
 }
 
+// 召回测试请求对象
+export interface RecallTestRequest {
+  knowledgeBaseId: number;
+  query: string;
+  retrievalMethod: 'vector' | 'full_text' | 'hybrid';
+  topK?: number;
+  scoreThreshold?: number;
+  rerankEnabled?: boolean;
+}
+
+// 召回测试结果对象
+export interface RecallTestResult {
+  chunkId: number;
+  contentId: number;
+  content: string;
+  score: number;
+  metadata?: any;
+  docTitle?: string;
+  chunkIndex?: number;
+}
+
+// 知识库设置对象
+export interface KnowledgeBaseSettings {
+  id: number;
+  name: string;
+  description?: string;
+  visibility: 'public' | 'private';
+  indexingMode: 'high_quality' | 'economy';
+  embeddingModel: string;
+  retrievalSettings: {
+    vectorSearch: {
+      enabled: boolean;
+      topK: number;
+      scoreThreshold: number;
+    };
+    fullTextSearch: {
+      enabled: boolean;
+    };
+    hybridSearch: {
+      enabled: boolean;
+      rerankEnabled: boolean;
+    };
+  };
+}
+
+// 分块状态更新请求
+export interface ChunkStatusUpdateRequest {
+  chunkId: number;
+  status: 'enabled' | 'disabled';
+}
+
+// 分块更新请求
+export interface ChunkUpdateRequest {
+  chunkId: number;
+  content: string;
+  metadata?: any;
+}
+
 // API响应接口
 interface ApiResponse<T> {
   success: boolean;
@@ -184,6 +242,81 @@ export const knowledgeBaseApi = {
         'Content-Type': 'multipart/form-data'
       }
     });
+  },
+
+  /**
+   * 召回测试
+   */
+  recallTest(data: RecallTestRequest): Promise<ApiResponse<RecallTestResult[]>> {
+    return request({
+      url: `/smartcs/api/admin/knowledge-base/${data.knowledgeBaseId}/recall-test`,
+      method: 'post',
+      data
+    });
+  },
+
+  /**
+   * 获取知识库设置
+   */
+  getSettings(id: number): Promise<ApiResponse<KnowledgeBaseSettings>> {
+    return request({
+      url: `/smartcs/api/admin/knowledge-base/${id}/settings`,
+      method: 'get'
+    });
+  },
+
+  /**
+   * 更新知识库设置
+   */
+  updateSettings(data: KnowledgeBaseSettings): Promise<ApiResponse<any>> {
+    return request({
+      url: `/smartcs/api/admin/knowledge-base/${data.id}/settings`,
+      method: 'put',
+      data
+    });
+  },
+
+  /**
+   * 获取文档分块列表
+   */
+  getDocumentChunks(contentId: number, params?: any): Promise<ApiResponse<any[]>> {
+    return request({
+      url: `/smartcs/api/admin/content/${contentId}/chunks`,
+      method: 'get',
+      params
+    });
+  },
+
+  /**
+   * 更新分块状态
+   */
+  updateChunkStatus(data: ChunkStatusUpdateRequest): Promise<ApiResponse<any>> {
+    return request({
+      url: `/smartcs/api/admin/chunk/${data.chunkId}/status`,
+      method: 'put',
+      data: { status: data.status }
+    });
+  },
+
+  /**
+   * 更新分块内容
+   */
+  updateChunk(data: ChunkUpdateRequest): Promise<ApiResponse<any>> {
+    return request({
+      url: `/smartcs/api/admin/chunk/${data.chunkId}`,
+      method: 'put',
+      data
+    });
+  },
+
+  /**
+   * 删除分块
+   */
+  deleteChunk(chunkId: number): Promise<ApiResponse<any>> {
+    return request({
+      url: `/smartcs/api/admin/chunk/${chunkId}`,
+      method: 'delete'
+    });
   }
 };
 
@@ -208,4 +341,33 @@ export const getKnowledgeBase = (id: number): Promise<ApiResponse<any>> => {
 
 export const deleteKnowledgeBase = (id: number): Promise<ApiResponse<any>> => {
   return knowledgeBaseApi.delete(id);
+};
+
+// 新增API导出函数
+export const recallTest = (data: RecallTestRequest): Promise<ApiResponse<RecallTestResult[]>> => {
+  return knowledgeBaseApi.recallTest(data);
+};
+
+export const getKnowledgeBaseSettings = (id: number): Promise<ApiResponse<KnowledgeBaseSettings>> => {
+  return knowledgeBaseApi.getSettings(id);
+};
+
+export const updateKnowledgeBaseSettings = (data: KnowledgeBaseSettings): Promise<ApiResponse<any>> => {
+  return knowledgeBaseApi.updateSettings(data);
+};
+
+export const getDocumentChunks = (contentId: number, params?: any): Promise<ApiResponse<any[]>> => {
+  return knowledgeBaseApi.getDocumentChunks(contentId, params);
+};
+
+export const updateChunkStatus = (data: ChunkStatusUpdateRequest): Promise<ApiResponse<any>> => {
+  return knowledgeBaseApi.updateChunkStatus(data);
+};
+
+export const updateChunk = (data: ChunkUpdateRequest): Promise<ApiResponse<any>> => {
+  return knowledgeBaseApi.updateChunk(data);
+};
+
+export const deleteChunk = (chunkId: number): Promise<ApiResponse<any>> => {
+  return knowledgeBaseApi.deleteChunk(chunkId);
 }; 

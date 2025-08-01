@@ -43,6 +43,7 @@
             v-model:content="promptConfig.content"
             v-model:variables="promptConfig.variables"
             @change="handlePromptChange"
+            @optimize-prompt="showOptimizeModal = true"
           />
         </div>
 
@@ -57,7 +58,8 @@
         <!-- 知识库配置 -->
         <div class="config-section">
           <AppKnowledgeConfig 
-            v-model:knowledge="knowledgeConfig"
+            :knowledge="knowledgeConfig"
+            @update:knowledge="(val) => Object.assign(knowledgeConfig, val)"
             @change="handleKnowledgeChange"
           />
         </div>
@@ -85,9 +87,25 @@
           :knowledge-config="knowledgeConfig"
           :filter-config="filterConfig"
           @test="handleTestConversation"
+          @show-function-management="showFunctionModal = true"
         />
       </div>
     </div>
+
+    <!-- Prompt优化弹窗 -->
+    <PromptOptimizeModal
+      v-model="showOptimizeModal"
+      :current-prompt="promptConfig.content"
+      :app-id="appData?.id || 0"
+      @optimized="handlePromptOptimized"
+    />
+
+    <!-- 功能管理弹窗 -->
+    <FunctionManageModal
+      v-model="showFunctionModal"
+      :app-id="appData?.id || 0"
+      @config-changed="handleFunctionConfigChanged"
+    />
   </div>
 </template>
 
@@ -101,6 +119,8 @@ import AppPromptEditor from './components/AppPromptEditor.vue'
 import AppVariableManager from './components/AppVariableManager.vue'
 import AppKnowledgeConfig from './components/AppKnowledgeConfig.vue'
 import AppTestPanel from './components/AppTestPanel.vue'
+import PromptOptimizeModal from '@/components/app/PromptOptimizeModal.vue'
+import FunctionManageModal from '@/components/app/FunctionManageModal.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -110,6 +130,8 @@ const loading = ref(true)
 const publishing = ref(false)
 const saving = ref(false)
 const appData = ref<AiAppDTO | null>(null)
+const showOptimizeModal = ref(false)
+const showFunctionModal = ref(false)
 let saveTimeout: NodeJS.Timeout | null = null
 
 // 配置数据
@@ -156,7 +178,9 @@ const fetchAppDetail = async () => {
         
         // 提示词配置
         if (config.prompt_template) {
-          promptConfig.content = config.prompt_template
+          promptConfig.content = String(config.prompt_template)
+        } else {
+          promptConfig.content = ''
         }
         
         // 变量配置
@@ -295,6 +319,18 @@ const handlePublish = async () => {
 
 const handleTestConversation = (data: any) => {
   console.log('测试对话:', data)
+}
+
+// 处理Prompt优化
+const handlePromptOptimized = (optimizedPrompt: string) => {
+  promptConfig.content = optimizedPrompt
+  handlePromptChange()
+  ElMessage.success('Prompt已更新')
+}
+
+// 处理功能配置变更
+const handleFunctionConfigChanged = (config: any) => {
+  console.log('功能配置已更新:', config)
 }
 
 // 监听路由变化

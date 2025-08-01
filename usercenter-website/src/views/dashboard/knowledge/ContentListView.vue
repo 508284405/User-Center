@@ -313,6 +313,17 @@ const getSegmentModeText = (mode: string): string => {
   }
 };
 
+// 查看文档详情
+const handleViewDocument = (row: ContentDTO) => {
+  router.push({
+    name: 'DocumentDetail',
+    params: { 
+      id: row.id,
+      knowledgeBaseId: knowledgeBaseId.value
+    }
+  })
+}
+
 // 页面加载时获取数据
 onMounted(() => {
   fetchContents();
@@ -392,7 +403,18 @@ onMounted(() => {
         border
       >
         <el-table-column prop="id" label="ID" width="80" />
-        <el-table-column prop="title" label="标题" min-width="200" show-overflow-tooltip />
+        <el-table-column prop="title" label="标题" min-width="200" show-overflow-tooltip>
+          <template #default="{ row }">
+            <el-button 
+              text 
+              type="primary" 
+              @click="handleViewDocument(row)"
+              class="title-link"
+            >
+              {{ row.title }}
+            </el-button>
+          </template>
+        </el-table-column>
         <el-table-column prop="contentType" label="类型" width="100" />
         <el-table-column prop="segmentMode" label="分段模式" width="120">
           <template #default="{ row }">

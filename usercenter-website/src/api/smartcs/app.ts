@@ -198,3 +198,69 @@ export const getAppStatusInfo = (status: string) => {
 export const chatWithApp = (data: AppChatRequest): Promise<ApiResponse<AppChatResponse>> => {
   return request.post('/smartcs/api/admin/app/chat', data)
 }
+
+// ==================== 新增接口类型定义 ====================
+
+export interface AiAppPromptOptimizeRequest {
+  appId: number
+  originalPrompt: string
+  optimizeGoal?: string
+  modelId?: number
+}
+
+export interface AiAppPromptOptimizeResponse {
+  originalPrompt: string
+  optimizedPrompt: string
+  optimizeExplanation: string
+  modelName: string
+  taskId: string
+}
+
+export interface AiAppFunctionConfigRequest {
+  appId: number
+  functionConfig?: Record<string, any>
+  conversationOpenerEnabled?: boolean
+  nextQuestionSuggestionEnabled?: boolean
+  textToSpeechEnabled?: boolean
+  speechToTextEnabled?: boolean
+  citationEnabled?: boolean
+  contentModerationEnabled?: boolean
+  standardReplyEnabled?: boolean
+}
+
+export interface AiAppFunctionConfigResponse {
+  appId: number
+  functionConfig: Record<string, any>
+  conversationOpenerEnabled: boolean
+  nextQuestionSuggestionEnabled: boolean
+  textToSpeechEnabled: boolean
+  speechToTextEnabled: boolean
+  citationEnabled: boolean
+  contentModerationEnabled: boolean
+  standardReplyEnabled: boolean
+}
+
+// ==================== 新增API接口方法 ====================
+
+/**
+ * 优化Prompt
+ */
+export const optimizePrompt = (data: AiAppPromptOptimizeRequest): Promise<ApiResponse<AiAppPromptOptimizeResponse>> => {
+  return request.post('/smartcs/api/admin/app/optimize-prompt', data, {
+    timeout: 60000 // 设置60秒超时，因为LLM推理可能需要较长时间
+  })
+}
+
+/**
+ * 更新功能配置
+ */
+export const updateFunctionConfig = (appId: number, data: AiAppFunctionConfigRequest): Promise<ApiResponse> => {
+  return request.put(`/smartcs/api/admin/app/${appId}/function-config`, data)
+}
+
+/**
+ * 获取功能配置
+ */
+export const getFunctionConfig = (appId: number): Promise<ApiResponse<AiAppFunctionConfigResponse>> => {
+  return request.get(`/smartcs/api/admin/app/${appId}/function-config`)
+}

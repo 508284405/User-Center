@@ -386,7 +386,10 @@ const canProceed = computed(() => {
 
 // 处理知识库卡片点击
 const handleCardClick = (kb: KnowledgeBase) => {
-  router.push(`/dashboard/knowledge/base/${kb.id}/contents`);
+  router.push({
+    name: 'KnowledgeBaseDetail',
+    params: { id: kb.id }
+  });
 };
 
 // 预览块功能

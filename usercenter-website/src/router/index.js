@@ -340,6 +340,16 @@ const routes = [
                         }
                     },
                     {
+                        path: 'base/:id',
+                        name: 'KnowledgeBaseDetail',
+                        component: () => import('../views/dashboard/knowledge/KnowledgeBaseDetailView.vue'),
+                        meta: {
+                            requiresAuth: true,
+                            permission: 'knowledge:base:view',
+                            title: '知识库详情'
+                        }
+                    },
+                    {
                         path: 'base/:knowledgeBaseId/contents',
                         name: 'ContentList',
                         component: () => import('../views/dashboard/knowledge/ContentListView.vue'),
@@ -367,6 +377,16 @@ const routes = [
                             requiresAuth: true,
                             permission: 'knowledge:chunk:view',
                             title: '切片管理'
+                        }
+                    },
+                    {
+                        path: 'document/:id',
+                        name: 'DocumentDetail',
+                        component: () => import('../views/dashboard/knowledge/DocumentDetailView.vue'),
+                        meta: {
+                            requiresAuth: true,
+                            permission: 'knowledge:content:view',
+                            title: '文档详情'
                         }
                     },
                     {
