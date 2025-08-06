@@ -8,10 +8,6 @@
             <el-icon><MagicStick /></el-icon>
             优化
           </el-button>
-          <el-button text type="primary" @click="showGenerateDialog">
-            <el-icon><MagicStick /></el-icon>
-            生成
-          </el-button>
         </div>
       </div>
       <div class="editor-info">
@@ -173,11 +169,6 @@ const syncScroll = () => {
   }
 }
 
-// 显示生成对话框
-const showGenerateDialog = () => {
-  // TODO: 实现提示词生成功能
-  console.log('显示提示词生成对话框')
-}
 
 // 显示优化对话框
 const showOptimizeDialog = () => {
@@ -285,6 +276,11 @@ onUnmounted(() => {
       color: #374151;
       z-index: 2;
       position: relative;
+      font-feature-settings: normal;
+      -webkit-font-feature-settings: normal;
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
 
       &::placeholder {
         color: #9ca3af;
@@ -307,6 +303,11 @@ onUnmounted(() => {
       overflow: hidden;
       pointer-events: none;
       z-index: 1;
+      font-feature-settings: normal;
+      -webkit-font-feature-settings: normal;
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
 
       :deep(.variable) {
         background-color: rgba(59, 130, 246, 0.1);
@@ -314,6 +315,12 @@ onUnmounted(() => {
         padding: 2px 4px;
         border-radius: 4px;
         font-weight: 500;
+        font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+        font-feature-settings: normal;
+        -webkit-font-feature-settings: normal;
+        text-rendering: optimizeLegibility;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
       }
     }
   }

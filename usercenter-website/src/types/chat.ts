@@ -149,4 +149,90 @@ export interface SessionListEmits {
   'session-selected': [sessionId: string];
   'session-deleted': [sessionId: string];
   'session-renamed': [sessionId: string, newName: string];
+}
+
+// RAG组件配置接口
+export interface ContentAggregatorConfig {
+  maxResults: number; // 最大结果数 (1-50)
+  minScore: number; // 最小分数阈值 (0.0-1.0)
+}
+
+export interface QueryTransformerConfig {
+  n: number; // 查询扩展数量 (1-10)
+}
+
+export interface QueryRouterConfig {
+  webSearchEnabled: boolean; // 是否启用网络搜索
+  knowledgeSearchEnabled: boolean; // 是否启用知识库搜索
+}
+
+export interface WebSearchConfig {
+  maxResults: number; // 最大搜索结果数 (1-20)
+  timeout: number; // 搜索超时时间（秒）(1-60)
+}
+
+export interface KnowledgeSearchConfig {
+  topK: number; // 返回的最相关结果数 (1-100)
+  scoreThreshold: number; // 分数阈值 (0.0-1.0)
+}
+
+// RAG组件完整配置
+export interface RagComponentConfig {
+  contentAggregator: ContentAggregatorConfig;
+  queryTransformer: QueryTransformerConfig;
+  queryRouter: QueryRouterConfig;
+  webSearch: WebSearchConfig;
+  knowledgeSearch: KnowledgeSearchConfig;
+}
+
+// RAG配置预设模式
+export enum RagConfigPreset {
+  HIGH_PRECISION = 'high_precision',
+  HIGH_RECALL = 'high_recall',
+  BALANCED = 'balanced',
+  DEBUG = 'debug'
+}
+
+// RAG配置预设定义
+export interface RagConfigPresetDefinition {
+  id: RagConfigPreset;
+  name: string;
+  description: string;
+  config: RagComponentConfig;
+}
+
+// RAG调试信息
+export interface RagDebugInfo {
+  configUsed: RagComponentConfig; // 实际使用的配置
+  retrievalStats: {
+    totalDocuments: number;
+    webSearchResults: number;
+    knowledgeSearchResults: number;
+    finalResults: number;
+  };
+  performanceMetrics: {
+    totalResponseTime: number; // 毫秒
+    retrievalTime: number; // 毫秒
+    aggregationTime: number; // 毫秒
+  };
+  timestamp: number;
+}
+
+// RAG配置验证错误
+export interface RagConfigValidationError {
+  field: string;
+  message: string;
+  suggestedValue?: number | boolean;
+}
+
+// RAG配置验证结果
+export interface RagConfigValidationResult {
+  isValid: boolean;
+  errors: RagConfigValidationError[];
+  correctedConfig?: RagComponentConfig;
+}
+
+// 扩展聊天请求以包含RAG配置
+export interface BotChatSSERequestWithRag extends BotChatSSERequest {
+  ragConfig?: RagComponentConfig;
 } 

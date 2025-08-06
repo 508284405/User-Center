@@ -259,6 +259,11 @@ const messageInput = ref()
 
 // 计算属性
 const canStartTest = computed(() => {
+  // 检查是否选择了模型
+  if (!selectedModelId.value) {
+    return false
+  }
+  
   // 检查必填变量是否都已填写
   const requiredVariables = props.promptConfig.variables.filter(v => v.required)
   return requiredVariables.every(v => {
@@ -302,6 +307,11 @@ const clearHistory = () => {
 
 // 开始测试
 const handleStartTest = () => {
+  if (!selectedModelId.value) {
+    ElMessage.warning('请先选择测试模型')
+    return
+  }
+  
   if (!canStartTest.value) {
     ElMessage.warning('请填写所有必填变量')
     return
@@ -347,6 +357,12 @@ const handleSendMessage = async () => {
   const message = currentMessage.value.trim()
   if (!message || isLoading.value) return
 
+  // 检查是否选择了模型
+  if (!selectedModelId.value) {
+    ElMessage.warning('请先选择测试模型')
+    return
+  }
+
   // 添加用户消息
   messages.value.push({
     role: 'user',
@@ -365,6 +381,7 @@ const handleSendMessage = async () => {
     // 调用聊天API
     const chatRequest: AppChatRequest = {
       appId: props.appData?.id!,
+      modelId: selectedModelId.value!,
       message: message,
       variables: variableValues,
       sessionId: sessionId.value || undefined

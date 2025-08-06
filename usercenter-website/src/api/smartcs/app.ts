@@ -57,9 +57,11 @@ export interface AiAppListQuery {
 
 export interface AppChatRequest {
   appId: number
+  modelId: number
   message: string
   variables?: Record<string, any>
   sessionId?: string
+  ragConfig?: import('@/types/chat').RagComponentConfig // 添加RAG配置支持
 }
 
 export interface AppChatResponse {
@@ -67,6 +69,7 @@ export interface AppChatResponse {
   sessionId: string
   messageId: string
   timestamp: number
+  ragDebugInfo?: import('@/types/chat').RagDebugInfo // 可选的RAG调试信息
 }
 
 export interface PageResponse<T> {
@@ -195,8 +198,37 @@ export const getAppStatusInfo = (status: string) => {
 /**
  * 应用聊天测试
  */
-export const chatWithApp = (data: AppChatRequest): Promise<ApiResponse<AppChatResponse>> => {
-  return request.post('/smartcs/api/admin/app/chat', data)
+export const chatWithApp = async (data: AppChatRequest): Promise<ApiResponse<AppChatResponse>> => {
+  try {
+    // 验证RAG配置（如果提供）
+    if (data.ragConfig) {
+      const { validateRagConfig } = await import('@/utils/ragConfigValidator');
+      const result = validateRagConfig(data.ragConfig);
+      
+      if (!result.isValid && result.correctedConfig) {
+        console.warn('RAG配置验证失败，使用修正后的配置:', result.errors);
+        data.ragConfig = result.correctedConfig;
+      } else if (!result.isValid) {
+        return {
+          success: false,
+          errCode: 'RAG_CONFIG_ERROR',
+          errMessage: `RAG配置验证失败: ${result.errors.map(e => e.message).join(', ')}`
+        };
+      }
+    }
+
+    return await request.post('/smartcs/api/admin/app/chat', data, {
+      timeout: 30000 // 30秒超时，RAG处理可能需要更长时间
+    });
+  } catch (error: any) {
+    console.error('聊天请求失败:', error);
+    
+    return {
+      success: false,
+      errCode: error.code || 'CHAT_ERROR',
+      errMessage: error.message || '聊天请求失败，请稍后重试'
+    };
+  }
 }
 
 // ==================== 新增接口类型定义 ====================
