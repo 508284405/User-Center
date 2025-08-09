@@ -55,6 +55,25 @@ export const useRagConfigStore = defineStore('ragConfig', () => {
         contentInjector: {
           promptTemplate: undefined,
           metadataKeysToInclude: undefined
+        },
+        embeddingStore: {
+          maxResults: 3,
+          minScore: 0.9,
+          metadataKeysToInclude: undefined
+        },
+        sqlQuery: {
+          maxResults: 50,
+          timeout: 15,
+          securitySettings: {
+            allowedTables: undefined,
+            forbiddenKeywords: undefined,
+            enableQueryValidation: true,
+            selectOnly: true
+          }
+        },
+        memory: {
+          maxMessages: 50,
+          memoryType: 'sliding_window'
         }
       }
     },
@@ -90,6 +109,25 @@ export const useRagConfigStore = defineStore('ragConfig', () => {
         contentInjector: {
           promptTemplate: undefined,
           metadataKeysToInclude: undefined
+        },
+        embeddingStore: {
+          maxResults: 25,
+          minScore: 0.3,
+          metadataKeysToInclude: undefined
+        },
+        sqlQuery: {
+          maxResults: 200,
+          timeout: 45,
+          securitySettings: {
+            allowedTables: undefined,
+            forbiddenKeywords: undefined,
+            enableQueryValidation: true,
+            selectOnly: true
+          }
+        },
+        memory: {
+          maxMessages: 200,
+          memoryType: 'summary'
         }
       }
     },
@@ -131,6 +169,25 @@ export const useRagConfigStore = defineStore('ragConfig', () => {
         contentInjector: {
           promptTemplate: undefined,
           metadataKeysToInclude: undefined
+        },
+        embeddingStore: {
+          maxResults: 20,
+          minScore: 0.4,
+          metadataKeysToInclude: undefined
+        },
+        sqlQuery: {
+          maxResults: 150,
+          timeout: 40,
+          securitySettings: {
+            allowedTables: undefined,
+            forbiddenKeywords: undefined,
+            enableQueryValidation: true,
+            selectOnly: true
+          }
+        },
+        memory: {
+          maxMessages: 150,
+          memoryType: 'sliding_window'
         }
       }
     }
@@ -209,6 +266,22 @@ export const useRagConfigStore = defineStore('ragConfig', () => {
       contentInjector: {
         ...currentConfig.value.contentInjector,
         ...newConfig.contentInjector
+      },
+      embeddingStore: {
+        ...currentConfig.value.embeddingStore,
+        ...newConfig.embeddingStore
+      },
+      sqlQuery: {
+        ...currentConfig.value.sqlQuery,
+        ...newConfig.sqlQuery,
+        securitySettings: newConfig.sqlQuery?.securitySettings ? {
+          ...currentConfig.value.sqlQuery?.securitySettings,
+          ...newConfig.sqlQuery.securitySettings
+        } : currentConfig.value.sqlQuery?.securitySettings
+      },
+      memory: {
+        ...currentConfig.value.memory,
+        ...newConfig.memory
       }
     };
     

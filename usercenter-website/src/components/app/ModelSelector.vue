@@ -7,7 +7,7 @@
     
     <el-select 
       v-model="selectedModelId" 
-      :placeholder="placeholder"
+      :placeholder="getPlaceholder()"
       :style="{ width: width }"
       :loading="loading"
       :disabled="disabled"
@@ -48,16 +48,16 @@
                   effect="plain"
                   class="features-tag"
                 >
-                  {{ getFeaturesSummary(model.features) }}
+                  {{ getFeaturesSummary(model.features || '') }}
                 </el-tag>
               </div>
             </div>
             <div class="model-status">
               <el-tag 
-                :type="getStatusType(model.status)" 
+                :type="getStatusType(model.status || 'UNKNOWN')" 
                 size="small"
               >
-                {{ getStatusText(model.status) }}
+                {{ getStatusText(model.status || 'UNKNOWN') }}
               </el-tag>
             </div>
           </div>
@@ -93,16 +93,16 @@
                 effect="plain"
                 class="features-tag"
               >
-                {{ getFeaturesSummary(model.features) }}
+                {{ getFeaturesSummary(model.features || '') }}
               </el-tag>
             </div>
           </div>
           <div class="model-status">
             <el-tag 
-              :type="getStatusType(model.status)" 
+              :type="getStatusType(model.status || 'UNKNOWN')" 
               size="small"
             >
-              {{ getStatusText(model.status) }}
+              {{ getStatusText(model.status || 'UNKNOWN') }}
             </el-tag>
           </div>
         </div>
@@ -130,16 +130,16 @@
           <span class="detail-label">模型类型：</span>
           <span class="detail-value">{{ selectedModel.modelType.join(', ') }}</span>
         </div>
-        <div class="detail-item" v-if="selectedModel.features">
-          <span class="detail-label">支持功能：</span>
-          <span class="detail-value">{{ selectedModel.features }}</span>
-        </div>
-        <div class="detail-item">
-          <span class="detail-label">模型状态：</span>
-          <el-tag :type="getStatusType(selectedModel.status)" size="small">
-            {{ getStatusText(selectedModel.status) }}
-          </el-tag>
-        </div>
+                  <div class="detail-item" v-if="selectedModel.features">
+            <span class="detail-label">支持功能：</span>
+            <span class="detail-value">{{ selectedModel.features }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">模型状态：</span>
+            <el-tag :type="getStatusType(selectedModel.status || 'UNKNOWN')" size="small">
+              {{ getStatusText(selectedModel.status || 'UNKNOWN') }}
+            </el-tag>
+          </div>
         <div class="detail-item" v-if="selectedModel.loadBalancingEnabled">
           <span class="detail-label">负载均衡：</span>
           <el-tag type="success" size="small">已启用</el-tag>
@@ -181,6 +181,7 @@ interface Props {
   showDetails?: boolean // 是否显示选中模型的详情
   showRefresh?: boolean // 是否显示刷新按钮
   autoLoad?: boolean // 是否自动加载
+  autoSelectFirst?: boolean // 是否自动选择第一个可用模型
 }
 
 interface Emits {
@@ -199,7 +200,8 @@ const props = withDefaults(defineProps<Props>(), {
   groupByProvider: false,
   showDetails: false,
   showRefresh: false,
-  autoLoad: true
+  autoLoad: true,
+  autoSelectFirst: true
 })
 
 const emit = defineEmits<Emits>()
@@ -265,10 +267,17 @@ const loadModels = async () => {
     loading.value = true
     const response = await modelApi.getAvailableModels()
     
-    if (response.success && response.data) {
+    if (response.data && Array.isArray(response.data)) {
       models.value = response.data
+      
+      // 自动选择第一个可用模型
+      if (props.autoSelectFirst && !props.modelValue && filteredModels.value.length > 0) {
+        const firstModel = filteredModels.value[0]
+        selectedModelId.value = firstModel.id
+        handleModelChange(firstModel.id!)
+      }
     } else {
-      throw new Error(response.errMessage || '获取模型列表失败')
+      throw new Error('获取模型列表失败')
     }
   } catch (error) {
     console.error('加载模型列表失败:', error)
@@ -325,6 +334,17 @@ const getFeaturesSummary = (features: string) => {
   if (!features) return ''
   const featureList = features.split(',').map(f => f.trim())
   return featureList.length > 2 ? `${featureList.slice(0, 2).join(', ')}...` : features
+}
+
+// 获取占位符文本
+const getPlaceholder = () => {
+  if (props.required && filteredModels.value.length === 0) {
+    return '暂无可用模型'
+  }
+  if (props.required && !selectedModelId.value) {
+    return '请选择模型（必填）'
+  }
+  return props.placeholder
 }
 
 // 监听选中模型变化，显示详情

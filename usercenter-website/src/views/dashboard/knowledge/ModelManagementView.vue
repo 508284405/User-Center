@@ -305,6 +305,10 @@ const fetchProviders = async () => {
     const response = await providerApi.getPage({ pageSize: 1000, needTotalCount: false })
     if (response.success) {
       providerOptions.value = response.data
+      // 如果是新增模式且有提供商数据，默认选中第一个
+      if (!isEdit.value && response.data.length > 0) {
+        form.providerId = response.data[0].id || 0
+      }
     }
   } catch (error) {
     console.error('获取提供商列表失败:', error)
@@ -478,9 +482,10 @@ const handleDialogClose = () => {
 
 // 重置表单
 const resetForm = () => {
+  const defaultProviderId = providerOptions.value.length > 0 ? providerOptions.value[0].id || 0 : 0
   Object.assign(form, {
     id: undefined,
-    providerId: 0,
+    providerId: defaultProviderId,
     label: '',
     modelType: [],
     features: '',

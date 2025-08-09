@@ -167,7 +167,9 @@ export interface QueryTransformerConfig {
 export interface QueryRouterConfig {
   webSearchEnabled: boolean; // 是否启用网络搜索
   knowledgeSearchEnabled: boolean; // 是否启用知识库搜索
+  enableSqlQuery?: boolean; // 是否启用SQL查询检索
   promptTemplate?: string; // 提示模板
+  retrieverToDescription?: Record<string, string>; // 检索器描述映射
   modelId?: number | string; // 模型ID，未指定时回退到会话级 modelId
 }
 
@@ -179,6 +181,7 @@ export interface WebSearchConfig {
 export interface KnowledgeSearchConfig {
   topK: number; // 返回的最相关结果数 (1-100)
   scoreThreshold: number; // 分数阈值 (0.0-1.0)
+  modelId?: number | string; // 模型ID，用于知识库检索
 }
 
 // 内容注入器配置
@@ -186,6 +189,36 @@ export interface ContentInjectorConfig {
   promptTemplate?: string; // 提示模板
   metadataKeysToInclude?: string[]; // 要包含的元数据键列表
 }
+
+// 嵌入存储配置
+export interface EmbeddingStoreConfig {
+  maxResults: number; // 最大结果数量 (1-100)
+  minScore: number; // 最小分数 (0.0-1.0)
+  metadataKeysToInclude?: string[]; // 要包含的元数据键列表
+}
+
+// SQL查询安全设置
+export interface SecuritySettings {
+  allowedTables?: string[]; // 允许的表名列表
+  forbiddenKeywords?: string[]; // 禁止的关键字列表
+  enableQueryValidation: boolean; // 是否启用查询验证
+  selectOnly: boolean; // 是否只允许SELECT语句
+}
+
+// SQL查询配置
+export interface SqlQueryConfig {
+  maxResults: number; // 最大结果数量 (1-1000)
+  timeout: number; // 超时时间（秒）(1-300)
+  securitySettings?: SecuritySettings; // 安全设置
+}
+
+// 记忆配置
+export interface MemoryConfig {
+  maxMessages: number; // 最大消息数量 (1-1000)
+  memoryType: string; // 记忆类型
+}
+
+
 
 // RAG组件完整配置
 export interface RagComponentConfig {
@@ -195,6 +228,9 @@ export interface RagComponentConfig {
   webSearch: WebSearchConfig;
   knowledgeSearch: KnowledgeSearchConfig;
   contentInjector: ContentInjectorConfig;
+  embeddingStore: EmbeddingStoreConfig;
+  sqlQuery: SqlQueryConfig;
+  memory: MemoryConfig;
 }
 
 // RAG配置预设模式

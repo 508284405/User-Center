@@ -18,6 +18,8 @@
         :model-types="['LLM']"
         :show-refresh="false"
         :clearable="false"
+        :required="true"
+        :auto-select-first="true"
         @change="handleModelChange"
       />
     </div>

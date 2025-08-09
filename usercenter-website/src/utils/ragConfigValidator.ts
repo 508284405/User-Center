@@ -7,7 +7,10 @@ import {
   QueryRouterConfig,
   WebSearchConfig,
   KnowledgeSearchConfig,
-  ContentInjectorConfig
+  ContentInjectorConfig,
+  EmbeddingStoreConfig,
+  SqlQueryConfig,
+  MemoryConfig
 } from '@/types/chat';
 
 /**
@@ -30,6 +33,9 @@ export class RagConfigValidator {
     const webSearchErrors = this.validateWebSearch(config.webSearch);
     const knowledgeSearchErrors = this.validateKnowledgeSearch(config.knowledgeSearch);
     const contentInjectorErrors = this.validateContentInjector(config.contentInjector);
+    const embeddingStoreErrors = this.validateEmbeddingStore(config.embeddingStore);
+    const sqlQueryErrors = this.validateSqlQuery(config.sqlQuery);
+    const memoryErrors = this.validateMemory(config.memory);
     
     // 合并所有错误
     errors.push(
@@ -38,7 +44,10 @@ export class RagConfigValidator {
       ...queryRouterErrors,
       ...webSearchErrors,
       ...knowledgeSearchErrors,
-      ...contentInjectorErrors
+      ...contentInjectorErrors,
+      ...embeddingStoreErrors,
+      ...sqlQueryErrors,
+      ...memoryErrors
     );
     
     // 如果有错误，生成修正后的配置
@@ -278,6 +287,138 @@ export class RagConfigValidator {
   }
   
   /**
+   * 验证嵌入存储配置
+   */
+  static validateEmbeddingStore(config: EmbeddingStoreConfig): RagConfigValidationError[] {
+    const errors: RagConfigValidationError[] = [];
+    
+    // 验证maxResults (1-100)
+    if (config.maxResults < 1 || config.maxResults > 100) {
+      errors.push({
+        field: 'embeddingStore.maxResults',
+        message: '嵌入存储最大结果数必须在1-100之间',
+        suggestedValue: Math.max(1, Math.min(100, config.maxResults))
+      });
+    }
+    
+    // 验证minScore (0.0-1.0)
+    if (config.minScore < 0.0 || config.minScore > 1.0) {
+      errors.push({
+        field: 'embeddingStore.minScore',
+        message: '最小分数必须在0.0-1.0之间',
+        suggestedValue: Math.max(0.0, Math.min(1.0, config.minScore))
+      });
+    }
+    
+    // 验证metadataKeysToInclude（可空，但个数不能超过20，每个元素不能为空字符串）
+    if (config.metadataKeysToInclude) {
+      if (config.metadataKeysToInclude.length > 20) {
+        errors.push({
+          field: 'embeddingStore.metadataKeysToInclude',
+          message: '元数据键个数不能超过20个',
+          suggestedValue: undefined
+        });
+      }
+      
+      const hasEmptyKeys = config.metadataKeysToInclude.some(key => !key || key.trim() === '');
+      if (hasEmptyKeys) {
+        errors.push({
+          field: 'embeddingStore.metadataKeysToInclude',
+          message: '元数据键不能包含空字符串',
+          suggestedValue: undefined
+        });
+      }
+    }
+    
+    return errors;
+  }
+  
+  /**
+   * 验证SQL查询配置
+   */
+  static validateSqlQuery(config: SqlQueryConfig): RagConfigValidationError[] {
+    const errors: RagConfigValidationError[] = [];
+    
+    // 验证maxResults (1-1000)
+    if (config.maxResults < 1 || config.maxResults > 1000) {
+      errors.push({
+        field: 'sqlQuery.maxResults',
+        message: 'SQL查询最大结果数必须在1-1000之间',
+        suggestedValue: Math.max(1, Math.min(1000, config.maxResults))
+      });
+    }
+    
+    // 验证timeout (1-300)
+    if (config.timeout < 1 || config.timeout > 300) {
+      errors.push({
+        field: 'sqlQuery.timeout',
+        message: 'SQL查询超时时间必须在1-300秒之间',
+        suggestedValue: Math.max(1, Math.min(300, config.timeout))
+      });
+    }
+    
+    // 验证安全设置
+    if (config.securitySettings) {
+      if (config.securitySettings.allowedTables && config.securitySettings.allowedTables.length > 50) {
+        errors.push({
+          field: 'sqlQuery.securitySettings.allowedTables',
+          message: '允许的表名个数不能超过50个',
+          suggestedValue: undefined
+        });
+      }
+      
+      if (config.securitySettings.forbiddenKeywords && config.securitySettings.forbiddenKeywords.length > 100) {
+        errors.push({
+          field: 'sqlQuery.securitySettings.forbiddenKeywords',
+          message: '禁止关键字个数不能超过100个',
+          suggestedValue: undefined
+        });
+      }
+    }
+    
+    return errors;
+  }
+  
+  /**
+   * 验证记忆配置
+   */
+  static validateMemory(config: MemoryConfig): RagConfigValidationError[] {
+    const errors: RagConfigValidationError[] = [];
+    
+    // 验证maxMessages (1-1000)
+    if (config.maxMessages < 1 || config.maxMessages > 1000) {
+      errors.push({
+        field: 'memory.maxMessages',
+        message: '最大消息数必须在1-1000之间',
+        suggestedValue: Math.max(1, Math.min(1000, config.maxMessages))
+      });
+    }
+    
+    // 验证memoryType（不能为空）
+    if (!config.memoryType || config.memoryType.trim() === '') {
+      errors.push({
+        field: 'memory.memoryType',
+        message: '记忆类型不能为空',
+        suggestedValue: undefined
+      });
+    }
+    
+    // 验证memoryType的有效值
+    const validMemoryTypes = ['sliding_window', 'summary', 'full'];
+    if (config.memoryType && !validMemoryTypes.includes(config.memoryType)) {
+      errors.push({
+        field: 'memory.memoryType',
+        message: '记忆类型必须是sliding_window、summary或full',
+        suggestedValue: undefined
+      });
+    }
+    
+    return errors;
+  }
+  
+
+  
+  /**
    * 根据验证错误生成修正后的配置
    */
   static generateCorrectedConfig(
@@ -328,7 +469,9 @@ export class RagConfigValidator {
       queryRouter: {
         webSearchEnabled: true,
         knowledgeSearchEnabled: true,
+        enableSqlQuery: false,
         promptTemplate: undefined,
+        retrieverToDescription: {},
         modelId: undefined
       },
       webSearch: {
@@ -337,11 +480,31 @@ export class RagConfigValidator {
       },
       knowledgeSearch: {
         topK: 20,
-        scoreThreshold: 0.6
+        scoreThreshold: 0.6,
+        modelId: undefined
       },
       contentInjector: {
         promptTemplate: undefined,
         metadataKeysToInclude: undefined
+      },
+      embeddingStore: {
+        maxResults: 10,
+        minScore: 0.0,
+        metadataKeysToInclude: undefined
+      },
+      sqlQuery: {
+        maxResults: 100,
+        timeout: 30,
+        securitySettings: {
+          allowedTables: undefined,
+          forbiddenKeywords: undefined,
+          enableQueryValidation: true,
+          selectOnly: true
+        }
+      },
+      memory: {
+        maxMessages: 100,
+        memoryType: 'sliding_window'
       }
     };
   }

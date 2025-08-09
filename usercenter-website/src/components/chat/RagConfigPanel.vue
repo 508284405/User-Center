@@ -90,7 +90,7 @@
                       :min="0"
                       :max="1"
                       :step="0.1"
-                      :format-tooltip="(val) => val.toFixed(1)"
+                      :format-tooltip="(val: number) => val.toFixed(1)"
                       @change="handleConfigChange"
                     />
                     <div class="field-help">过滤低相关性文档的分数阈值 (0.0-1.0)</div>
@@ -106,7 +106,9 @@
                     <ModelSelector
                       v-model="localConfig.contentAggregator.scoringModelId"
                       placeholder="选择评分模型，未选择时使用会话级模型"
+                      :model-types="['RERANK']"
                       clearable
+                      :auto-select-first="true"
                       @change="handleConfigChange"
                     />
                     <div class="field-help">用于重排序打分的LLM模型</div>
@@ -151,7 +153,9 @@
                     <ModelSelector
                       v-model="localConfig.queryTransformer.modelId"
                       placeholder="选择查询转换模型，未选择时使用会话级模型"
+                      :model-types="['LLM']"
                       clearable
+                      :auto-select-first="true"
                       @change="handleConfigChange"
                     />
                     <div class="field-help">用于查询转换的LLM模型</div>
@@ -204,7 +208,9 @@
                     <ModelSelector
                       v-model="localConfig.queryRouter.modelId"
                       placeholder="选择路由判别模型，未选择时使用会话级模型"
+                      :model-types="['LLM']"
                       clearable
+                      :auto-select-first="true"
                       @change="handleConfigChange"
                     />
                     <div class="field-help">用于路由决策的LLM模型</div>
@@ -302,10 +308,28 @@
                       :max="1"
                       :step="0.1"
                       :disabled="!localConfig.queryRouter.knowledgeSearchEnabled"
-                      :format-tooltip="(val) => val.toFixed(1)"
+                      :format-tooltip="(val: number) => val.toFixed(1)"
                       @change="handleConfigChange"
                     />
                     <div class="field-help">知识库搜索的分数阈值 (0.0-1.0)</div>
+                  </el-form-item>
+                </el-col>
+              </el-row>
+              <el-row :gutter="16">
+                <el-col :span="12">
+                  <el-form-item 
+                    label="嵌入模型（可选）"
+                    :error="getFieldError('knowledgeSearch.modelId')"
+                  >
+                    <ModelSelector
+                      v-model="localConfig.knowledgeSearch.modelId"
+                      placeholder="选择嵌入模型，未选择时使用会话级模型"
+                      :model-types="['TEXT_EMBEDDING']"
+                      clearable
+                      :auto-select-first="true"
+                      @change="handleConfigChange"
+                    />
+                    <div class="field-help">用于知识库检索的嵌入模型</div>
                   </el-form-item>
                 </el-col>
               </el-row>
@@ -370,6 +394,222 @@
               </el-row>
             </div>
           </el-collapse-item>
+
+          <!-- 嵌入存储配置 -->
+          <el-collapse-item name="embeddingStore">
+            <template #title>
+              <div class="section-title">
+                <el-icon><DataBoard /></el-icon>
+                <span>嵌入存储 (Embedding Store)</span>
+              </div>
+            </template>
+            
+            <div class="config-section">
+              <el-row :gutter="16">
+                <el-col :span="12">
+                  <el-form-item 
+                    label="最大结果数" 
+                    :error="getFieldError('embeddingStore.maxResults')"
+                  >
+                    <el-input-number
+                      v-model="localConfig.embeddingStore.maxResults"
+                      :min="1"
+                      :max="100"
+                      :step="1"
+                      controls-position="right"
+                      @change="handleConfigChange"
+                    />
+                    <div class="field-help">返回的最大结果数量 (1-100)</div>
+                  </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                  <el-form-item 
+                    label="最小分数" 
+                    :error="getFieldError('embeddingStore.minScore')"
+                  >
+                    <el-slider
+                      v-model="localConfig.embeddingStore.minScore"
+                      :min="0"
+                      :max="1"
+                      :step="0.1"
+                      :format-tooltip="(val: number) => val.toFixed(1)"
+                      @change="handleConfigChange"
+                    />
+                    <div class="field-help">最小相关性分数 (0.0-1.0)</div>
+                  </el-form-item>
+                </el-col>
+              </el-row>
+              <el-row :gutter="16">
+                <el-col :span="24">
+                  <el-form-item 
+                    label="元数据键列表"
+                    :error="getFieldError('embeddingStore.metadataKeysToInclude')"
+                  >
+                    <el-select
+                      v-model="localConfig.embeddingStore.metadataKeysToInclude"
+                      multiple
+                      filterable
+                      allow-create
+                      default-first-option
+                      :reserve-keyword="false"
+                      placeholder="输入要包含的元数据键，按回车添加"
+                      @change="handleConfigChange"
+                    >
+                      <el-option
+                        v-for="key in commonMetadataKeys"
+                        :key="key"
+                        :label="key"
+                        :value="key"
+                      />
+                    </el-select>
+                    <div class="field-help">指定哪些元数据键应该包含在嵌入存储中</div>
+                  </el-form-item>
+                </el-col>
+              </el-row>
+            </div>
+          </el-collapse-item>
+
+          <!-- SQL查询配置 -->
+          <el-collapse-item name="sqlQuery">
+            <template #title>
+              <div class="section-title">
+                <el-icon><Grid /></el-icon>
+                <span>SQL查询 (SQL Query)</span>
+              </div>
+            </template>
+            
+            <div class="config-section">
+              <el-row :gutter="16">
+                <el-col :span="12">
+                  <el-form-item 
+                    label="最大结果数" 
+                    :error="getFieldError('sqlQuery.maxResults')"
+                  >
+                    <el-input-number
+                      v-model="localConfig.sqlQuery.maxResults"
+                      :min="1"
+                      :max="1000"
+                      :step="1"
+                      controls-position="right"
+                      @change="handleConfigChange"
+                    />
+                    <div class="field-help">SQL查询返回的最大结果数 (1-1000)</div>
+                  </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                  <el-form-item 
+                    label="超时时间 (秒)" 
+                    :error="getFieldError('sqlQuery.timeout')"
+                  >
+                    <el-input-number
+                      v-model="localConfig.sqlQuery.timeout"
+                      :min="1"
+                      :max="300"
+                      :step="1"
+                      controls-position="right"
+                      @change="handleConfigChange"
+                    />
+                    <div class="field-help">SQL查询的超时时间 (1-300秒)</div>
+                  </el-form-item>
+                </el-col>
+              </el-row>
+              <el-row :gutter="16">
+                <el-col :span="12">
+                  <el-form-item label="启用查询验证">
+                    <el-switch
+                      v-model="localConfig.sqlQuery.securitySettings!.enableQueryValidation"
+                      active-text="启用"
+                      inactive-text="禁用"
+                      @change="handleConfigChange"
+                    />
+                    <div class="field-help">是否启用SQL查询安全验证</div>
+                  </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                  <el-form-item label="仅允许SELECT">
+                    <el-switch
+                      v-model="localConfig.sqlQuery.securitySettings!.selectOnly"
+                      active-text="启用"
+                      inactive-text="禁用"
+                      @change="handleConfigChange"
+                    />
+                    <div class="field-help">是否只允许执行SELECT语句</div>
+                  </el-form-item>
+                </el-col>
+              </el-row>
+              <el-row :gutter="16">
+                <el-col :span="24">
+                  <el-form-item 
+                    label="允许的表名"
+                    :error="getFieldError('sqlQuery.securitySettings.allowedTables')"
+                  >
+                    <el-select
+                      v-model="localConfig.sqlQuery.securitySettings!.allowedTables"
+                      multiple
+                      filterable
+                      allow-create
+                      default-first-option
+                      :reserve-keyword="false"
+                      placeholder="输入允许查询的表名，按回车添加"
+                      @change="handleConfigChange"
+                    >
+                    </el-select>
+                    <div class="field-help">指定允许查询的数据库表名列表</div>
+                  </el-form-item>
+                </el-col>
+              </el-row>
+            </div>
+          </el-collapse-item>
+
+          <!-- 记忆配置 -->
+          <el-collapse-item name="memory">
+            <template #title>
+              <div class="section-title">
+                <el-icon><Clock /></el-icon>
+                <span>记忆管理 (Memory)</span>
+              </div>
+            </template>
+            
+            <div class="config-section">
+              <el-row :gutter="16">
+                <el-col :span="12">
+                  <el-form-item 
+                    label="最大消息数" 
+                    :error="getFieldError('memory.maxMessages')"
+                  >
+                    <el-input-number
+                      v-model="localConfig.memory.maxMessages"
+                      :min="1"
+                      :max="1000"
+                      :step="1"
+                      controls-position="right"
+                      @change="handleConfigChange"
+                    />
+                    <div class="field-help">记忆中保存的最大消息数量 (1-1000)</div>
+                  </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                  <el-form-item 
+                    label="记忆类型" 
+                    :error="getFieldError('memory.memoryType')"
+                  >
+                    <el-select
+                      v-model="localConfig.memory.memoryType"
+                      placeholder="选择记忆类型"
+                      @change="handleConfigChange"
+                    >
+                      <el-option label="滑动窗口" value="sliding_window" />
+                      <el-option label="摘要记忆" value="summary" />
+                      <el-option label="完整记忆" value="full" />
+                    </el-select>
+                    <div class="field-help">指定使用的记忆管理类型</div>
+                  </el-form-item>
+                </el-col>
+              </el-row>
+            </div>
+          </el-collapse-item>
+
+
         </el-collapse>
       </div>
 
@@ -399,7 +639,10 @@ import {
   Search,
   FolderOpened,
   RefreshRight,
-  Check
+  Check,
+  DataBoard,
+  Grid,
+  Clock
 } from '@element-plus/icons-vue';
 import { useRagConfigStore } from '@/stores/ragConfig';
 import { RagComponentConfig } from '@/types/chat';
@@ -425,9 +668,59 @@ const emit = defineEmits<Emits>();
 // Store
 const ragStore = useRagConfigStore();
 
+/**
+ * 初始化本地配置，确保所有必需字段都有默认值
+ */
+const initializeLocalConfig = (): RagComponentConfig => {
+  const config = ragStore.getConfigCopy();
+  
+  // 确保所有新增字段都有默认值
+  if (!config.embeddingStore) {
+    config.embeddingStore = {
+      maxResults: 10,
+      minScore: 0.0,
+      metadataKeysToInclude: undefined
+    };
+  }
+  
+  if (!config.sqlQuery) {
+    config.sqlQuery = {
+      maxResults: 100,
+      timeout: 30,
+      securitySettings: {
+        allowedTables: undefined,
+        forbiddenKeywords: undefined,
+        enableQueryValidation: true,
+        selectOnly: true
+      }
+    };
+  }
+  
+  if (!config.memory) {
+    config.memory = {
+      maxMessages: 100,
+      memoryType: 'sliding_window'
+    };
+  }
+  
+
+  
+  // 确保查询路由器有新字段的默认值
+  if (config.queryRouter) {
+    if (config.queryRouter.enableSqlQuery === undefined) {
+      config.queryRouter.enableSqlQuery = false;
+    }
+    if (!config.queryRouter.retrieverToDescription) {
+      config.queryRouter.retrieverToDescription = {};
+    }
+  }
+  
+  return config;
+};
+
 // 本地状态
-const activeCollapse = ref(['contentAggregator', 'queryRouter']);
-const localConfig = ref<RagComponentConfig>(ragStore.getConfigCopy());
+const activeCollapse = ref(['contentAggregator', 'queryRouter', 'knowledgeSearch']);
+const localConfig = ref<RagComponentConfig>(initializeLocalConfig());
 
 // 常用的元数据键选项
 const commonMetadataKeys = ref([
@@ -468,6 +761,13 @@ const getFieldError = (fieldPath: string): string => {
  * 处理配置变更
  */
 const handleConfigChange = async () => {
+  // 确保本地配置结构完整
+  const validatedConfig = initializeLocalConfig();
+  
+  // 合并当前配置变更
+  Object.assign(validatedConfig, localConfig.value);
+  localConfig.value = validatedConfig;
+  
   // 更新store中的配置
   ragStore.updateConfig(localConfig.value);
   
@@ -499,7 +799,7 @@ const handleApply = () => {
  */
 const handleCancel = () => {
   // 重置本地配置为store中的配置
-  localConfig.value = ragStore.getConfigCopy();
+  localConfig.value = initializeLocalConfig();
   
   emit('config-cancelled');
   
@@ -511,7 +811,7 @@ const handleCancel = () => {
  */
 const handleReset = () => {
   ragStore.resetToDefault();
-  localConfig.value = ragStore.getConfigCopy();
+  localConfig.value = initializeLocalConfig();
   
   ElMessage.success('已重置为默认配置');
 };
