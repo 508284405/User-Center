@@ -155,20 +155,20 @@ export interface SessionListEmits {
 export interface ContentAggregatorConfig {
   maxResults: number; // 最大结果数 (1-50)
   minScore: number; // 最小分数阈值 (0.0-1.0)
-  scoringModelId?: number; // 评分模型ID，未指定时回退到会话级 modelId
+  scoringModelId?: number | string; // 评分模型ID，未指定时回退到会话级 modelId
 }
 
 export interface QueryTransformerConfig {
   n: number; // 查询扩展数量 (1-10)
   promptTemplate?: string; // 提示模板
-  modelId?: number; // 模型ID，未指定时回退到会话级 modelId
+  modelId?: number | string; // 模型ID，未指定时回退到会话级 modelId
 }
 
 export interface QueryRouterConfig {
   webSearchEnabled: boolean; // 是否启用网络搜索
   knowledgeSearchEnabled: boolean; // 是否启用知识库搜索
   promptTemplate?: string; // 提示模板
-  modelId?: number; // 模型ID，未指定时回退到会话级 modelId
+  modelId?: number | string; // 模型ID，未指定时回退到会话级 modelId
 }
 
 export interface WebSearchConfig {

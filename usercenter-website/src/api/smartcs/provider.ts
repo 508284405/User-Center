@@ -2,15 +2,15 @@ import request from '../config'
 
 // 模型提供商类型枚举
 export enum ProviderType {
-  OPENAI = 'openai',
-  DEEPSEEK = 'deepseek',
-  CLAUDE = 'claude',
-  GEMINI = 'gemini',
-  QWEN = 'qwen',
-  BAIDU = 'baidu',
-  TENCENT = 'tencent',
-  ZHIPU = 'zhipu',
-  MODELSCOPE = 'modelscope'
+  OPENAI = 'OPENAI',
+  DEEPSEEK = 'DEEPSEEK',
+  CLAUDE = 'CLAUDE',
+  GEMINI = 'GEMINI',
+  QWEN = 'QWEN',
+  BAIDU = 'BAIDU',
+  TENCENT = 'TENCENT',
+  ZHIPU = 'ZHIPU',
+  MODELSCOPE = 'MODELSCOPE'
 }
 
 // 提供商类型选项

@@ -168,7 +168,7 @@ import { Refresh as RefreshIcon } from '@element-plus/icons-vue'
 import { modelApi, type Model } from '@/api/smartcs/model'
 
 interface Props {
-  modelValue?: number
+  modelValue?: number | string
   label?: string
   placeholder?: string
   width?: string
@@ -184,7 +184,7 @@ interface Props {
 }
 
 interface Emits {
-  (e: 'update:modelValue', value?: number): void
+  (e: 'update:modelValue', value?: number | string): void
   (e: 'change', model?: Model): void
   (e: 'clear'): void
 }
@@ -217,7 +217,7 @@ const selectedModelId = computed({
 
 // 选中的模型对象
 const selectedModel = computed(() => {
-  return models.value.find(model => model.id === selectedModelId.value)
+  return models.value.find(model => model.id === selectedModelId.value || String(model.id) === String(selectedModelId.value))
 })
 
 // 过滤后的模型列表
@@ -279,8 +279,8 @@ const loadModels = async () => {
 }
 
 // 处理模型选择变化
-const handleModelChange = (modelId: number) => {
-  const model = models.value.find(m => m.id === modelId)
+const handleModelChange = (modelId: number | string) => {
+  const model = models.value.find(m => m.id === modelId || String(m.id) === String(modelId))
   emit('change', model)
   
   if (props.showDetails && model) {
@@ -290,6 +290,7 @@ const handleModelChange = (modelId: number) => {
 
 // 处理清空选择
 const handleClear = () => {
+  emit('update:modelValue', undefined)
   emit('clear')
   showDetails.value = false
 }

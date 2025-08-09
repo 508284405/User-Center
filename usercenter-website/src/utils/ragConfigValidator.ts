@@ -77,13 +77,27 @@ export class RagConfigValidator {
       });
     }
     
-    // 验证scoringModelId (必须是正整数或undefined)
-    if (config.scoringModelId !== undefined && (!Number.isInteger(config.scoringModelId) || config.scoringModelId <= 0)) {
-      errors.push({
-        field: 'contentAggregator.scoringModelId',
-        message: '评分模型ID必须是正整数',
-        suggestedValue: undefined
-      });
+    // 验证scoringModelId (可以是正整数、字符串或undefined)
+    if (config.scoringModelId !== undefined && config.scoringModelId !== null && config.scoringModelId !== '') {
+      // 如果是字符串且不为空，则认为是有效的模型标识符
+      if (typeof config.scoringModelId === 'string') {
+        // 字符串模型ID被认为是有效的（如"gpt-3.5-turbo"）
+      } else if (typeof config.scoringModelId === 'number') {
+        // 数字模型ID必须是正整数
+        if (!Number.isInteger(config.scoringModelId) || config.scoringModelId <= 0) {
+          errors.push({
+            field: 'contentAggregator.scoringModelId',
+            message: '评分模型ID必须是正整数或有效的模型名称',
+            suggestedValue: undefined
+          });
+        }
+      } else {
+        errors.push({
+          field: 'contentAggregator.scoringModelId',
+          message: '评分模型ID必须是正整数或有效的模型名称',
+          suggestedValue: undefined
+        });
+      }
     }
     
     return errors;
@@ -104,13 +118,27 @@ export class RagConfigValidator {
       });
     }
     
-    // 验证modelId (必须是正整数或undefined)
-    if (config.modelId !== undefined && (!Number.isInteger(config.modelId) || config.modelId <= 0)) {
-      errors.push({
-        field: 'queryTransformer.modelId',
-        message: '模型ID必须是正整数',
-        suggestedValue: undefined
-      });
+    // 验证modelId (可以是正整数、字符串或undefined)
+    if (config.modelId !== undefined && config.modelId !== null && config.modelId !== '') {
+      // 如果是字符串且不为空，则认为是有效的模型标识符
+      if (typeof config.modelId === 'string') {
+        // 字符串模型ID被认为是有效的（如"gpt-3.5-turbo"）
+      } else if (typeof config.modelId === 'number') {
+        // 数字模型ID必须是正整数
+        if (!Number.isInteger(config.modelId) || config.modelId <= 0) {
+          errors.push({
+            field: 'queryTransformer.modelId',
+            message: '模型ID必须是正整数或有效的模型名称',
+            suggestedValue: undefined
+          });
+        }
+      } else {
+        errors.push({
+          field: 'queryTransformer.modelId',
+          message: '模型ID必须是正整数或有效的模型名称',
+          suggestedValue: undefined
+        });
+      }
     }
     
     return errors;
@@ -131,13 +159,27 @@ export class RagConfigValidator {
       });
     }
     
-    // 验证modelId (必须是正整数或undefined)
-    if (config.modelId !== undefined && (!Number.isInteger(config.modelId) || config.modelId <= 0)) {
-      errors.push({
-        field: 'queryRouter.modelId',
-        message: '模型ID必须是正整数',
-        suggestedValue: undefined
-      });
+    // 验证modelId (可以是正整数、字符串或undefined)
+    if (config.modelId !== undefined && config.modelId !== null && config.modelId !== '') {
+      // 如果是字符串且不为空，则认为是有效的模型标识符
+      if (typeof config.modelId === 'string') {
+        // 字符串模型ID被认为是有效的（如"gpt-3.5-turbo"）
+      } else if (typeof config.modelId === 'number') {
+        // 数字模型ID必须是正整数
+        if (!Number.isInteger(config.modelId) || config.modelId <= 0) {
+          errors.push({
+            field: 'queryRouter.modelId',
+            message: '模型ID必须是正整数或有效的模型名称',
+            suggestedValue: undefined
+          });
+        }
+      } else {
+        errors.push({
+          field: 'queryRouter.modelId',
+          message: '模型ID必须是正整数或有效的模型名称',
+          suggestedValue: undefined
+        });
+      }
     }
     
     return errors;
