@@ -7,6 +7,11 @@ const props = defineProps({
     type: String,
     default: 'login',
     validator: (value) => ['login', 'register'].includes(value)
+  },
+  theme: {
+    type: String,
+    default: 'teal',
+    validator: (value) => ['blue', 'purple', 'pink', 'teal', 'cyber-blue'].includes(value)
   }
 })
 
@@ -39,16 +44,38 @@ const handleBlur = (field) => {
   focusStates.value[field] = false
 }
 
-// 按钮样式计算
+// 主题色表
+const builtInThemes = {
+  blue: { primary: '#3B82F6', secondary: '#1D4ED8', glow: 'rgba(59,130,246,0.4)', accent: '#60A5FA' },
+  purple: { primary: '#8B5CF6', secondary: '#7C3AED', glow: 'rgba(139,92,246,0.4)', accent: '#A78BFA' },
+  pink: { primary: '#EC4899', secondary: '#DB2777', glow: 'rgba(236,72,153,0.4)', accent: '#F472B6' },
+  teal: { primary: '#22D3EE', secondary: '#0EA5E9', glow: 'rgba(34,211,238,0.4)', accent: '#67E8F9' },
+  'cyber-blue': { primary: '#06B6D4', secondary: '#0A4D8C', glow: 'rgba(56,189,248,0.35)', accent: '#38BDF8' }
+}
+
+// 优先读取 .auth-page 的 CSS 变量，否则回退到内置主题
+const resolveCssVar = (varName, fallback) => {
+  try {
+    const el = document.querySelector('.auth-page') || document.documentElement
+    const value = getComputedStyle(el).getPropertyValue(varName).trim()
+    return value || fallback
+  } catch (_) {
+    return fallback
+  }
+}
+
+// 按钮样式计算 - 优先使用CSS变量
 const buttonTheme = computed(() => {
-  return props.type === 'login' ? {
-    primary: '#8B5CF6',
-    secondary: '#A78BFA',
-    glow: 'rgba(139, 92, 246, 0.4)'
-  } : {
-    primary: '#EC4899',
-    secondary: '#F472B6', 
-    glow: 'rgba(236, 72, 153, 0.4)'
+  const builtIn = builtInThemes[props.theme] || builtInThemes.teal
+  return {
+    primary: resolveCssVar('--color-primary', builtIn.primary),
+    secondary: resolveCssVar('--color-secondary', builtIn.secondary),
+    accent: resolveCssVar('--color-accent', builtIn.accent),
+    glow: resolveCssVar('--color-glow', builtIn.glow),
+    glowStrong: resolveCssVar('--color-glow-strong', builtIn.glow),
+    surface: resolveCssVar('--color-surface', 'rgba(255,255,255,0.06)'),
+    border: resolveCssVar('--color-border', 'rgba(255,255,255,0.18)'),
+    borderHover: resolveCssVar('--color-border-hover', 'rgba(255,255,255,0.3)')
   }
 })
 
@@ -57,9 +84,12 @@ const getInputStyle = (field) => {
   const theme = buttonTheme.value
   return focusStates.value[field] ? {
     borderColor: theme.primary,
-    boxShadow: `0 0 10px ${theme.glow}`,
-    backgroundColor: `${theme.primary}08`
-  } : {}
+    boxShadow: `0 0 12px ${theme.glow}, 0 0 4px ${theme.glowStrong}`,
+    backgroundColor: theme.surface
+  } : {
+    borderColor: theme.border,
+    backgroundColor: 'transparent'
+  }
 }
 
 const onSubmit = () => {
@@ -181,7 +211,7 @@ const onGoogleLogin = () => {
       <RouterLink 
         :to="type === 'login' ? '/register' : '/login'" 
         class="switch-link"
-        :style="{ color: buttonTheme.primary }"
+        :style="{ color: buttonTheme.accent || buttonTheme.primary }"
       >
         {{ type === 'login' ? '立即注册' : '立即登录' }}
       </RouterLink>
@@ -202,11 +232,13 @@ const onGoogleLogin = () => {
 
 .form-title {
   text-align: center;
-  color: #FFFFFF;
+  color: #1a1a1a;
   font-size: 1.5rem;
-  font-weight: 300;
-  margin-bottom: 1rem;
-  text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+  font-weight: 800;
+  margin-bottom: 1.5rem;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background: none;
+  -webkit-text-fill-color: initial;
 }
 
 .input-group {
@@ -225,21 +257,44 @@ const onGoogleLogin = () => {
 .tech-input {
   width: 100%;
   padding: 0.8rem 1rem;
-  background: rgba(255, 255, 255, 0.1);
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-radius: 8px;
-  color: #FFFFFF;
+  background: linear-gradient(135deg, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.15) 100%);
+  border: 2px solid rgba(255,255,255,0.4);
+  border-radius: var(--radius-sm, 8px);
+  color: #1a1a1a;
   font-size: 0.9rem;
-  transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
+  font-weight: 500;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(var(--blur-medium, 15px)) saturate(180%);
   outline: none;
   position: relative;
   z-index: 2;
   box-sizing: border-box;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.tech-input:hover {
+  border-color: rgba(255,255,255,0.6);
+  background: linear-gradient(135deg, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.25) 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+.tech-input:focus {
+  transform: translateY(-2px);
+  background: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.3) 100%);
+  border-color: var(--color-primary, #22D3EE);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2), 0 0 0 3px rgba(34, 211, 238, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.5);
 }
 
 .tech-input::placeholder {
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(26, 26, 26, 0.8);
+  font-weight: 600;
+  transition: color 0.3s ease;
+}
+
+.tech-input:focus::placeholder {
+  color: rgba(26, 26, 26, 0.6);
+  transform: translateY(-2px);
 }
 
 .input-glow {
@@ -280,7 +335,13 @@ const onGoogleLogin = () => {
   display: flex;
   align-items: center;
   cursor: pointer;
-  color: #FFFFFF;
+  color: #1a1a1a;
+  font-weight: 600;
+  transition: color 0.3s ease;
+}
+
+.cyber-checkbox:hover {
+  color: #0d0d0d;
 }
 
 .cyber-checkbox input {
@@ -288,19 +349,26 @@ const onGoogleLogin = () => {
 }
 
 .checkmark {
-  width: 16px;
-  height: 16px;
-  border: 2px solid rgba(255, 255, 255, 0.5);
-  border-radius: 3px;
-  margin-right: 0.3rem;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--color-border, rgba(255, 255, 255, 0.5));
+  border-radius: 4px;
+  margin-right: 0.5rem;
   position: relative;
   transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.checkmark:hover {
+  border-color: var(--color-border-hover, rgba(255, 255, 255, 0.7));
+  background: rgba(255, 255, 255, 0.08);
+  transform: scale(1.1);
 }
 
 .cyber-checkbox input:checked + .checkmark {
-  background: var(--primary-color, #8B5CF6);
-  border-color: var(--primary-color, #8B5CF6);
-  box-shadow: 0 0 8px rgba(139, 92, 246, 0.5);
+  background: var(--color-primary, #22D3EE);
+  border-color: var(--color-primary, #22D3EE);
+  box-shadow: 0 0 8px var(--color-glow, rgba(34, 211, 238, 0.4));
 }
 
 .cyber-checkbox input:checked + .checkmark::after {
@@ -316,31 +384,37 @@ const onGoogleLogin = () => {
 }
 
 .forgot-link {
-  color: rgba(255, 255, 255, 0.7);
+  color: #4a5568;
   text-decoration: none;
+  font-weight: 600;
   transition: all 0.3s ease;
+  padding: 0.2rem 0.4rem;
+  border-radius: var(--radius-sm, 4px);
 }
 
 .forgot-link:hover {
-  color: #FFFFFF;
-  text-shadow: 0 0 5px rgba(255, 255, 255, 0.8);
+  color: var(--color-primary, #22D3EE);
+  text-shadow: 0 0 8px rgba(34, 211, 238, 0.6);
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
 }
 
 .energy-button {
   position: relative;
   width: 100%;
   padding: 0.8rem 1.5rem;
-  background: transparent;
-  border: 2px solid var(--primary-color, #8B5CF6);
-  border-radius: 8px;
-  color: #FFFFFF;
+  background: linear-gradient(135deg, rgba(34, 211, 238, 0.1) 0%, rgba(34, 211, 238, 0.05) 100%);
+  border: 2px solid var(--color-primary, #22D3EE);
+  border-radius: var(--radius-sm, 8px);
+  color: #1a1a1a;
   font-size: 0.9rem;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   overflow: hidden;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   margin-bottom: 0.8rem;
   z-index: 10;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .btn-content {
@@ -362,16 +436,23 @@ const onGoogleLogin = () => {
   height: 100%;
   background: linear-gradient(90deg, 
     transparent, 
-    var(--primary-color, #8B5CF6), 
+    var(--color-primary, #22D3EE), 
     transparent);
-  transition: left 0.4s ease;
+  transition: left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 1;
   opacity: 0.3;
 }
 
 .energy-button:hover {
-  box-shadow: 0 0 15px var(--glow-color, rgba(139, 92, 246, 0.4));
-  transform: translateY(-1px);
+  box-shadow: var(--shadow-glow, 0 0 20px var(--color-glow, rgba(34, 211, 238, 0.4))), 0 8px 25px rgba(0, 0, 0, 0.15);
+  transform: translateY(-3px) scale(1.02);
+  border-color: var(--color-accent, #67E8F9);
+  background: linear-gradient(135deg, var(--color-surface, rgba(255,255,255,0.08)) 0%, rgba(255,255,255,0.12) 100%);
+}
+
+.energy-button:active {
+  transform: translateY(-1px) scale(1.01);
+  box-shadow: var(--shadow-glow, 0 0 15px var(--color-glow, rgba(34, 211, 238, 0.4))), 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .energy-button:hover .energy-fill {
@@ -380,7 +461,7 @@ const onGoogleLogin = () => {
 
 .google-btn {
   --primary-color: #4285f4;
-  --glow-color: rgba(66, 133, 244, 0.4);
+  --glow-color: color-mix(in srgb, var(--color-glow, rgba(66,133,244,0.35)) 60%, rgba(66,133,244,0.35));
 }
 
 .google-icon {
@@ -397,8 +478,9 @@ const onGoogleLogin = () => {
   text-align: center;
   margin: 1rem 0;
   position: relative;
-  color: rgba(255, 255, 255, 0.6);
+  color: #4a5568;
   font-size: 0.8rem;
+  font-weight: 600;
 }
 
 .divider::before,
@@ -408,7 +490,7 @@ const onGoogleLogin = () => {
   top: 50%;
   width: 35%;
   height: 1px;
-  background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.3), transparent);
+  background: linear-gradient(to right, transparent, rgba(26, 26, 26, 0.2), transparent);
 }
 
 .divider::before {
@@ -421,8 +503,9 @@ const onGoogleLogin = () => {
 
 .switch-form {
   text-align: center;
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 0.8rem;
+  color: #4a5568;
+  font-size: 0.9rem;
+  font-weight: 600;
   margin-top: 0.5rem;
 }
 
@@ -434,7 +517,9 @@ const onGoogleLogin = () => {
 }
 
 .switch-link:hover {
-  text-shadow: 0 0 5px currentColor;
+  text-shadow: 0 0 8px currentColor;
+  transform: translateY(-1px);
+  filter: brightness(1.2);
 }
 
 /* 移动端适配 */

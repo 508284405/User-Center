@@ -30,14 +30,19 @@ export const useRagConfigStore = defineStore('ragConfig', () => {
       config: {
         contentAggregator: {
           maxResults: 5,
-          minScore: 0.85
+          minScore: 0.85,
+          scoringModelId: undefined
         },
         queryTransformer: {
-          n: 2
+          n: 2,
+          promptTemplate: undefined,
+          modelId: undefined
         },
         queryRouter: {
           webSearchEnabled: false,
-          knowledgeSearchEnabled: true
+          knowledgeSearchEnabled: true,
+          promptTemplate: undefined,
+          modelId: undefined
         },
         webSearch: {
           maxResults: 3,
@@ -46,6 +51,10 @@ export const useRagConfigStore = defineStore('ragConfig', () => {
         knowledgeSearch: {
           topK: 10,
           scoreThreshold: 0.8
+        },
+        contentInjector: {
+          promptTemplate: undefined,
+          metadataKeysToInclude: undefined
         }
       }
     },
@@ -56,14 +65,19 @@ export const useRagConfigStore = defineStore('ragConfig', () => {
       config: {
         contentAggregator: {
           maxResults: 20,
-          minScore: 0.5
+          minScore: 0.5,
+          scoringModelId: undefined
         },
         queryTransformer: {
-          n: 5
+          n: 5,
+          promptTemplate: undefined,
+          modelId: undefined
         },
         queryRouter: {
           webSearchEnabled: true,
-          knowledgeSearchEnabled: true
+          knowledgeSearchEnabled: true,
+          promptTemplate: undefined,
+          modelId: undefined
         },
         webSearch: {
           maxResults: 10,
@@ -72,6 +86,10 @@ export const useRagConfigStore = defineStore('ragConfig', () => {
         knowledgeSearch: {
           topK: 50,
           scoreThreshold: 0.4
+        },
+        contentInjector: {
+          promptTemplate: undefined,
+          metadataKeysToInclude: undefined
         }
       }
     },
@@ -88,14 +106,19 @@ export const useRagConfigStore = defineStore('ragConfig', () => {
       config: {
         contentAggregator: {
           maxResults: 15,
-          minScore: 0.6
+          minScore: 0.6,
+          scoringModelId: undefined
         },
         queryTransformer: {
-          n: 4
+          n: 4,
+          promptTemplate: undefined,
+          modelId: undefined
         },
         queryRouter: {
           webSearchEnabled: true,
-          knowledgeSearchEnabled: true
+          knowledgeSearchEnabled: true,
+          promptTemplate: undefined,
+          modelId: undefined
         },
         webSearch: {
           maxResults: 8,
@@ -104,6 +127,10 @@ export const useRagConfigStore = defineStore('ragConfig', () => {
         knowledgeSearch: {
           topK: 30,
           scoreThreshold: 0.5
+        },
+        contentInjector: {
+          promptTemplate: undefined,
+          metadataKeysToInclude: undefined
         }
       }
     }
@@ -178,6 +205,10 @@ export const useRagConfigStore = defineStore('ragConfig', () => {
       knowledgeSearch: {
         ...currentConfig.value.knowledgeSearch,
         ...newConfig.knowledgeSearch
+      },
+      contentInjector: {
+        ...currentConfig.value.contentInjector,
+        ...newConfig.contentInjector
       }
     };
     

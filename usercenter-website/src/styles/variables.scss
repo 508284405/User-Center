@@ -25,3 +25,41 @@ $font-weight-medium: 500;
 
 $dialog-width: 480px;
 $content-max-width: 1148px; 
+
+// Auth 蓝青科技主题扩展 Token - Enhanced contrast
+$color-teal-primary: #22d3ee; // cyan-400
+$color-teal-secondary: #0ea5e9; // sky-500
+$color-teal-accent: #67e8f9; // cyan-300
+$color-teal-dark: #0891b2; // cyan-600
+$color-teal-light: #a5f3fc; // cyan-200
+$color-teal-glow: rgba(34, 211, 238, 0.5);
+$color-teal-glow-strong: rgba(34, 211, 238, 0.7);
+
+// Cyber blue 主题 - Enhanced contrast
+$color-cyber-primary: #06b6d4; // cyan-500
+$color-cyber-secondary: #0284c7; // sky-600
+$color-cyber-accent: #38bdf8; // sky-400
+$color-cyber-glow: rgba(56, 189, 248, 0.45);
+
+// 状态颜色扩展 - Enhanced visibility
+$color-success-glow: rgba(16, 185, 129, 0.5); // emerald-500
+$color-error-glow: rgba(239, 68, 68, 0.5); // rose-500
+$color-warning-glow: rgba(245, 158, 11, 0.5); // amber-500
+
+// 表面颜色和边框 - Enhanced for better contrast
+$color-surface-teal: rgba(34, 211, 238, 0.12);
+$color-border-teal: rgba(34, 211, 238, 0.3);
+$color-text-teal: rgba(255, 255, 255, 1.0);
+$color-text-teal-secondary: rgba(255, 255, 255, 0.88);
+
+$radius-sm: 8px;
+$radius-md: 16px;
+$radius-lg: 20px;
+$radius-xl: 24px;
+
+$blur-medium: 15px;
+$blur-strong: 25px;
+
+$shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.15);
+$shadow-medium: 0 8px 32px rgba(0, 0, 0, 0.18);
+$shadow-strong: 0 16px 60px rgba(0, 0, 0, 0.25);

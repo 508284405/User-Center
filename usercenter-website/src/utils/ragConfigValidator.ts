@@ -6,7 +6,8 @@ import {
   QueryTransformerConfig,
   QueryRouterConfig,
   WebSearchConfig,
-  KnowledgeSearchConfig
+  KnowledgeSearchConfig,
+  ContentInjectorConfig
 } from '@/types/chat';
 
 /**
@@ -28,6 +29,7 @@ export class RagConfigValidator {
     const queryRouterErrors = this.validateQueryRouter(config.queryRouter);
     const webSearchErrors = this.validateWebSearch(config.webSearch);
     const knowledgeSearchErrors = this.validateKnowledgeSearch(config.knowledgeSearch);
+    const contentInjectorErrors = this.validateContentInjector(config.contentInjector);
     
     // 合并所有错误
     errors.push(
@@ -35,7 +37,8 @@ export class RagConfigValidator {
       ...queryTransformerErrors,
       ...queryRouterErrors,
       ...webSearchErrors,
-      ...knowledgeSearchErrors
+      ...knowledgeSearchErrors,
+      ...contentInjectorErrors
     );
     
     // 如果有错误，生成修正后的配置
@@ -74,6 +77,15 @@ export class RagConfigValidator {
       });
     }
     
+    // 验证scoringModelId (必须是正整数或undefined)
+    if (config.scoringModelId !== undefined && (!Number.isInteger(config.scoringModelId) || config.scoringModelId <= 0)) {
+      errors.push({
+        field: 'contentAggregator.scoringModelId',
+        message: '评分模型ID必须是正整数',
+        suggestedValue: undefined
+      });
+    }
+    
     return errors;
   }
   
@@ -92,6 +104,15 @@ export class RagConfigValidator {
       });
     }
     
+    // 验证modelId (必须是正整数或undefined)
+    if (config.modelId !== undefined && (!Number.isInteger(config.modelId) || config.modelId <= 0)) {
+      errors.push({
+        field: 'queryTransformer.modelId',
+        message: '模型ID必须是正整数',
+        suggestedValue: undefined
+      });
+    }
+    
     return errors;
   }
   
@@ -107,6 +128,15 @@ export class RagConfigValidator {
         field: 'queryRouter',
         message: '至少需要启用一个搜索器（网络搜索或知识库搜索）',
         suggestedValue: true
+      });
+    }
+    
+    // 验证modelId (必须是正整数或undefined)
+    if (config.modelId !== undefined && (!Number.isInteger(config.modelId) || config.modelId <= 0)) {
+      errors.push({
+        field: 'queryRouter.modelId',
+        message: '模型ID必须是正整数',
+        suggestedValue: undefined
       });
     }
     
@@ -168,6 +198,44 @@ export class RagConfigValidator {
   }
   
   /**
+   * 验证内容注入器配置
+   */
+  static validateContentInjector(config: ContentInjectorConfig): RagConfigValidationError[] {
+    const errors: RagConfigValidationError[] = [];
+    
+    // 验证promptTemplate长度（可空，但不能超过4000字符）
+    if (config.promptTemplate && config.promptTemplate.length > 4000) {
+      errors.push({
+        field: 'contentInjector.promptTemplate',
+        message: '提示模板长度不能超过4000字符',
+        suggestedValue: undefined
+      });
+    }
+    
+    // 验证metadataKeysToInclude（可空，但个数不能超过20，每个元素不能为空字符串）
+    if (config.metadataKeysToInclude) {
+      if (config.metadataKeysToInclude.length > 20) {
+        errors.push({
+          field: 'contentInjector.metadataKeysToInclude',
+          message: '元数据键个数不能超过20个',
+          suggestedValue: undefined
+        });
+      }
+      
+      const hasEmptyKeys = config.metadataKeysToInclude.some(key => !key || key.trim() === '');
+      if (hasEmptyKeys) {
+        errors.push({
+          field: 'contentInjector.metadataKeysToInclude',
+          message: '元数据键不能包含空字符串',
+          suggestedValue: undefined
+        });
+      }
+    }
+    
+    return errors;
+  }
+  
+  /**
    * 根据验证错误生成修正后的配置
    */
   static generateCorrectedConfig(
@@ -207,14 +275,19 @@ export class RagConfigValidator {
     return {
       contentAggregator: {
         maxResults: 10,
-        minScore: 0.7
+        minScore: 0.7,
+        scoringModelId: undefined
       },
       queryTransformer: {
-        n: 3
+        n: 3,
+        promptTemplate: undefined,
+        modelId: undefined
       },
       queryRouter: {
         webSearchEnabled: true,
-        knowledgeSearchEnabled: true
+        knowledgeSearchEnabled: true,
+        promptTemplate: undefined,
+        modelId: undefined
       },
       webSearch: {
         maxResults: 5,
@@ -223,6 +296,10 @@ export class RagConfigValidator {
       knowledgeSearch: {
         topK: 20,
         scoreThreshold: 0.6
+      },
+      contentInjector: {
+        promptTemplate: undefined,
+        metadataKeysToInclude: undefined
       }
     };
   }

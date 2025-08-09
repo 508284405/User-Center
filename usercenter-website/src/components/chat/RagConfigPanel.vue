@@ -97,6 +97,22 @@
                   </el-form-item>
                 </el-col>
               </el-row>
+              <el-row :gutter="16">
+                <el-col :span="12">
+                  <el-form-item 
+                    label="打分模型（可选）"
+                    :error="getFieldError('contentAggregator.scoringModelId')"
+                  >
+                    <ModelSelector
+                      v-model="localConfig.contentAggregator.scoringModelId"
+                      placeholder="选择评分模型，未选择时使用会话级模型"
+                      clearable
+                      @change="handleConfigChange"
+                    />
+                    <div class="field-help">用于重排序打分的LLM模型</div>
+                  </el-form-item>
+                </el-col>
+              </el-row>
             </div>
           </el-collapse-item>
 
@@ -110,7 +126,7 @@
             </template>
             
             <div class="config-section">
-              <el-row>
+              <el-row :gutter="16">
                 <el-col :span="12">
                   <el-form-item 
                     label="查询扩展数量" 
@@ -125,6 +141,20 @@
                       @change="handleConfigChange"
                     />
                     <div class="field-help">生成的扩展查询数量 (1-10)</div>
+                  </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                  <el-form-item 
+                    label="LLM（可选）"
+                    :error="getFieldError('queryTransformer.modelId')"
+                  >
+                    <ModelSelector
+                      v-model="localConfig.queryTransformer.modelId"
+                      placeholder="选择查询转换模型，未选择时使用会话级模型"
+                      clearable
+                      @change="handleConfigChange"
+                    />
+                    <div class="field-help">用于查询转换的LLM模型</div>
                   </el-form-item>
                 </el-col>
               </el-row>
@@ -162,6 +192,22 @@
                       @change="handleConfigChange"
                     />
                     <div class="field-help">是否启用知识库检索器</div>
+                  </el-form-item>
+                </el-col>
+              </el-row>
+              <el-row :gutter="16">
+                <el-col :span="12">
+                  <el-form-item 
+                    label="LLM（可选）"
+                    :error="getFieldError('queryRouter.modelId')"
+                  >
+                    <ModelSelector
+                      v-model="localConfig.queryRouter.modelId"
+                      placeholder="选择路由判别模型，未选择时使用会话级模型"
+                      clearable
+                      @change="handleConfigChange"
+                    />
+                    <div class="field-help">用于路由决策的LLM模型</div>
                   </el-form-item>
                 </el-col>
               </el-row>
@@ -221,7 +267,7 @@
           <el-collapse-item name="knowledgeSearch">
             <template #title>
               <div class="section-title">
-                <el-icon><DataBase /></el-icon>
+                <el-icon><FolderOpened /></el-icon>
                 <span>知识库搜索 (Knowledge Search)</span>
               </div>
             </template>
@@ -265,6 +311,65 @@
               </el-row>
             </div>
           </el-collapse-item>
+
+          <!-- 内容注入器配置 -->
+          <el-collapse-item name="contentInjector">
+            <template #title>
+              <div class="section-title">
+                <el-icon><EditPen /></el-icon>
+                <span>内容注入器 (Content Injector)</span>
+              </div>
+            </template>
+            
+            <div class="config-section">
+              <el-row :gutter="16">
+                <el-col :span="24">
+                  <el-form-item 
+                    label="提示模板"
+                    :error="getFieldError('contentInjector.promptTemplate')"
+                  >
+                    <el-input
+                      v-model="localConfig.contentInjector.promptTemplate"
+                      type="textarea"
+                      :rows="4"
+                      placeholder="自定义内容注入的提示模板，为空时使用系统默认模板"
+                      maxlength="4000"
+                      show-word-limit
+                      @change="handleConfigChange"
+                    />
+                    <div class="field-help">用于格式化注入内容的提示模板（最多4000字符）</div>
+                  </el-form-item>
+                </el-col>
+              </el-row>
+              <el-row :gutter="16">
+                <el-col :span="24">
+                  <el-form-item 
+                    label="元数据键列表"
+                    :error="getFieldError('contentInjector.metadataKeysToInclude')"
+                  >
+                    <el-select
+                      v-model="localConfig.contentInjector.metadataKeysToInclude"
+                      multiple
+                      filterable
+                      allow-create
+                      default-first-option
+                      :reserve-keyword="false"
+                      placeholder="输入要包含的元数据键，按回车添加"
+                      @change="handleConfigChange"
+                    >
+                      <el-option
+                        v-for="key in commonMetadataKeys"
+                        :key="key"
+                        :label="key"
+                        :value="key"
+                      />
+                    </el-select>
+                    <div class="field-help">指定哪些元数据键应该包含在注入的内容中（最多20个）</div>
+                  </el-form-item>
+                </el-col>
+              </el-row>
+            </div>
+          </el-collapse-item>
         </el-collapse>
       </div>
 
@@ -289,14 +394,16 @@ import { ElMessage } from 'element-plus';
 import {
   Document,
   Edit,
+  EditPen,
   Connection,
   Search,
-  DataBase,
+  FolderOpened,
   RefreshRight,
   Check
 } from '@element-plus/icons-vue';
 import { useRagConfigStore } from '@/stores/ragConfig';
 import { RagComponentConfig } from '@/types/chat';
+import ModelSelector from '@/components/app/ModelSelector.vue';
 
 // Props 和 Emits
 interface Props {
@@ -321,6 +428,20 @@ const ragStore = useRagConfigStore();
 // 本地状态
 const activeCollapse = ref(['contentAggregator', 'queryRouter']);
 const localConfig = ref<RagComponentConfig>(ragStore.getConfigCopy());
+
+// 常用的元数据键选项
+const commonMetadataKeys = ref([
+  'title',
+  'source',
+  'url', 
+  'author',
+  'date',
+  'category',
+  'tags',
+  'document_type',
+  'file_name',
+  'page_number'
+]);
 
 // 监听store配置变化，同步到本地配置
 watch(() => ragStore.currentConfig, (newConfig) => {

@@ -54,8 +54,15 @@ onMounted(() => {
   <div class="form-card-container">
     <div 
       ref="cardRef"
-      class="form-card"
+      class="form-card auth-card"
       :class="[`status-${status}`, `type-${codeType}`]"
+      :style="{
+        '--active-color': 'var(--color-primary, #22D3EE)',
+        '--active-glow': 'var(--color-glow, rgba(34,211,238,0.4))',
+        '--active-accent': 'var(--color-accent, #67E8F9)',
+        '--surface-color': 'var(--color-surface, rgba(255,255,255,0.06))',
+        '--border-color': 'var(--color-border, rgba(255,255,255,0.18))'
+      }"
     >
       <!-- 背景装饰 -->
       <div class="card-background">
@@ -115,69 +122,58 @@ onMounted(() => {
   width: 100%;
   max-width: 480px;
   min-height: 520px;
-  background: 
-    linear-gradient(135deg, 
-      rgba(255, 255, 255, 0.1) 0%, 
-      rgba(255, 255, 255, 0.05) 50%, 
-      rgba(255, 255, 255, 0.02) 100%
-    );
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 24px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.75) 100%);
+  backdrop-filter: blur(var(--blur-medium, 20px)) saturate(150%);
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  border-radius: var(--radius-xl, 24px);
   padding: 3rem 2.5rem;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 
-    0 8px 32px rgba(0, 0, 0, 0.12),
-    0 2px 16px rgba(0, 0, 0, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.25), 0 8px 32px rgba(0, 0, 0, 0.15), inset 0 2px 0 rgba(255, 255, 255, 0.95);
   overflow: hidden;
   will-change: transform, box-shadow;
 }
 
 /* 状态样式 */
 .status-idle {
+  transform: translateY(0px);
   box-shadow: 
-    0 8px 32px rgba(0, 0, 0, 0.12),
-    0 2px 16px rgba(0, 0, 0, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    0 16px 48px rgba(0, 0, 0, 0.25),
+    0 8px 32px rgba(0, 0, 0, 0.15),
+    inset 0 2px 0 rgba(255, 255, 255, 0.95);
+  border-color: rgba(255, 255, 255, 0.9);
 }
 
-.status-active.type-login {
-  border-color: rgba(139, 92, 246, 0.4);
+.status-active {
+  transform: translateY(-3px) scale(1.01);
+  border-color: var(--active-color, #22D3EE);
   box-shadow: 
-    0 8px 32px rgba(139, 92, 246, 0.2),
-    0 2px 16px rgba(139, 92, 246, 0.15),
-    0 0 0 1px rgba(139, 92, 246, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.15);
-}
-
-.status-active.type-register {
-  border-color: rgba(236, 72, 153, 0.4);
-  box-shadow: 
-    0 8px 32px rgba(236, 72, 153, 0.2),
-    0 2px 16px rgba(236, 72, 153, 0.15),
-    0 0 0 1px rgba(236, 72, 153, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    0 20px 60px var(--active-glow, rgba(34, 211, 238, 0.3)),
+    0 8px 32px var(--active-glow, rgba(34, 211, 238, 0.2)),
+    0 0 0 3px var(--active-color, rgba(34, 211, 238, 0.4)),
+    inset 0 2px 0 rgba(255, 255, 255, 0.95);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.8) 100%);
 }
 
 .status-success {
-  border-color: rgba(16, 185, 129, 0.4);
+  border-color: rgba(16, 185, 129, 0.6);
   box-shadow: 
-    0 8px 32px rgba(16, 185, 129, 0.2),
-    0 2px 16px rgba(16, 185, 129, 0.15),
-    0 0 0 1px rgba(16, 185, 129, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.15);
-  transform: scale(1.02);
+    0 12px 40px rgba(16, 185, 129, 0.3),
+    0 4px 20px rgba(16, 185, 129, 0.2),
+    0 0 0 2px rgba(16, 185, 129, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px) scale(1.02);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(255, 255, 255, 0.12) 100%);
 }
 
 .status-error {
-  border-color: rgba(239, 68, 68, 0.4);
+  border-color: rgba(239, 68, 68, 0.6);
   box-shadow: 
-    0 8px 32px rgba(239, 68, 68, 0.2),
-    0 2px 16px rgba(239, 68, 68, 0.15),
-    0 0 0 1px rgba(239, 68, 68, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.15);
-  transform: scale(0.98);
+    0 12px 40px rgba(239, 68, 68, 0.3),
+    0 4px 20px rgba(239, 68, 68, 0.2),
+    0 0 0 2px rgba(239, 68, 68, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  transform: translateY(1px) scale(0.98);
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(255, 255, 255, 0.12) 100%);
 }
 
 /* 背景装饰 */
@@ -196,59 +192,33 @@ onMounted(() => {
   position: absolute;
   border-radius: 50%;
   filter: blur(60px);
-  opacity: 0.3;
+  opacity: 0.1;
   animation: orbFloat 8s ease-in-out infinite alternate;
 }
 
-.type-login .orb-1 {
+/* 统一使用蓝青主题色 */
+.orb-1 {
   width: 120px;
   height: 120px;
-  background: radial-gradient(circle, rgba(139, 92, 246, 0.6) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(34, 211, 238, 0.15) 0%, transparent 70%);
   top: -20%;
   right: -10%;
   animation-delay: 0s;
 }
 
-.type-login .orb-2 {
+.orb-2 {
   width: 80px;
   height: 80px;
-  background: radial-gradient(circle, rgba(59, 130, 246, 0.4) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(14, 165, 233, 0.12) 0%, transparent 70%);
   bottom: -15%;
   left: -5%;
   animation-delay: 2s;
 }
 
-.type-login .orb-3 {
+.orb-3 {
   width: 100px;
   height: 100px;
-  background: radial-gradient(circle, rgba(99, 102, 241, 0.3) 0%, transparent 70%);
-  top: 30%;
-  left: -20%;
-  animation-delay: 4s;
-}
-
-.type-register .orb-1 {
-  width: 120px;
-  height: 120px;
-  background: radial-gradient(circle, rgba(236, 72, 153, 0.6) 0%, transparent 70%);
-  top: -20%;
-  right: -10%;
-  animation-delay: 0s;
-}
-
-.type-register .orb-2 {
-  width: 80px;
-  height: 80px;
-  background: radial-gradient(circle, rgba(244, 114, 182, 0.4) 0%, transparent 70%);
-  bottom: -15%;
-  left: -5%;
-  animation-delay: 2s;
-}
-
-.type-register .orb-3 {
-  width: 100px;
-  height: 100px;
-  background: radial-gradient(circle, rgba(251, 146, 60, 0.3) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(103, 232, 249, 0.1) 0%, transparent 70%);
   top: 30%;
   left: -20%;
   animation-delay: 4s;
@@ -269,33 +239,44 @@ onMounted(() => {
   position: absolute;
   width: 3px;
   height: 3px;
-  background: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.4);
   border-radius: 50%;
   animation: particleFloat linear infinite;
-  box-shadow: 0 0 6px rgba(255, 255, 255, 0.4);
+  box-shadow: 0 0 4px rgba(255, 255, 255, 0.3);
+  filter: blur(0.5px);
+  opacity: 0.6;
 }
 
 /* 边框光效 */
 .border-glow {
   position: absolute;
-  top: -2px;
-  left: -2px;
-  right: -2px;
-  bottom: -2px;
-  border-radius: 26px;
+  top: -3px;
+  left: -3px;
+  right: -3px;
+  bottom: -3px;
+  border-radius: 27px;
   background: 
     linear-gradient(45deg, 
-      transparent 30%, 
-      rgba(255, 255, 255, 0.1) 50%, 
-      transparent 70%
+      transparent 20%, 
+      rgba(255, 255, 255, 0.15) 30%,
+      var(--color-accent, rgba(103, 232, 249, 0.2)) 50%, 
+      rgba(255, 255, 255, 0.15) 70%,
+      transparent 80%
     );
   opacity: 0;
-  animation: borderSweep 3s ease-in-out infinite;
+  animation: borderSweep 4s ease-in-out infinite;
   z-index: -1;
+  filter: blur(1px);
 }
 
 .status-active .border-glow {
-  opacity: 1;
+  opacity: 0.8;
+  animation: borderSweep 2s ease-in-out infinite;
+}
+
+.form-card:hover .border-glow {
+  opacity: 0.6;
+  animation: borderSweep 3s ease-in-out infinite;
 }
 
 /* 表单内容 */
@@ -342,29 +323,29 @@ onMounted(() => {
 }
 
 .status-active .status-ring {
-  border-color: rgba(139, 92, 246, 0.8);
-  box-shadow: 0 0 8px rgba(139, 92, 246, 0.6);
+  border-color: color-mix(in srgb, var(--active-color) 80%, transparent);
+  box-shadow: 0 0 8px var(--active-glow);
 }
 
 .status-active .status-pulse {
   opacity: 1;
-  background: rgba(139, 92, 246, 1);
+  background: var(--active-color);
   animation: statusPulse 2s ease-in-out infinite;
 }
 
 .status-success .status-ring {
-  border-color: rgba(16, 185, 129, 0.8);
-  box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+  border-color: rgba(16, 185, 129, 0.7);
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.45);
 }
 
 .status-success .status-pulse {
   opacity: 1;
-  background: rgba(16, 185, 129, 1);
+  background: rgba(16, 185, 129, 0.9);
 }
 
 .status-error .status-ring {
-  border-color: rgba(239, 68, 68, 0.8);
-  box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+  border-color: rgba(239, 68, 68, 0.7);
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.45);
 }
 
 .status-error .status-pulse {
@@ -396,15 +377,22 @@ onMounted(() => {
 
 @keyframes borderSweep {
   0% { 
-    background-position: -200% 0; 
-    opacity: 0; 
+    background-position: -300% 0; 
+    transform: rotate(0deg);
+  }
+  25% {
+    opacity: 0.6;
   }
   50% { 
-    opacity: 1; 
+    opacity: 1;
+    transform: rotate(90deg);
+  }
+  75% {
+    opacity: 0.6;
   }
   100% { 
-    background-position: 200% 0; 
-    opacity: 0; 
+    background-position: 300% 0; 
+    transform: rotate(180deg);
   }
 }
 
@@ -512,13 +500,23 @@ onMounted(() => {
   }
 }
 
-/* 硬件加速 */
+/* 硬件加速和性能优化 */
 .form-card,
 .gradient-orb,
 .decoration-particle,
 .border-glow {
-  will-change: transform;
+  will-change: transform, opacity;
   backface-visibility: hidden;
   transform: translateZ(0);
+}
+
+.form-card:hover {
+  transform: translateY(-2px) translateZ(0);
+  box-shadow: 
+    0 20px 60px rgba(0, 0, 0, 0.2),
+    0 8px 32px rgba(0, 0, 0, 0.15),
+    inset 0 2px 0 rgba(255, 255, 255, 1.0);
+  border-color: rgba(255, 255, 255, 0.95);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.85) 100%);
 }
 </style> 

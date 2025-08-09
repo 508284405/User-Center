@@ -87,8 +87,8 @@ import { ref, onMounted, computed } from 'vue'
 const props = defineProps({
   theme: {
     type: String,
-    default: 'blue',
-    validator: (value) => ['blue', 'purple', 'pink'].includes(value)
+    default: 'teal',
+    validator: (value) => ['blue', 'purple', 'pink', 'teal', 'cyber-blue'].includes(value)
   },
   density: {
     type: String,
@@ -105,6 +105,9 @@ const particles = ref([])
 const connections = ref([])
 const glows = ref([])
 const pulses = ref([])
+
+// 设备与可达性感知的有效密度
+const effectiveDensity = ref(props.density)
 
 // 主题配置
 const themeConfig = computed(() => {
@@ -126,6 +129,18 @@ const themeConfig = computed(() => {
       secondary: '#DB2777',
       accent: '#F472B6',
       glow: 'rgba(236, 72, 153, 0.4)'
+    },
+    teal: {
+      primary: '#22D3EE',
+      secondary: '#0EA5E9',
+      accent: '#67E8F9',
+      glow: 'rgba(34, 211, 238, 0.4)'
+    },
+    'cyber-blue': {
+      primary: '#06B6D4',
+      secondary: '#0A4D8C',
+      accent: '#38BDF8',
+      glow: 'rgba(56, 189, 248, 0.35)'
     }
   }
   return themes[props.theme]
@@ -138,7 +153,7 @@ const densityConfig = computed(() => {
     medium: { particles: 50, connections: 12, glows: 8, pulses: 5 },
     high: { particles: 80, connections: 18, glows: 12, pulses: 8 }
   }
-  return configs[props.density]
+  return configs[effectiveDensity.value]
 })
 
 // 生成粒子
@@ -232,6 +247,27 @@ const initializeEffects = () => {
 }
 
 onMounted(() => {
+  // 移动端与无动效降级：将密度下调一档
+  try {
+    const isMobile = window.matchMedia && window.matchMedia('(max-width: 768px)').matches
+    const isTablet = window.matchMedia && window.matchMedia('(max-width: 1024px)').matches
+    const prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const isLowEnd = window.navigator && window.navigator.hardwareConcurrency && window.navigator.hardwareConcurrency < 4
+    
+    if (prefersReduced) {
+      // 完全禁用动画的情况下，使用最低密度
+      effectiveDensity.value = 'low'
+    } else if (isMobile || isLowEnd) {
+      // 移动端或低端设备：降级一档
+      const mobileMap = { high: 'low', medium: 'low', low: 'low' }
+      effectiveDensity.value = mobileMap[props.density]
+    } else if (isTablet) {
+      // 平板设备：轻微降级
+      const tabletMap = { high: 'medium', medium: 'low', low: 'low' }
+      effectiveDensity.value = tabletMap[props.density]
+    }
+  } catch (_) {}
+
   initializeEffects()
 })
 </script>
@@ -295,14 +331,15 @@ onMounted(() => {
 
 .connection-line {
   animation: connectionPulse linear infinite;
+  opacity: 0.7;
 }
 
 /* 光晕样式 */
 .glow-orb {
   position: absolute;
   border-radius: 50%;
-  filter: blur(30px);
-  opacity: 0.3;
+  filter: blur(28px);
+  opacity: 0.28;
   animation: glowFloat ease-in-out infinite alternate;
 }
 

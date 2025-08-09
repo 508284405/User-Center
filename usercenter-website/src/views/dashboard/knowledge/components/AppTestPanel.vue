@@ -22,6 +22,24 @@
       />
     </div>
 
+    <!-- RAG配置区域 -->
+    <div class="rag-config-section">
+      <div class="section-title">
+        <span>RAG配置</span>
+        <div class="rag-actions">
+          <el-button 
+            text 
+            size="small" 
+            @click="showRagConfigPanel = true"
+            title="自定义配置"
+          >
+            <el-icon><Setting /></el-icon>
+            自定义配置
+          </el-button>
+        </div>
+      </div>
+    </div>
+
     <div class="panel-content">
       <!-- 变量输入区域 -->
       <div class="variables-section" v-if="promptConfig.variables.length > 0">
@@ -188,6 +206,20 @@
         <el-icon><Setting /></el-icon>
       </el-button>
     </div>
+
+    <!-- RAG配置面板弹窗 -->
+    <el-dialog
+      v-model="showRagConfigPanel"
+      title="RAG配置"
+      width="800px"
+      :close-on-click-modal="false"
+      destroy-on-close
+    >
+      <RagConfigPanel
+        @config-applied="handleRagConfigApplied"
+        @config-cancelled="showRagConfigPanel = false"
+      />
+    </el-dialog>
   </div>
 </template>
 
@@ -198,7 +230,9 @@ import { Delete, Refresh, VideoPlay, Promotion, Setting } from '@element-plus/ic
 import { formatTime } from '@/utils/format'
 import { chatWithApp, type AppChatRequest } from '@/api/smartcs/app'
 import ModelSelector from '@/components/app/ModelSelector.vue'
+import RagConfigPanel from '@/components/chat/RagConfigPanel.vue'
 import type { Model } from '@/api/smartcs/model'
+import { useRagConfigStore } from '@/stores/ragConfig'
 
 interface Variable {
   key: string
@@ -243,6 +277,9 @@ interface Emits {
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 
+// RAG配置store
+const ragStore = useRagConfigStore()
+
 // 响应式数据
 const variableValues = reactive<Record<string, any>>({})
 const messages = ref<Message[]>([])
@@ -252,6 +289,7 @@ const hasStartedTest = ref(false)
 const sessionId = ref<string>('')
 const selectedModelId = ref<number>()
 const selectedModel = ref<Model>()
+const showRagConfigPanel = ref(false)
 
 // 模板引用
 const chatContainer = ref<HTMLElement>()
@@ -384,7 +422,8 @@ const handleSendMessage = async () => {
       modelId: selectedModelId.value!,
       message: message,
       variables: variableValues,
-      sessionId: sessionId.value || undefined
+      sessionId: sessionId.value || undefined,
+      ragConfig: ragStore.getConfigCopy()
     }
 
     const response = await chatWithApp(chatRequest)
@@ -393,6 +432,12 @@ const handleSendMessage = async () => {
       // 更新会话ID
       if (response.data.sessionId) {
         sessionId.value = response.data.sessionId
+      }
+
+      // 处理RAG调试信息（如果有的话）
+      if (response.data.ragDebugInfo) {
+        ragStore.setDebugInfo(response.data.ragDebugInfo)
+        console.log('RAG调试信息:', response.data.ragDebugInfo)
       }
 
       // 添加AI回复
@@ -444,6 +489,16 @@ const handleModelChange = (model?: Model) => {
 const showFunctionManagement = () => {
   emit('show-function-management')
 }
+
+// ========== RAG配置相关方法 ==========
+
+
+// 处理RAG配置应用
+const handleRagConfigApplied = () => {
+  showRagConfigPanel.value = false
+  ElMessage.success('RAG配置已保存')
+}
+
 
 // 监听变量变化，重新初始化
 watch(() => props.promptConfig.variables, () => {
@@ -679,6 +734,28 @@ watch(() => props.promptConfig.variables, () => {
   .model-selector-section {
     padding: 16px 24px;
     border-bottom: 1px solid #f3f4f6;
+  }
+
+  .rag-config-section {
+    padding: 16px 24px;
+    border-bottom: 1px solid #f3f4f6;
+    background: #fafbfc;
+
+    .section-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      font-weight: 500;
+      color: #374151;
+      font-size: 14px;
+
+      .rag-actions {
+        display: flex;
+        gap: 8px;
+      }
+    }
+
   }
 
   .floating-actions {

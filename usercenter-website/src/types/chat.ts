@@ -155,15 +155,20 @@ export interface SessionListEmits {
 export interface ContentAggregatorConfig {
   maxResults: number; // 最大结果数 (1-50)
   minScore: number; // 最小分数阈值 (0.0-1.0)
+  scoringModelId?: number; // 评分模型ID，未指定时回退到会话级 modelId
 }
 
 export interface QueryTransformerConfig {
   n: number; // 查询扩展数量 (1-10)
+  promptTemplate?: string; // 提示模板
+  modelId?: number; // 模型ID，未指定时回退到会话级 modelId
 }
 
 export interface QueryRouterConfig {
   webSearchEnabled: boolean; // 是否启用网络搜索
   knowledgeSearchEnabled: boolean; // 是否启用知识库搜索
+  promptTemplate?: string; // 提示模板
+  modelId?: number; // 模型ID，未指定时回退到会话级 modelId
 }
 
 export interface WebSearchConfig {
@@ -176,6 +181,12 @@ export interface KnowledgeSearchConfig {
   scoreThreshold: number; // 分数阈值 (0.0-1.0)
 }
 
+// 内容注入器配置
+export interface ContentInjectorConfig {
+  promptTemplate?: string; // 提示模板
+  metadataKeysToInclude?: string[]; // 要包含的元数据键列表
+}
+
 // RAG组件完整配置
 export interface RagComponentConfig {
   contentAggregator: ContentAggregatorConfig;
@@ -183,6 +194,7 @@ export interface RagComponentConfig {
   queryRouter: QueryRouterConfig;
   webSearch: WebSearchConfig;
   knowledgeSearch: KnowledgeSearchConfig;
+  contentInjector: ContentInjectorConfig;
 }
 
 // RAG配置预设模式

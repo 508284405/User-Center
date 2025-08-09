@@ -172,9 +172,14 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="login-container" :class="{ 'page-loaded': pageLoadAnimation }">
-    <!-- 动态粒子背景 -->
-    <ParticleBackground theme="purple" density="medium" />
+  <div class="auth-page login-container" :class="{ 'page-loaded': pageLoadAnimation }">
+    <!-- 科技网格覆盖层 -->
+    <div class="auth-grid-overlay"></div>
+    <!-- 噪点纹理覆盖层 -->
+    <div class="auth-noise-overlay"></div>
+    
+    <!-- 统一粒子背景：蓝青主题 -->
+    <ParticleBackground theme="teal" density="medium" />
     
     <header class="header">
       <div class="logo">
@@ -190,7 +195,7 @@ onMounted(() => {
 
     <main class="main-content">
       <!-- 左侧3D地球特效区域 -->
-      <div class="earth-section">
+      <div class="earth-section auth-planet">
         <div class="earth-container">
           <div class="earth-3d">
             <div class="earth-sphere">
@@ -227,13 +232,14 @@ onMounted(() => {
       
       <!-- 右侧登录表单区域 -->
       <div class="form-section">
-        <div class="form-wrapper">
+        <div class="form-wrapper auth-card">
           <GlowingRing 
             :status="formStatus"
             code-type="login"
           >
             <TechForm 
-              type="login" 
+              type="login"
+              theme="teal"
               @submit="onSubmit"
               @google-login="handleGoogleLogin"
             />
@@ -255,21 +261,14 @@ onMounted(() => {
 </template>
 
 <style scoped>
-/* 主容器 */
+/* 主容器 - 使用统一的蓝青科技主题 */
 .login-container {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
+  /* 继承 .auth-page 的样式 */
   position: relative;
-  background: 
-    url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2072&q=80') center/cover no-repeat fixed,
-    radial-gradient(ellipse at top, rgba(139, 92, 246, 0.25) 0%, transparent 50%),
-    radial-gradient(ellipse at bottom right, rgba(59, 130, 246, 0.15) 0%, transparent 50%),
-    linear-gradient(135deg, rgba(10, 14, 26, 0.8) 0%, rgba(26, 31, 46, 0.7) 50%, rgba(42, 26, 58, 0.8) 100%);
   overflow: hidden;
 }
 
-/* 背景遮罩层 */
+/* 增强背景遮罩层 */
 .login-container::before {
   content: '';
   position: absolute;
@@ -277,21 +276,18 @@ onMounted(() => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: 
-    radial-gradient(circle at 30% 40%, rgba(139, 92, 246, 0.08) 0%, transparent 50%),
-    radial-gradient(circle at 70% 60%, rgba(59, 130, 246, 0.06) 0%, transparent 50%),
-    linear-gradient(135deg, rgba(10, 14, 26, 0.6) 0%, rgba(26, 31, 46, 0.5) 50%, rgba(42, 26, 58, 0.6) 100%);
+  background: var(--gradient-bg-1), var(--gradient-bg-2), var(--gradient-bg-3);
   z-index: 0;
   pointer-events: none;
 }
 
-/* 鼠标跟随光效 */
+/* 鼠标跟随光效 - 使用CSS变量 */
 .login-container::after {
   content: '';
   position: absolute;
   width: 300px;
   height: 300px;
-  background: radial-gradient(circle, rgba(139, 92, 246, 0.12) 0%, rgba(59, 130, 246, 0.08) 50%, transparent 70%);
+  background: radial-gradient(circle, var(--color-glow) 0%, var(--color-glow) 50%, transparent 70%);
   border-radius: 50%;
   pointer-events: none;
   z-index: 1;
@@ -303,30 +299,22 @@ onMounted(() => {
 }
 
 .login-container.mouse-active::after {
-  opacity: 0.4;
+  opacity: 0.6;
   animation: mouseGlow 0.3s ease-out;
 }
 
-/* 头部导航 */
+/* 头部导航 - 使用CSS变量 */
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 1.5rem 3rem;
-  background: 
-    linear-gradient(135deg, 
-      rgba(255, 255, 255, 0.15) 0%, 
-      rgba(255, 255, 255, 0.08) 50%,
-      rgba(255, 255, 255, 0.05) 100%
-    );
-  backdrop-filter: blur(25px) saturate(180%);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  background: linear-gradient(135deg, var(--surface-color) 0%, rgba(255, 255, 255, 0.12) 100%);
+  backdrop-filter: blur(var(--blur-strong)) saturate(200%);
+  border-bottom: 1px solid var(--color-border-hover);
   position: relative;
   z-index: 10;
-  box-shadow: 
-    0 2px 20px rgba(0, 0, 0, 0.15),
-    0 0 40px rgba(139, 92, 246, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  box-shadow: var(--shadow-medium), 0 0 40px var(--color-glow), inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }
 
 .logo {
@@ -334,19 +322,24 @@ onMounted(() => {
   align-items: center;
   gap: 0.8rem;
   font-size: 1.6rem;
-  font-weight: 600;
-  color: #FFFFFF;
-  text-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+  font-weight: 700;
+  color: var(--color-text-primary);
+  text-shadow: 0 0 20px var(--color-glow), 0 0 10px rgba(255, 255, 255, 0.6);
+  transition: all 0.3s ease;
+}
+
+.logo:hover {
+  transform: scale(1.05);
+  text-shadow: 0 0 25px var(--color-glow), 0 0 15px rgba(255, 255, 255, 0.8);
 }
 
 .logo-icon {
   width: 32px;
   height: 32px;
-  background: 
-    linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%);
-  border-radius: 8px;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
+  border-radius: var(--radius-sm);
   position: relative;
-  box-shadow: 0 0 20px rgba(139, 92, 246, 0.4);
+  box-shadow: var(--shadow-glow);
 }
 
 .logo-icon::before {
@@ -357,9 +350,9 @@ onMounted(() => {
   transform: translate(-50%, -50%);
   width: 16px;
   height: 16px;
-  background: #FFFFFF;
+  background: var(--color-text-primary);
   border-radius: 4px;
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
+  box-shadow: 0 0 10px var(--color-glow);
 }
 
 nav {
@@ -368,11 +361,11 @@ nav {
 }
 
 .nav-link {
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--color-text-secondary);
   text-decoration: none;
-  font-weight: 400;
+  font-weight: 500;
   padding: 0.5rem 1rem;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
 }
@@ -384,16 +377,18 @@ nav {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(139, 92, 246, 0.1);
-  border-radius: 8px;
+  background: var(--color-surface);
+  border-radius: var(--radius-sm);
   opacity: 0;
   transition: opacity 0.3s ease;
 }
 
 .nav-link:hover {
-  color: #FFFFFF;
-  text-shadow: 0 0 10px rgba(139, 92, 246, 0.8);
-  transform: translateY(-2px);
+  color: var(--color-text-primary);
+  text-shadow: var(--shadow-glow), 0 0 10px rgba(255, 255, 255, 0.6);
+  transform: translateY(-3px) scale(1.05);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.12) 100%);
+  border-color: var(--color-border-hover);
 }
 
 .nav-link:hover::before {
@@ -480,15 +475,15 @@ nav {
   height: 100%;
   border-radius: 50%;
   background: 
-    radial-gradient(circle at 30% 30%, #4F46E5 0%, #7C3AED 25%, #8B5CF6 50%, #A78BFA 75%, #C4B5FD 100%),
-    radial-gradient(circle at 70% 70%, #1E40AF 0%, #3B82F6 25%, #60A5FA 50%, #93C5FD 75%, #DBEAFE 100%),
-    linear-gradient(45deg, rgba(139, 92, 246, 0.1) 0%, transparent 50%),
-    radial-gradient(circle at 20% 80%, rgba(59, 130, 246, 0.2) 0%, transparent 60%);
+    radial-gradient(circle at 30% 30%, var(--color-primary) 0%, var(--color-secondary) 25%, var(--color-dark) 50%, var(--color-accent) 75%, var(--color-light) 100%),
+    radial-gradient(circle at 70% 70%, var(--color-cyber-secondary) 0%, var(--color-cyber-primary) 25%, var(--color-cyber-accent) 50%, var(--color-accent) 75%, var(--color-light) 100%),
+    linear-gradient(45deg, var(--color-surface) 0%, transparent 50%),
+    radial-gradient(circle at 20% 80%, var(--color-glow) 0%, transparent 60%);
   box-shadow: 
     inset 0 0 50px rgba(0, 0, 0, 0.3),
-    0 0 50px rgba(139, 92, 246, 0.3),
-    0 0 100px rgba(59, 130, 246, 0.2),
-    inset 0 0 100px rgba(139, 92, 246, 0.1);
+    var(--shadow-glow),
+    var(--shadow-glow-strong),
+    inset 0 0 100px var(--color-surface);
   animation: earthGlow 4s ease-in-out infinite alternate;
   position: relative;
   overflow: hidden;
@@ -505,8 +500,8 @@ nav {
   bottom: 0;
   background: 
     radial-gradient(circle at 40% 40%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
-    radial-gradient(circle at 60% 60%, rgba(139, 92, 246, 0.2) 0%, transparent 50%),
-    linear-gradient(45deg, transparent 30%, rgba(139, 92, 246, 0.1) 50%, transparent 70%);
+    radial-gradient(circle at 60% 60%, var(--color-glow) 0%, transparent 50%),
+    linear-gradient(45deg, transparent 30%, var(--color-surface) 50%, transparent 70%);
   border-radius: 50%;
   animation: surfaceShimmer 6s ease-in-out infinite;
   will-change: opacity;
@@ -521,8 +516,8 @@ nav {
   right: 0;
   bottom: 0;
   background: 
-    radial-gradient(circle at 30% 70%, rgba(59, 130, 246, 0.15) 0%, transparent 40%),
-    radial-gradient(circle at 70% 30%, rgba(167, 139, 250, 0.1) 0%, transparent 40%);
+    radial-gradient(circle at 30% 70%, var(--color-cyber-glow) 0%, transparent 40%),
+    radial-gradient(circle at 70% 30%, var(--color-glow) 0%, transparent 40%);
   border-radius: 50%;
   animation: surfaceShimmer 8s ease-in-out infinite reverse;
   will-change: opacity;
@@ -537,7 +532,7 @@ nav {
   left: -10%;
   border-radius: 50%;
   background: 
-    radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, rgba(139, 92, 246, 0.05) 50%, transparent 70%);
+    radial-gradient(circle, var(--color-cyber-glow) 0%, var(--color-glow) 50%, transparent 70%);
   animation: atmospherePulse 3s ease-in-out infinite;
   will-change: opacity;
   backface-visibility: hidden;
@@ -551,7 +546,7 @@ nav {
   left: -20%;
   border-radius: 50%;
   background: 
-    radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, rgba(59, 130, 246, 0.1) 30%, transparent 60%);
+    radial-gradient(circle, var(--color-glow-strong) 0%, var(--color-glow) 30%, transparent 60%);
   animation: glowPulse 5s ease-in-out infinite;
   will-change: opacity;
   backface-visibility: hidden;
@@ -563,7 +558,7 @@ nav {
   height: 400px;
   top: -50px;
   left: -50px;
-  border: 1px solid rgba(139, 92, 246, 0.3);
+  border: 1px solid var(--color-border-hover);
   border-radius: 50%;
   animation: orbitRotate 15s linear infinite;
   will-change: transform;
@@ -712,26 +707,29 @@ nav {
 
 .welcome-title {
   font-size: 3rem;
-  font-weight: 700;
+  font-weight: 800;
   color: #FFFFFF;
-  text-shadow: 0 0 30px rgba(255, 255, 255, 0.8);
-  margin-bottom: 1.2rem;
+  text-shadow: 0 0 40px rgba(255, 255, 255, 0.9), 0 0 20px rgba(139, 92, 246, 0.6);
+  margin-bottom: 1.5rem;
   background: 
     linear-gradient(135deg, 
       #FFFFFF 0%, 
-      #A78BFA 50%, 
-      #8B5CF6 100%
+      #A78BFA 30%, 
+      #8B5CF6 70%,
+      #FFFFFF 100%
     );
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   line-height: 1.1;
+  letter-spacing: -0.02em;
+  animation: titleGlow 4s ease-in-out infinite alternate;
 }
 
 .welcome-subtitle {
   font-size: 1.3rem;
-  color: rgba(255, 255, 255, 0.85);
-  text-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 0 15px rgba(255, 255, 255, 0.4);
   font-weight: 300;
   margin-bottom: 2rem;
   line-height: 1.4;
@@ -748,21 +746,21 @@ nav {
   padding: 0.6rem 1.2rem;
   background: 
     linear-gradient(135deg, 
-      rgba(255, 255, 255, 0.18) 0%, 
-      rgba(255, 255, 255, 0.08) 50%,
-      rgba(255, 255, 255, 0.06) 100%
+      rgba(255, 255, 255, 0.25) 0%, 
+      rgba(255, 255, 255, 0.15) 50%,
+      rgba(255, 255, 255, 0.12) 100%
     );
   backdrop-filter: blur(12px) saturate(120%);
-  border: 1px solid rgba(255, 255, 255, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.35);
   border-radius: 20px;
-  color: rgba(255, 255, 255, 0.95);
+  color: rgba(255, 255, 255, 0.98);
   font-size: 0.85rem;
   font-weight: 500;
-  text-shadow: 0 0 10px rgba(255, 255, 255, 0.4);
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
   box-shadow: 
     0 4px 20px rgba(0, 0, 0, 0.15),
-    0 0 30px rgba(139, 92, 246, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    0 0 30px rgba(139, 92, 246, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
@@ -784,12 +782,14 @@ nav {
 }
 
 .feature-tag:hover {
-  transform: translateY(-3px) scale(1.02);
+  transform: translateY(-4px) scale(1.05);
   box-shadow: 
-    0 8px 30px rgba(0, 0, 0, 0.2),
-    0 0 40px rgba(139, 92, 246, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.4);
-  border-color: rgba(255, 255, 255, 0.35);
+    0 12px 35px rgba(0, 0, 0, 0.25),
+    0 0 50px rgba(139, 92, 246, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    0 0 20px rgba(139, 92, 246, 0.4);
+  border-color: rgba(255, 255, 255, 0.45);
+  backdrop-filter: blur(15px) saturate(150%);
 }
 
 .feature-tag:nth-child(1) {
@@ -817,12 +817,12 @@ nav {
   align-items: center;
   background: 
     linear-gradient(135deg, 
-      rgba(255, 255, 255, 0.12) 0%, 
-      rgba(255, 255, 255, 0.06) 50%,
-      rgba(255, 255, 255, 0.04) 100%
+      rgba(255, 255, 255, 0.4) 0%, 
+      rgba(255, 255, 255, 0.35) 50%,
+      rgba(255, 255, 255, 0.3) 100%
     );
   backdrop-filter: blur(15px) saturate(150%);
-  border-left: 1px solid rgba(255, 255, 255, 0.15);
+  border-left: 2px solid rgba(255, 255, 255, 0.6);
   position: relative;
   z-index: 2;
 }
@@ -835,9 +835,9 @@ nav {
   right: 0;
   bottom: 0;
   background: 
-    radial-gradient(circle at center, rgba(139, 92, 246, 0.08) 0%, transparent 50%),
-    radial-gradient(circle at 80% 20%, rgba(59, 130, 246, 0.06) 0%, transparent 40%),
-    linear-gradient(45deg, rgba(139, 92, 246, 0.02) 0%, transparent 50%);
+    radial-gradient(circle at center, rgba(139, 92, 246, 0.12) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(59, 130, 246, 0.08) 0%, transparent 40%),
+    linear-gradient(45deg, rgba(139, 92, 246, 0.04) 0%, transparent 50%);
   z-index: 0;
 }
 
@@ -851,11 +851,13 @@ nav {
   background: 
     linear-gradient(90deg, 
       transparent 0%, 
-      rgba(139, 92, 246, 0.03) 50%, 
+      rgba(34, 211, 238, 0.08) 30%,
+      rgba(139, 92, 246, 0.06) 50%,
+      rgba(34, 211, 238, 0.08) 70%,
       transparent 100%
     );
   z-index: 1;
-  animation: shimmer 3s ease-in-out infinite;
+  animation: shimmer 4s ease-in-out infinite;
 }
 
 .form-wrapper {
@@ -864,25 +866,20 @@ nav {
   width: 100%;
   max-width: 480px;
   padding: 3rem 2rem;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.1) 100%);
+  border-radius: var(--radius-xl, 24px);
+  backdrop-filter: blur(10px);
 }
 
-/* 页脚 */
+/* 页脚 - 使用统一主题 */
 .footer {
-  background: 
-    linear-gradient(135deg, 
-      rgba(255, 255, 255, 0.15) 0%, 
-      rgba(255, 255, 255, 0.08) 50%,
-      rgba(255, 255, 255, 0.05) 100%
-    );
-  backdrop-filter: blur(25px) saturate(180%);
-  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  background: linear-gradient(135deg, var(--surface-color) 0%, rgba(255, 255, 255, 0.08) 100%);
+  backdrop-filter: blur(var(--blur-strong)) saturate(200%);
+  border-top: 1px solid var(--color-border-hover);
   padding: 1.5rem 3rem;
   position: relative;
   z-index: 10;
-  box-shadow: 
-    0 -2px 20px rgba(0, 0, 0, 0.15),
-    0 0 40px rgba(139, 92, 246, 0.08),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.2);
+  box-shadow: var(--shadow-medium), 0 0 40px var(--color-glow), inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .footer-content {
@@ -891,7 +888,7 @@ nav {
   align-items: center;
   max-width: 1200px;
   margin: 0 auto;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--color-text-muted);
   font-size: 0.9rem;
 }
 
@@ -901,17 +898,17 @@ nav {
 }
 
 .footer-link {
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--color-text-muted);
   text-decoration: none;
   transition: all 0.3s ease;
   padding: 0.3rem 0.8rem;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
 }
 
 .footer-link:hover {
-  color: #FFFFFF;
-  text-shadow: 0 0 8px rgba(139, 92, 246, 0.6);
-  background: rgba(139, 92, 246, 0.1);
+  color: var(--color-text-primary);
+  text-shadow: var(--shadow-glow);
+  background: var(--color-surface);
 }
 
 /* 3D地球动画 */
@@ -1081,11 +1078,30 @@ nav {
 @keyframes shimmer {
   0%, 100% {
     opacity: 0;
-    transform: translateX(-100%);
+    transform: translateX(-150%) scaleX(1);
+  }
+  25% {
+    opacity: 0.4;
+    transform: translateX(-50%) scaleX(1.5);
   }
   50% {
     opacity: 1;
-    transform: translateX(100%);
+    transform: translateX(50%) scaleX(1);
+  }
+  75% {
+    opacity: 0.4;
+    transform: translateX(150%) scaleX(1.5);
+  }
+}
+
+@keyframes titleGlow {
+  0%, 100% {
+    text-shadow: 0 0 40px rgba(255, 255, 255, 0.9), 0 0 20px rgba(139, 92, 246, 0.6);
+    filter: brightness(1);
+  }
+  50% {
+    text-shadow: 0 0 50px rgba(255, 255, 255, 1), 0 0 30px rgba(139, 92, 246, 0.8), 0 0 15px rgba(167, 139, 250, 0.6);
+    filter: brightness(1.1);
   }
 }
 
@@ -1311,7 +1327,7 @@ nav {
   .form-section {
     flex: 1;
     border-left: none;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 2px solid rgba(255, 255, 255, 0.5);
   }
 
   .form-wrapper {
