@@ -235,15 +235,7 @@ import ModelSelector from '@/components/app/ModelSelector.vue'
 import RagConfigPanel from '@/components/chat/RagConfigPanel.vue'
 import type { Model } from '@/api/smartcs/model'
 import { useRagConfigStore } from '@/stores/ragConfig'
-
-interface Variable {
-  key: string
-  label: string
-  type: string
-  required: boolean
-  defaultValue?: any
-  options?: Array<{ label: string; value: any }>
-}
+import type { Variable } from '@/types/app'
 
 interface Message {
   role: 'user' | 'assistant'

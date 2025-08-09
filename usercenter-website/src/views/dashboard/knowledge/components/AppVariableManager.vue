@@ -43,7 +43,7 @@
           </div>
         </div>
         
-        <div class="variable-details" v-if="variable.label !== variable.key || variable.defaultValue">
+        <div class="variable-details" v-if="variable.label !== variable.key || variable.defaultValue || (variable.type === 'select' && variable.options?.length)">
           <div class="variable-label" v-if="variable.label !== variable.key">
             <span class="label">显示名称:</span>
             <span class="value">{{ variable.label }}</span>
@@ -51,6 +51,19 @@
           <div class="variable-default" v-if="variable.defaultValue">
             <span class="label">默认值:</span>
             <span class="value">{{ variable.defaultValue }}</span>
+          </div>
+          <div class="variable-options" v-if="variable.type === 'select' && variable.options?.length">
+            <span class="label">选项:</span>
+            <div class="options-list">
+              <el-tag 
+                v-for="option in variable.options" 
+                :key="option.value"
+                size="small"
+                class="option-tag"
+              >
+                {{ option.label }}
+              </el-tag>
+            </div>
           </div>
         </div>
       </div>
@@ -106,12 +119,68 @@
           <el-switch v-model="formData.required" />
         </el-form-item>
 
-        <el-form-item label="默认值" prop="defaultValue" v-if="!formData.required">
+        <!-- 选项配置区域 -->
+        <el-form-item label="选项配置" v-if="formData.type === 'select'" required>
+          <div class="options-config">
+            <div class="options-list">
+              <div 
+                v-for="(option, index) in formData.options" 
+                :key="index"
+                class="option-item"
+              >
+                <el-input
+                  v-model="option.label"
+                  placeholder="显示名称"
+                  size="small"
+                  class="option-input"
+                />
+                <el-input
+                  v-model="option.value"
+                  placeholder="选项值"
+                  size="small"
+                  class="option-input"
+                />
+                <el-button 
+                  text 
+                  type="danger" 
+                  size="small"
+                  @click="removeOption(index)"
+                  :disabled="formData.options.length <= 1"
+                >
+                  <el-icon><Delete /></el-icon>
+                </el-button>
+              </div>
+            </div>
+            <el-button 
+              text 
+              type="primary" 
+              size="small"
+              @click="addOption"
+              class="add-option-btn"
+            >
+              <el-icon><Plus /></el-icon>
+              添加选项
+            </el-button>
+          </div>
+        </el-form-item>
+
+        <el-form-item label="默认值" prop="defaultValue" v-if="!formData.required && formData.type !== 'select'">
           <el-input
             v-model="formData.defaultValue"
             :type="formData.type === 'number' ? 'number' : 'text'"
             placeholder="请输入默认值（可选）"
           />
+        </el-form-item>
+
+        <el-form-item label="默认选项" prop="defaultValue" v-if="!formData.required && formData.type === 'select'">
+          <el-select v-model="formData.defaultValue" placeholder="请选择默认选项" style="width: 100%">
+            <el-option
+              v-for="option in formData.options"
+              :key="option.value"
+              :label="option.label"
+              :value="option.value"
+            />
+          </el-select>
         </el-form-item>
       </el-form>
 
@@ -128,18 +197,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Edit, Delete } from '@element-plus/icons-vue'
 import type { FormInstance, FormRules } from 'element-plus'
-
-interface Variable {
-  key: string
-  label: string
-  type: string
-  required: boolean
-  defaultValue?: any
-}
+import type { Variable, VariableOption } from '@/types/app'
 
 interface Props {
   variables: Variable[]
@@ -166,12 +228,20 @@ const dialogVisible = ref(false)
 const editingIndex = ref(-1)
 const formRef = ref<FormInstance>()
 
-const formData = reactive({
+const formData = reactive<{
+  key: string
+  label: string
+  type: Variable['type']
+  required: boolean
+  defaultValue: any
+  options: VariableOption[]
+}>({
   key: '',
   label: '',
   type: 'string',
   required: true,
-  defaultValue: ''
+  defaultValue: '',
+  options: []
 })
 
 const formRules: FormRules = {
@@ -201,7 +271,8 @@ const showAddDialog = () => {
     label: '',
     type: 'string',
     required: true,
-    defaultValue: ''
+    defaultValue: '',
+    options: []
   })
   dialogVisible.value = true
 }
@@ -215,7 +286,8 @@ const editVariable = (index: number) => {
     label: variable.label,
     type: variable.type,
     required: variable.required,
-    defaultValue: variable.defaultValue || ''
+    defaultValue: variable.defaultValue || '',
+    options: variable.options ? [...variable.options] : []
   })
   dialogVisible.value = true
 }
@@ -261,12 +333,36 @@ const handleSave = async () => {
       return
     }
 
+    // 验证选择类型变量必须有选项
+    if (formData.type === 'select') {
+      if (!formData.options.length) {
+        ElMessage.error('选择类型变量至少需要一个选项')
+        return
+      }
+      
+      // 验证选项完整性
+      const invalidOptions = formData.options.filter(opt => !opt.label.trim() || opt.value === undefined || opt.value === '')
+      if (invalidOptions.length > 0) {
+        ElMessage.error('选项的显示名称和值不能为空')
+        return
+      }
+      
+      // 检查选项值重复
+      const optionValues = formData.options.map(opt => opt.value)
+      const uniqueValues = new Set(optionValues)
+      if (uniqueValues.size !== optionValues.length) {
+        ElMessage.error('选项值不能重复')
+        return
+      }
+    }
+
     const newVariable: Variable = {
       key: formData.key,
       label: formData.label,
       type: formData.type,
       required: formData.required,
-      defaultValue: formData.defaultValue || undefined
+      defaultValue: formData.defaultValue || undefined,
+      ...(formData.type === 'select' && { options: [...formData.options] })
     }
 
     const newVariables = [...props.variables]
@@ -288,6 +384,33 @@ const handleSave = async () => {
     console.error('保存变量失败:', error)
   }
 }
+
+// 选项管理方法
+const addOption = () => {
+  formData.options.push({ label: '', value: '' })
+}
+
+const removeOption = (index: number) => {
+  if (formData.options.length > 1) {
+    formData.options.splice(index, 1)
+  }
+}
+
+// 监听变量类型变化
+watch(() => formData.type, (newType: string, oldType: string) => {
+  if (newType === 'select' && formData.options.length === 0) {
+    // 切换到选择类型时，添加默认选项
+    formData.options = [{ label: '选项1', value: 'option1' }]
+  } else if (newType !== 'select') {
+    // 切换到非选择类型时，清空选项
+    formData.options = []
+  }
+  
+  // 清空默认值
+  if (newType !== oldType) {
+    formData.defaultValue = ''
+  }
+})
 
 // 响应式计算属性
 const variables = computed({
@@ -433,6 +556,56 @@ const variables = computed({
     display: flex;
     justify-content: flex-end;
     gap: 12px;
+  }
+
+  // 选项配置样式
+  .options-config {
+    .options-list {
+      .option-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+
+        &:last-child {
+          margin-bottom: 0;
+        }
+
+        .option-input {
+          flex: 1;
+        }
+      }
+    }
+
+    .add-option-btn {
+      margin-top: 8px;
+      width: 100%;
+    }
+  }
+
+  // 变量详情样式扩展
+  .variable-details {
+    .variable-options {
+      margin-bottom: 4px;
+
+      .label {
+        font-weight: 500;
+        margin-right: 8px;
+      }
+
+      .options-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        margin-top: 4px;
+
+        .option-tag {
+          background-color: rgba(34, 197, 94, 0.1);
+          color: #059669;
+          border: 1px solid rgba(34, 197, 94, 0.2);
+        }
+      }
+    }
   }
 }
 </style>

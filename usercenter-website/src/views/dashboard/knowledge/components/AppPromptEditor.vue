@@ -53,14 +53,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { MagicStick } from '@element-plus/icons-vue'
-
-interface Variable {
-  key: string
-  label: string
-  type: string
-  required: boolean
-  defaultValue?: any
-}
+import type { Variable } from '@/types/app'
 
 interface Props {
   content: string
