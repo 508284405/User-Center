@@ -31,7 +31,8 @@ export interface Provider {
   providerType: string
   iconSmall?: string
   iconLarge?: string
-  apiKey: string
+  hasApiKey?: boolean
+  apiKeyMasked?: string
   endpoint?: string
   supportedModelTypes?: string
   createdBy?: string
@@ -49,8 +50,14 @@ export interface CreateProviderRequest {
   supportedModelTypes?: string
 }
 
-export interface UpdateProviderRequest extends CreateProviderRequest {
+export interface UpdateProviderRequest {
   id: number
+  providerType: string
+  iconSmall?: string
+  iconLarge?: string
+  apiKey?: string  // 可选，为空表示不修改
+  endpoint?: string
+  supportedModelTypes?: string
 }
 
 export interface PageQuery {

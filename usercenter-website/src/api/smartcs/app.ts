@@ -296,3 +296,11 @@ export const updateFunctionConfig = (appId: number, data: AiAppFunctionConfigReq
 export const getFunctionConfig = (appId: number): Promise<ApiResponse<AiAppFunctionConfigResponse>> => {
   return request.get(`/smartcs/api/admin/app/${appId}/function-config`)
 }
+
+/**
+ * 应用聊天（SSE流式响应） - 管理员模式
+ */
+export const chatWithAppStream = (data: AppChatRequest): string => {
+  // 返回SSE端点URL，由AppRunner组件直接使用
+  return '/smartcs/api/admin/app/chat'
+}

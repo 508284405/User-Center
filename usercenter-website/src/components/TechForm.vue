@@ -12,6 +12,10 @@ const props = defineProps({
     type: String,
     default: 'teal',
     validator: (value) => ['blue', 'purple', 'pink', 'teal', 'cyber-blue'].includes(value)
+  },
+  loading: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -92,13 +96,53 @@ const getInputStyle = (field) => {
   }
 }
 
+// 简单前端校验与错误状态
+const errors = ref({ username: '', email: '', password: '', confirmPassword: '' })
+
+const validate = () => {
+  errors.value = { username: '', email: '', password: '', confirmPassword: '' }
+  let ok = true
+  if (!formData.value.username || formData.value.username.trim().length < 3) {
+    errors.value.username = '用户名至少 3 个字符'
+    ok = false
+  }
+  if (props.type === 'register') {
+    const email = formData.value.email
+    const emailOk = /.+@+.\..+/.test(email || '')
+    if (!emailOk) {
+      errors.value.email = '请输入有效的邮箱地址'
+      ok = false
+    }
+  }
+  const pwd = formData.value.password || ''
+  if (pwd.length < 6) {
+    errors.value.password = '密码至少 6 个字符'
+    ok = false
+  }
+  if (props.type === 'register') {
+    if (!/[A-Z]/.test(pwd) || !/[0-9]/.test(pwd) || !/[!@#$%^&*]/.test(pwd)) {
+      errors.value.password = '需包含大写字母、数字和特殊字符'
+      ok = false
+    }
+    if (formData.value.confirmPassword !== pwd) {
+      errors.value.confirmPassword = '两次输入的密码不一致'
+      ok = false
+    }
+  }
+  return ok
+}
+
 const onSubmit = () => {
+  if (!validate()) return
   emit('submit', formData.value)
 }
 
 const onGoogleLogin = () => {
   emit('google-login')
 }
+// 为可访问性生成 id 前缀
+const idPrefix = computed(() => (props.type === 'register' ? 'register' : 'login'))
+
 </script>
 
 <template>
@@ -109,55 +153,75 @@ const onGoogleLogin = () => {
 
     <div class="input-group">
       <div class="tech-input-wrapper">
+        <label class="sr-only" :for="`${idPrefix}-username`">用户名</label>
         <input
+          :id="`${idPrefix}-username`"
           v-model="formData.username"
           type="text"
           placeholder="用户名/邮箱/手机号"
           class="tech-input"
           :style="getInputStyle('username')"
+          aria-label="用户名"
+          autocomplete="username"
           @focus="handleFocus('username')"
           @blur="handleBlur('username')"
         >
         <div class="input-glow" :class="{ active: focusStates.username }"></div>
+        <p v-if="errors.username" class="field-error" role="alert">{{ errors.username }}</p>
       </div>
 
       <div v-if="type === 'register'" class="tech-input-wrapper">
+        <label class="sr-only" :for="`${idPrefix}-email`">邮箱地址</label>
         <input
+          :id="`${idPrefix}-email`"
           v-model="formData.email"
           type="email"
           placeholder="邮箱地址"
           class="tech-input"
           :style="getInputStyle('email')"
+          aria-label="邮箱地址"
+          autocomplete="email"
           @focus="handleFocus('email')"
           @blur="handleBlur('email')"
         >
         <div class="input-glow" :class="{ active: focusStates.email }"></div>
+        <p v-if="errors.email" class="field-error" role="alert">{{ errors.email }}</p>
       </div>
 
       <div class="tech-input-wrapper">
+        <label class="sr-only" :for="`${idPrefix}-password`">密码</label>
         <input
+          :id="`${idPrefix}-password`"
           v-model="formData.password"
           type="password"
           placeholder="密码"
           class="tech-input"
           :style="getInputStyle('password')"
+          aria-label="密码"
+          :autocomplete="type === 'register' ? 'new-password' : 'current-password'"
           @focus="handleFocus('password')"
           @blur="handleBlur('password')"
         >
         <div class="input-glow" :class="{ active: focusStates.password }"></div>
+        <p v-if="errors.password" class="field-error" role="alert">{{ errors.password }}</p>
       </div>
 
       <div v-if="type === 'register'" class="tech-input-wrapper">
+        <label class="sr-only" :for="`${idPrefix}-confirm`">确认密码</label>
         <input
+          :id="`${idPrefix}-confirm`"
           v-model="formData.confirmPassword"
           type="password"
           placeholder="确认密码"
           class="tech-input"
           :style="getInputStyle('confirmPassword')"
+          aria-label="确认密码"
+          autocomplete="new-password"
           @focus="handleFocus('confirmPassword')"
           @blur="handleBlur('confirmPassword')"
         >
         <div class="input-glow" :class="{ active: focusStates.confirmPassword }"></div>
+        <p v-if="errors.confirmPassword" class="field-error" role="alert">{{ errors.confirmPassword }}</p>
       </div>
     </div>
 
@@ -181,10 +245,12 @@ const onGoogleLogin = () => {
     <button 
       class="energy-button primary-btn"
       :style="{ '--primary-color': buttonTheme.primary, '--glow-color': buttonTheme.glow }"
+      :disabled="props.loading"
+      :aria-busy="props.loading ? 'true' : 'false'"
       @click="onSubmit"
     >
       <span class="btn-content">
-        {{ type === 'login' ? '登录' : '注册' }}
+        {{ props.loading ? '处理中…' : (type === 'login' ? '登录' : '注册') }}
       </span>
       <div class="energy-fill"></div>
     </button>
@@ -415,6 +481,20 @@ const onGoogleLogin = () => {
   margin-bottom: 0.8rem;
   z-index: 10;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.energy-button[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+  filter: grayscale(0.2);
+}
+
+.field-error {
+  margin: 6px 2px 0;
+  color: #ef4444;
+  font-size: 12px;
+  font-weight: 600;
+  text-shadow: 0 0 8px rgba(239, 68, 68, 0.3);
 }
 
 .btn-content {

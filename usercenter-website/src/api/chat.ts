@@ -3,8 +3,8 @@ import { BotChatSSERequestWithRag, RagComponentConfig, RagDebugInfo } from '@/ty
 
 // 扩展现有的聊天请求接口以支持RAG配置
 export interface EnhancedChatRequest {
-  appId: number;
-  modelId: number;
+  appId: string; // 改为string类型，避免数字精度问题
+  modelId: string; // 改为string类型，避免数字精度问题
   message: string;
   variables?: Record<string, any>;
   sessionId?: string;
@@ -55,7 +55,12 @@ export const chatWithApp = async (data: EnhancedChatRequest): Promise<ApiRespons
       }
     }
 
-    const response = await request.post<ApiResponse<EnhancedChatResponse>>(
+    // 验证必填参数
+    if (!data.appId || !data.modelId || !data.message) {
+      throw new Error('缺少必填参数：appId、modelId、message');
+    }
+
+    const response = await request.post(
       '/smartcs/api/admin/app/chat',
       data,
       {
@@ -64,16 +69,31 @@ export const chatWithApp = async (data: EnhancedChatRequest): Promise<ApiRespons
           'Content-Type': 'application/json',
         }
       }
-    );
+    ) as ApiResponse<EnhancedChatResponse>;
 
     return response;
   } catch (error: any) {
     console.error('聊天请求失败:', error);
     
+    // 根据错误类型返回不同的错误信息
+    let errCode = 'CHAT_ERROR';
+    let errMessage = '聊天请求失败，请稍后重试';
+    
+    if (error.response?.status === 400) {
+      errCode = 'VALIDATION_ERROR';
+      errMessage = '请求参数错误，请检查输入';
+    } else if (error.response?.status === 500) {
+      errCode = 'SERVER_ERROR';
+      errMessage = '服务器内部错误，请稍后重试';
+    } else if (error.code === 'ECONNABORTED') {
+      errCode = 'TIMEOUT_ERROR';
+      errMessage = '请求超时，请稍后重试';
+    }
+    
     return {
       success: false,
-      errCode: error.code || 'CHAT_ERROR',
-      errMessage: error.message || '聊天请求失败，请稍后重试'
+      errCode: error.code || errCode,
+      errMessage: error.message || errMessage
     };
   }
 };
@@ -188,16 +208,23 @@ export const testRagComponents = async (config: RagComponentConfig): Promise<Api
   estimatedLatency: number;
 }>> => {
   try {
-    const response = await request.post('/smartcs/api/admin/rag/test', config, {
-      timeout: 10000 // 10秒超时
-    });
+    const response = await request.post('/smartcs/api/admin/rag/test', config) as any;
     
-    return response;
+    return {
+      success: response.success || false,
+      data: {
+        webSearchAvailable: response.data?.webSearchAvailable || false,
+        knowledgeBaseAvailable: response.data?.knowledgeBaseAvailable || false,
+        estimatedLatency: response.data?.estimatedLatency || 0
+      }
+    };
   } catch (error: any) {
+    console.error('RAG组件测试失败:', error);
+    
     return {
       success: false,
-      errCode: 'TEST_ERROR',
-      errMessage: error.message || 'RAG组件测试失败'
+      errCode: error.code || 'RAG_TEST_ERROR',
+      errMessage: error.message || 'RAG组件测试失败，请稍后重试'
     };
   }
 };
@@ -213,13 +240,25 @@ export const getRagPerformanceStats = async (timeRange: '1h' | '24h' | '7d' = '2
   totalRequests: number;
 }>> => {
   try {
-    const response = await request.get(`/smartcs/api/admin/rag/stats?timeRange=${timeRange}`);
-    return response;
+    const response = await request.get(`/smartcs/api/admin/rag/stats?timeRange=${timeRange}`) as any;
+    
+    return {
+      success: response.success || false,
+      data: {
+        avgResponseTime: response.data?.avgResponseTime || 0,
+        avgRetrievalTime: response.data?.avgRetrievalTime || 0,
+        avgAggregationTime: response.data?.avgAggregationTime || 0,
+        successRate: response.data?.successRate || 0,
+        totalRequests: response.data?.totalRequests || 0
+      }
+    };
   } catch (error: any) {
+    console.error('获取RAG性能统计失败:', error);
+    
     return {
       success: false,
-      errCode: 'STATS_ERROR',
-      errMessage: error.message || '获取性能统计失败'
+      errCode: error.code || 'RAG_STATS_ERROR',
+      errMessage: error.message || '获取RAG性能统计失败，请稍后重试'
     };
   }
 };

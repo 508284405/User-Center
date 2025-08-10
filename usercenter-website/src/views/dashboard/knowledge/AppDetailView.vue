@@ -19,6 +19,18 @@
           <el-icon class="is-loading"><Loading /></el-icon>
           <span>保存中...</span>
         </div>
+        <el-button @click="handlePreview">
+          <el-icon><View /></el-icon>
+          预览
+        </el-button>
+        <el-button 
+          @click="handleRun" 
+          :disabled="appData?.status !== 'PUBLISHED'"
+          title="仅已发布的应用可以运行"
+        >
+          <el-icon><VideoPlay /></el-icon>
+          运行
+        </el-button>
         <el-button @click="handleTest">
           <el-icon><VideoPlay /></el-icon>
           测试
@@ -113,7 +125,7 @@
 import { ref, reactive, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { ArrowLeft, VideoPlay, Loading } from '@element-plus/icons-vue'
+import { ArrowLeft, VideoPlay, Loading, View } from '@element-plus/icons-vue'
 import { getApp, updateApp, updateAppStatus, type AiAppDTO } from '@/api/smartcs/app'
 import AppPromptEditor from './components/AppPromptEditor.vue'
 import AppVariableManager from './components/AppVariableManager.vue'
@@ -261,6 +273,33 @@ const saveConfig = async () => {
 // 事件处理
 const goBack = () => {
   router.back()
+}
+
+// 预览应用（新窗口打开，管理员模式）
+const handlePreview = () => {
+  if (!appData.value?.id) {
+    ElMessage.warning('应用数据加载中，请稍后再试')
+    return
+  }
+  
+  const previewUrl = `/app/preview/${appData.value.id}`
+  window.open(previewUrl, '_blank', 'width=1200,height=800')
+}
+
+// 运行应用（新窗口打开，公开模式）
+const handleRun = () => {
+  if (!appData.value?.id) {
+    ElMessage.warning('应用数据加载中，请稍后再试')
+    return
+  }
+  
+  if (appData.value.status !== 'PUBLISHED') {
+    ElMessage.warning('仅已发布的应用可以运行')
+    return
+  }
+  
+  const runUrl = `/app/run/${appData.value.id}`
+  window.open(runUrl, '_blank', 'width=1200,height=800')
 }
 
 const handlePromptChange = () => {

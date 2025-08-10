@@ -112,7 +112,16 @@
                   </el-button>
                   <template #dropdown>
                     <el-dropdown-menu>
-                      <el-dropdown-item command="publish" v-if="app.status === 'DRAFT'">
+                      <el-dropdown-item command="preview">
+                        预览（新窗口）
+                      </el-dropdown-item>
+                      <el-dropdown-item 
+                        command="run" 
+                        :disabled="app.status !== 'PUBLISHED'"
+                      >
+                        运行（新窗口）
+                      </el-dropdown-item>
+                      <el-dropdown-item divided command="publish" v-if="app.status === 'DRAFT'">
                         发布
                       </el-dropdown-item>
                       <el-dropdown-item command="disable" v-if="app.status === 'PUBLISHED'">
@@ -273,9 +282,42 @@ const handleEdit = (app: AiAppDTO) => {
   router.push(`/dashboard/knowledge/app/${app.id}`)
 }
 
+// 预览应用（新窗口打开，管理员模式）
+const handlePreview = (app: AiAppDTO) => {
+  if (!app.id) {
+    ElMessage.warning('应用ID无效')
+    return
+  }
+  
+  const previewUrl = `/app/preview/${app.id}`
+  window.open(previewUrl, '_blank', 'width=1200,height=800')
+}
+
+// 运行应用（新窗口打开，公开模式）
+const handleRun = (app: AiAppDTO) => {
+  if (!app.id) {
+    ElMessage.warning('应用ID无效')
+    return
+  }
+  
+  if (app.status !== 'PUBLISHED') {
+    ElMessage.warning('仅已发布的应用可以运行')
+    return
+  }
+  
+  const runUrl = `/app/run/${app.id}`
+  window.open(runUrl, '_blank', 'width=1200,height=800')
+}
+
 // 处理应用操作
 const handleAction = async (command: string, app: AiAppDTO) => {
   switch (command) {
+    case 'preview':
+      handlePreview(app)
+      break
+    case 'run':
+      handleRun(app)
+      break
     case 'publish':
       await handleStatusChange(app, 'PUBLISHED')
       break

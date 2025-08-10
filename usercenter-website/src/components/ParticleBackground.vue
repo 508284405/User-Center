@@ -149,7 +149,7 @@ const themeConfig = computed(() => {
 // 密度配置
 const densityConfig = computed(() => {
   const configs = {
-    low: { particles: 30, connections: 8, glows: 5, pulses: 3 },
+    low: { particles: 28, connections: 4, glows: 5, pulses: 2 },
     medium: { particles: 50, connections: 12, glows: 8, pulses: 5 },
     high: { particles: 80, connections: 18, glows: 12, pulses: 8 }
   }

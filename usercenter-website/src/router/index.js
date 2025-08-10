@@ -484,6 +484,23 @@ const routes = [
             }
         ]
     },
+    // 应用预览和运行路由（无需认证）
+    {
+        path: '/app/preview/:id',
+        name: 'AppPreview',
+        component: () => import('../views/app/AppPreview.vue'),
+        meta: {
+            title: '应用预览'
+        }
+    },
+    {
+        path: '/app/run/:id',
+        name: 'AppRun',
+        component: () => import('../views/app/AppRun.vue'),
+        meta: {
+            title: '运行应用'
+        }
+    },
     {
         path: '/:pathMatch(.*)*',
         redirect: '/dashboard'

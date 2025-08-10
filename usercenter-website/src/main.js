@@ -6,6 +6,8 @@ import 'element-plus/dist/index.css'
 import App from './App.vue'
 import router from './router'
 import { permissionDirective, setupPermissionGuard } from './utils/permission'
+// 全局引入认证页主题变量与样式
+// import './styles/auth-theme.scss'
 
 const app = createApp(App)
 const pinia = createPinia()

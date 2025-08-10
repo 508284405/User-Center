@@ -18,6 +18,8 @@ instance.interceptors.request.use(
     // 根据请求路径设置不同的baseURL
     config.baseURL = 'http://115.190.36.226:8080/';
     if(config.url?.includes('smartcs')) {
+      console.log("--------", config.url);
+      
       // 去掉smartcs
       config.baseURL = 'http://localhost:8082';
       config.url = config.baseURL + config.url?.replace('/smartcs', '');

@@ -48,9 +48,15 @@
       </el-table-column>
       <el-table-column prop="endpoint" label="API端点" show-overflow-tooltip />
       <el-table-column prop="supportedModelTypes" label="支持的模型类型" show-overflow-tooltip />
-      <el-table-column prop="apiKey" label="API Key" show-overflow-tooltip>
+      <el-table-column label="API Key状态" width="150">
         <template #default="{ row }">
-          <span>{{ maskApiKey(row.apiKey) }}</span>
+          <el-tag v-if="row.hasApiKey" type="success">已设置</el-tag>
+          <el-tag v-else type="warning">未设置</el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column label="API Key" show-overflow-tooltip>
+        <template #default="{ row }">
+          <span>{{ row.apiKeyMasked || '-' }}</span>
         </template>
       </el-table-column>
       <el-table-column prop="createdAt" label="创建时间" width="180">
@@ -113,9 +119,13 @@
           <el-input
             v-model="form.apiKey"
             type="password"
-            placeholder="请输入API Key"
+            :placeholder="isEdit ? '留空表示不修改' : '请输入API Key'"
             show-password
+            clearable
           />
+          <div v-if="isEdit" class="form-item-tip">
+            留空表示保持原有API Key不变
+          </div>
         </el-form-item>
         <el-form-item label="API端点" prop="endpoint">
           <el-input v-model="form.endpoint" placeholder="请输入API端点" />
@@ -178,7 +188,11 @@ const formRules = {
     { required: true, message: '请选择模型提供商', trigger: 'change' }
   ],
   apiKey: [
-    { required: true, message: '请输入API Key', trigger: 'blur' }
+    { 
+      required: () => !isEdit.value, 
+      message: '请输入API Key', 
+      trigger: 'blur' 
+    }
   ]
 }
 
@@ -240,7 +254,10 @@ const showCreateDialog = () => {
 const handleEdit = (row: Provider) => {
   dialogTitle.value = '编辑模型提供商'
   isEdit.value = true
-  Object.assign(form, row)
+  Object.assign(form, {
+    ...row,
+    apiKey: '' // 编辑时不回填API Key
+  })
   dialogVisible.value = true
 }
 
@@ -313,13 +330,6 @@ const resetForm = () => {
   })
 }
 
-// 脱敏API Key
-const maskApiKey = (apiKey: string) => {
-  if (!apiKey) return '-'
-  if (apiKey.length <= 8) return '*'.repeat(apiKey.length)
-  return apiKey.substring(0, 4) + '*'.repeat(apiKey.length - 8) + apiKey.substring(apiKey.length - 4)
-}
-
 // 获取提供商类型标签
 const getProviderTypeLabel = (providerType: string) => {
   const option = providerTypeOptions.find(opt => opt.value === providerType)
@@ -378,5 +388,11 @@ onMounted(() => {
 
 .el-select {
   width: 100%;
+}
+
+.form-item-tip {
+  color: #909399;
+  font-size: 12px;
+  margin-top: 4px;
 }
 </style>
