@@ -97,10 +97,10 @@ const getInputStyle = (field) => {
 }
 
 // 简单前端校验与错误状态
-const errors = ref({ username: '', email: '', password: '', confirmPassword: '' })
+const errors = ref({ username: '', email: '', password: '', confirmPassword: '', terms: '' })
 
 const validate = () => {
-  errors.value = { username: '', email: '', password: '', confirmPassword: '' }
+  errors.value = { username: '', email: '', password: '', confirmPassword: '', terms: '' }
   let ok = true
   if (!formData.value.username || formData.value.username.trim().length < 3) {
     errors.value.username = '用户名至少 3 个字符'
@@ -111,6 +111,10 @@ const validate = () => {
     const emailOk = /.+@+.\..+/.test(email || '')
     if (!emailOk) {
       errors.value.email = '请输入有效的邮箱地址'
+      ok = false
+    }
+    if (!formData.value.agreeTerms) {
+      errors.value.terms = '请阅读并同意服务条款'
       ok = false
     }
   }
@@ -240,6 +244,10 @@ const idPrefix = computed(() => (props.type === 'register' ? 'register' : 'login
         <span class="checkmark"></span>
         <span class="label-text">我同意服务条款</span>
       </label>
+      <p v-if="type === 'register' && !formData.agreeTerms && errors.terms" 
+         id="terms-error" 
+         class="field-error" 
+         role="alert">{{ errors.terms }}</p>
     </div>
 
     <button 
@@ -247,6 +255,7 @@ const idPrefix = computed(() => (props.type === 'register' ? 'register' : 'login
       :style="{ '--primary-color': buttonTheme.primary, '--glow-color': buttonTheme.glow }"
       :disabled="props.loading"
       :aria-busy="props.loading ? 'true' : 'false'"
+      :aria-describedby="type === 'register' && !formData.agreeTerms ? 'terms-error' : undefined"
       @click="onSubmit"
     >
       <span class="btn-content">
@@ -329,7 +338,7 @@ const idPrefix = computed(() => (props.type === 'register' ? 'register' : 'login
   color: #1a1a1a;
   font-size: 0.9rem;
   font-weight: 500;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   backdrop-filter: blur(var(--blur-medium, 15px)) saturate(180%);
   outline: none;
   position: relative;
@@ -421,7 +430,7 @@ const idPrefix = computed(() => (props.type === 'register' ? 'register' : 'login
   border-radius: 4px;
   margin-right: 0.5rem;
   position: relative;
-  transition: all 0.3s ease;
+  transition: all 0.25s ease;
   background: rgba(255, 255, 255, 0.05);
 }
 
@@ -453,7 +462,7 @@ const idPrefix = computed(() => (props.type === 'register' ? 'register' : 'login
   color: #4a5568;
   text-decoration: none;
   font-weight: 600;
-  transition: all 0.3s ease;
+  transition: all 0.25s ease;
   padding: 0.2rem 0.4rem;
   border-radius: var(--radius-sm, 4px);
 }
@@ -477,7 +486,7 @@ const idPrefix = computed(() => (props.type === 'register' ? 'register' : 'login
   font-weight: 600;
   cursor: pointer;
   overflow: hidden;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   margin-bottom: 0.8rem;
   z-index: 10;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -593,7 +602,7 @@ const idPrefix = computed(() => (props.type === 'register' ? 'register' : 'login
   text-decoration: none;
   font-weight: 500;
   margin-left: 0.3rem;
-  transition: all 0.3s ease;
+  transition: all 0.25s ease;
 }
 
 .switch-link:hover {

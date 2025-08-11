@@ -7,7 +7,9 @@ import App from './App.vue'
 import router from './router'
 import { permissionDirective, setupPermissionGuard } from './utils/permission'
 // 全局引入认证页主题变量与样式
-// import './styles/auth-theme.scss'
+import './styles/auth-theme.scss'
+// 导入主题系统
+import { initGlobalTheme } from './composables/useTheme'
 
 const app = createApp(App)
 const pinia = createPinia()
@@ -25,6 +27,9 @@ setupPermissionGuard(router)
 
 // 兼容 sockjs-client 浏览器环境
 window.global = window;
+
+// 初始化全局主题系统
+initGlobalTheme()
 
 app.use(pinia)
 app.use(ElementPlus)

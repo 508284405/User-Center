@@ -7,6 +7,8 @@ import 'element-plus/dist/index.css'
 import { authApi } from '@/api/usercenter/auth'
 // 导入权限控制
 import { hasPermission, userPermissionState, initPermissions } from '@/utils/permission'
+// 导入主题切换组件
+import ThemeToggle from '@/components/ThemeToggle.vue'
 
 interface MenuItem {
   key: string
@@ -539,19 +541,22 @@ watch(() => route.path, (newPath, oldPath) => {
   <div class="layout-container">
     <header class="header">
       <div class="logo">用户中心</div>
-      <div class="user-info">
-        <el-dropdown trigger="click">
-          <div class="el-dropdown-link">
-            <el-avatar :size="40" :src="userAvatar" />
-            <span class="username">{{ userName }}</span>
-          </div>
-          <template #dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item @click="handleMenuClick('profile')">个人信息</el-dropdown-item>
-              <el-dropdown-item @click="handleLogout">退出登录</el-dropdown-item>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
+      <div class="header-actions">
+        <ThemeToggle mode="compact" :show-label="false" />
+        <div class="user-info">
+          <el-dropdown trigger="click">
+            <div class="el-dropdown-link">
+              <el-avatar :size="40" :src="userAvatar" />
+              <span class="username">{{ userName }}</span>
+            </div>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item @click="handleMenuClick('profile')">个人信息</el-dropdown-item>
+                <el-dropdown-item @click="handleLogout">退出登录</el-dropdown-item>
+              </el-dropdown-menu>
+            </el-dropdown>
+          </el-dropdown>
+        </div>
       </div>
     </header>
 
@@ -635,6 +640,12 @@ watch(() => route.path, (newPath, oldPath) => {
 .logo {
   font-size: 20px;
   font-weight: bold;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
 }
 
 .user-info {

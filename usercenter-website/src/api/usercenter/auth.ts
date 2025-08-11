@@ -6,6 +6,21 @@ interface LoginParams {
   password: string;
 }
 
+// 注册参数类型
+interface RegisterParams {
+  username: string;
+  email: string;
+  password: string;
+}
+
+// 注册返回数据类型
+interface RegisterResponseData {
+  id: number;
+  username: string;
+  email: string;
+  createdAt: string;
+}
+
 // API 通用返回格式
 interface ApiResponse<T> {
   success: boolean;
@@ -110,6 +125,11 @@ export const authApi = {
   // Google登录
   googleLogin: (params: GoogleLoginParams) => {
     return request.post<any, ApiResponse<LoginResponseData>>('/user-center/api/users/google-login', params);
+  },
+
+  // 用户注册
+  register: (params: RegisterParams) => {
+    return request.post<any, ApiResponse<RegisterResponseData>>('/user-center/api/users/register', params);
   },
 
   // 刷新令牌

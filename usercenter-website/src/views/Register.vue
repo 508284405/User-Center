@@ -2,12 +2,15 @@
 import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { authApi } from '@/api/usercenter/auth'
 import GlowingRing from '../components/GlowingRing.vue'
 import TechForm from '../components/TechForm.vue'
 import ParticleBackground from '../components/ParticleBackground.vue'
+import ThemeToggle from '../components/ThemeToggle.vue'
 
 const router = useRouter()
 const formStatus = ref('idle') // idle, active, success, error
+const loadingMessage = ref('')
 
 const registerForm = reactive({
   username: '',
@@ -65,39 +68,50 @@ const registerFormRef = ref()
 const onSubmit = async (formData) => {
   try {
     formStatus.value = 'active'
+    loadingMessage.value = '正在创建您的账户...'
 
-    const response = await fetch('http://localhost:8080/api/auth/register', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        username: formData.username,
-        email: formData.email,
-        password: formData.password
-      })
+    const response = await authApi.register({
+      username: formData.username,
+      email: formData.email,
+      password: formData.password
     })
 
-    const data = await response.json()
-
-    if (!response.ok || data.code !== 200) {
-      throw new Error(data.message || '注册失败')
+    console.log('注册响应:', response)
+    if (response && response.success) {
+      loadingMessage.value = '注册成功，正在跳转到登录页面...'
+      formStatus.value = 'success'
+      ElMessage.success('注册成功！请前往登录页面')
+      
+      setTimeout(() => {
+        router.push('/login')
+      }, 1500)
+    } else {
+      throw new Error(response?.errMessage || '注册失败：服务器响应异常')
     }
-
-    formStatus.value = 'success'
-    ElMessage.success('注册成功')
-    
-    setTimeout(() => {
-      router.push('/login')
-    }, 1000)
   } catch (error) {
     console.error('注册错误:', error)
     formStatus.value = 'error'
-    ElMessage.error(error.message || '注册失败，请重试')
+    loadingMessage.value = ''
+    
+    // 提供更友好的错误信息
+    let errorMessage = '注册失败，请重试'
+    if (error.message) {
+      if (error.message.includes('用户名') || error.message.includes('username')) {
+        errorMessage = '用户名已存在，请选择其他用户名'
+      } else if (error.message.includes('邮箱') || error.message.includes('email')) {
+        errorMessage = '邮箱已被注册，请使用其他邮箱'
+      } else if (error.message.includes('密码') || error.message.includes('password')) {
+        errorMessage = '密码不符合要求，请检查密码强度'
+      } else {
+        errorMessage = error.message
+      }
+    }
+    
+    ElMessage.error(errorMessage)
     
     setTimeout(() => {
       formStatus.value = 'idle'
-    }, 2000)
+    }, 2500)
   }
 }
 
@@ -165,24 +179,27 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="auth-page register-container" :class="{ 'page-loaded': pageLoadAnimation }">
+  <div class="auth-page register-container" :class="{ 'page-loaded': pageLoadAnimation }" role="main" aria-label="用户注册页面">
     <!-- 科技网格覆盖层 -->
     <div class="auth-grid-overlay"></div>
     <!-- 噪点纹理覆盖层 -->
     <div class="auth-noise-overlay"></div>
     
     <!-- 动态粒子背景 - 统一使用蓝青主题 -->
-    <ParticleBackground theme="teal" density="medium" />
+    <ParticleBackground theme="teal" density="low" />
     
-    <header class="header">
-      <div class="logo">
+    <header class="header" role="banner">
+      <!-- 无障碍跳转链接 -->
+      <a href="#main-form" class="skip-link">跳转到主内容</a>
+      <div class="logo" role="img" aria-label="用户中心Logo">
         <div class="logo-icon"></div>
         <span>用户中心</span>
       </div>
-      <nav>
-        <a href="#" class="nav-link">首页</a>
-        <a href="#" class="nav-link">帮助</a>
-        <a href="#" class="nav-link">联系我们</a>
+      <nav role="navigation" aria-label="主导航">
+        <a href="/login" class="nav-link" aria-label="返回登录页面">登录</a>
+        <a href="#" class="nav-link" aria-label="查看帮助文档">帮助</a>
+        <a href="#" class="nav-link" aria-label="联系客服">联系我们</a>
+        <ThemeToggle mode="button" :show-label="false" aria-label="切换主题" />
       </nav>
     </header>
 
@@ -214,27 +231,40 @@ onMounted(() => {
       
       <!-- 右侧注册表单区域 -->
       <div class="form-section">
-        <div class="form-wrapper auth-card">
+        <div class="form-wrapper auth-card" id="main-form" role="region" aria-label="注册表单">
           <GlowingRing 
             :status="formStatus"
             code-type="register"
+            aria-live="polite"
+            :aria-label="formStatus === 'active' ? '正在注册...' : formStatus === 'success' ? '注册成功' : formStatus === 'error' ? '注册失败' : '注册表单'"
           >
             <TechForm 
               type="register"
               theme="teal"
               @submit="onSubmit"
+              :disabled="formStatus === 'active'"
+              aria-describedby="register-instructions"
             />
           </GlowingRing>
+          <div id="register-instructions" class="sr-only">
+            请填写所有必填项目来创建您的新账户
+          </div>
+          
+          <!-- 加载状态指示器 -->
+          <div v-if="loadingMessage" class="loading-indicator" role="status" aria-live="polite">
+            <div class="loading-spinner"></div>
+            <span class="loading-text">{{ loadingMessage }}</span>
+          </div>
         </div>
       </div>
     </main>
 
-    <footer class="footer">
+    <footer class="footer" role="contentinfo">
       <div class="footer-content">
         <p>&copy; 2024 用户中心. All rights reserved.</p>
-        <div class="footer-links">
-          <a href="#" class="footer-link">隐私政策</a>
-          <a href="#" class="footer-link">使用条款</a>
+        <div class="footer-links" role="navigation" aria-label="法律信息链接">
+          <a href="#" class="footer-link" aria-label="查看隐私政策">隐私政策</a>
+          <a href="#" class="footer-link" aria-label="查看使用条款">使用条款</a>
         </div>
       </div>
     </footer>
@@ -280,7 +310,7 @@ onMounted(() => {
 }
 
 .register-container.mouse-active::after {
-  opacity: 0.6;
+  opacity: 0.3;
   animation: mouseGlow 0.3s ease-out;
 }
 
@@ -305,13 +335,13 @@ onMounted(() => {
   font-size: 1.6rem;
   font-weight: 700;
   color: var(--color-text-primary);
-  text-shadow: 0 0 20px var(--color-glow), 0 0 10px rgba(255, 255, 255, 0.6);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
   transition: all 0.3s ease;
 }
 
 .logo:hover {
   transform: scale(1.05);
-  text-shadow: 0 0 25px var(--color-glow), 0 0 15px rgba(255, 255, 255, 0.8);
+  text-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
 }
 
 .logo-icon {
@@ -366,9 +396,9 @@ nav {
 
 .nav-link:hover {
   color: var(--color-text-primary);
-  text-shadow: var(--shadow-glow), 0 0 10px rgba(255, 255, 255, 0.6);
-  transform: translateY(-3px) scale(1.05);
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.12) 100%);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+  transform: translateY(-2px) scale(1.03);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.16) 100%);
   border-color: var(--color-border-hover);
 }
 
@@ -393,8 +423,8 @@ nav {
   justify-content: center;
   align-items: center;
   background: 
-    radial-gradient(circle at center, rgba(236, 72, 153, 0.04) 0%, transparent 60%),
-    radial-gradient(circle at 20% 80%, rgba(244, 114, 182, 0.03) 0%, transparent 50%);
+    radial-gradient(circle at center, rgba(139, 92, 246, 0.08) 0%, transparent 60%),
+    radial-gradient(circle at 20% 80%, rgba(59, 130, 246, 0.06) 0%, transparent 50%);
   overflow: hidden;
 }
 
@@ -409,7 +439,7 @@ nav {
   width: 300px;
   height: 300px;
   transform-style: preserve-3d;
-  animation: earthRotate 20s linear infinite;
+  animation: earthRotate 30s linear infinite;
 }
 
 .earth-sphere {
@@ -466,7 +496,7 @@ nav {
   left: -50px;
   border: 1px solid var(--color-border-hover);
   border-radius: 50%;
-  animation: orbitRotate 15s linear infinite;
+  animation: orbitRotate 25s linear infinite;
 }
 
 .satellite {
@@ -496,14 +526,13 @@ nav {
   font-size: 3rem;
   font-weight: 800;
   color: #FFFFFF;
-  text-shadow: 0 0 40px rgba(255, 255, 255, 0.9), 0 0 20px rgba(236, 72, 153, 0.6);
+  text-shadow: 0 0 40px rgba(255, 255, 255, 0.9), 0 0 20px rgba(139, 92, 246, 0.6);
   margin-bottom: 1.5rem;
   background: 
     linear-gradient(135deg, 
       #FFFFFF 0%, 
-      #F472B6 25%, 
-      #EC4899 50%,
-      #F472B6 75%,
+      #A78BFA 30%, 
+      #8B5CF6 70%,
       #FFFFFF 100%
     );
   -webkit-background-clip: text;
@@ -511,7 +540,7 @@ nav {
   background-clip: text;
   line-height: 1.1;
   letter-spacing: -0.02em;
-  animation: registerTitleGlow 4s ease-in-out infinite alternate;
+  animation: titleGlow 4s ease-in-out infinite alternate;
 }
 
 .welcome-subtitle {
@@ -547,7 +576,7 @@ nav {
   text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
   box-shadow: 
     0 4px 20px rgba(0, 0, 0, 0.15),
-    0 0 30px rgba(236, 72, 153, 0.15),
+    0 0 30px rgba(139, 92, 246, 0.15),
     inset 0 1px 0 rgba(255, 255, 255, 0.4);
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
@@ -573,28 +602,28 @@ nav {
   transform: translateY(-4px) scale(1.05);
   box-shadow: 
     0 12px 35px rgba(0, 0, 0, 0.25),
-    0 0 50px rgba(236, 72, 153, 0.3),
+    0 0 50px rgba(139, 92, 246, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.5),
-    0 0 20px rgba(236, 72, 153, 0.4);
+    0 0 20px rgba(139, 92, 246, 0.4);
   border-color: rgba(255, 255, 255, 0.45);
   backdrop-filter: blur(15px) saturate(150%);
 }
 
 .feature-tag:nth-child(1) {
   animation: tagFloat 6s ease-in-out infinite;
-  border-color: rgba(236, 72, 153, 0.3);
+  border-color: rgba(139, 92, 246, 0.3);
 }
 
 .feature-tag:nth-child(2) {
   animation: tagFloat 6s ease-in-out infinite;
   animation-delay: 2s;
-  border-color: rgba(244, 114, 182, 0.3);
+  border-color: rgba(59, 130, 246, 0.3);
 }
 
 .feature-tag:nth-child(3) {
   animation: tagFloat 6s ease-in-out infinite;
   animation-delay: 4s;
-  border-color: rgba(251, 146, 60, 0.3);
+  border-color: rgba(167, 139, 250, 0.3);
 }
 
 /* 表单区域 */
@@ -623,9 +652,9 @@ nav {
   right: 0;
   bottom: 0;
   background: 
-    radial-gradient(circle at center, rgba(236, 72, 153, 0.06) 0%, transparent 50%),
-    radial-gradient(circle at 80% 20%, rgba(244, 114, 182, 0.04) 0%, transparent 40%),
-    linear-gradient(45deg, rgba(236, 72, 153, 0.02) 0%, transparent 50%);
+    radial-gradient(circle at center, rgba(139, 92, 246, 0.12) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(59, 130, 246, 0.08) 0%, transparent 40%),
+    linear-gradient(45deg, rgba(139, 92, 246, 0.04) 0%, transparent 50%);
   z-index: 0;
 }
 
@@ -639,9 +668,9 @@ nav {
   background: 
     linear-gradient(90deg, 
       transparent 0%, 
-      rgba(236, 72, 153, 0.08) 30%,
-      rgba(244, 114, 182, 0.06) 50%,
-      rgba(236, 72, 153, 0.08) 70%,
+      rgba(34, 211, 238, 0.08) 30%,
+      rgba(139, 92, 246, 0.06) 50%,
+      rgba(34, 211, 238, 0.08) 70%,
       transparent 100%
     );
   z-index: 1;
@@ -657,6 +686,48 @@ nav {
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.1) 100%);
   border-radius: var(--radius-xl, 24px);
   backdrop-filter: blur(10px);
+}
+
+/* 加载状态指示器 */
+.loading-indicator {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.9) 100%);
+  backdrop-filter: blur(15px);
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  box-shadow: var(--shadow-medium), 0 0 30px var(--color-glow);
+  border: 1px solid var(--color-border);
+  z-index: 1000;
+  min-width: 240px;
+  text-align: center;
+}
+
+.loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--color-border);
+  border-top: 3px solid var(--color-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.loading-text {
+  color: var(--color-text-primary);
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 /* 页脚 - 使用统一主题 */
@@ -713,14 +784,14 @@ nav {
   0%, 100% {
     box-shadow: 
       inset 0 0 50px rgba(0, 0, 0, 0.3),
-      0 0 50px rgba(236, 72, 153, 0.3),
-      0 0 100px rgba(244, 114, 182, 0.2);
+      0 0 50px rgba(139, 92, 246, 0.3),
+      0 0 100px rgba(59, 130, 246, 0.2);
   }
   50% {
     box-shadow: 
       inset 0 0 50px rgba(0, 0, 0, 0.3),
-      0 0 70px rgba(236, 72, 153, 0.4),
-      0 0 120px rgba(244, 114, 182, 0.3);
+      0 0 70px rgba(139, 92, 246, 0.4),
+      0 0 120px rgba(59, 130, 246, 0.3);
   }
 }
 
@@ -775,7 +846,7 @@ nav {
     opacity: 1;
     box-shadow: 
       0 8px 25px rgba(0, 0, 0, 0.2),
-      0 0 35px rgba(236, 72, 153, 0.15);
+      0 0 35px rgba(139, 92, 246, 0.15);
   }
 }
 
@@ -798,16 +869,6 @@ nav {
   }
 }
 
-@keyframes registerTitleGlow {
-  0%, 100% {
-    text-shadow: 0 0 40px rgba(255, 255, 255, 0.9), 0 0 20px rgba(236, 72, 153, 0.6);
-    filter: brightness(1);
-  }
-  50% {
-    text-shadow: 0 0 50px rgba(255, 255, 255, 1), 0 0 30px rgba(236, 72, 153, 0.8), 0 0 15px rgba(244, 114, 182, 0.6);
-    filter: brightness(1.1);
-  }
-}
 
 @keyframes mouseGlow {
   0% {

@@ -16,6 +16,11 @@ const routes = [
         component: () => import('../views/Register.vue')
     },
     {
+        path: '/theme-demo',
+        name: 'ThemeDemo',
+        component: () => import('../views/ThemeDemo.vue')
+    },
+    {
         path: '/google-callback',
         name: 'GoogleCallback',
         component: () => import('../views/GoogleCallback.vue')
