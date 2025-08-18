@@ -1,0 +1,44 @@
+.index-list-view {
+  padding: 20px;
+
+  .header-row {
+    margin-bottom: 20px;
+  }
+
+  .index-card {
+    margin-bottom: 20px;
+    height: 200px;
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      
+      span {
+        font-weight: 600;
+        font-size: 16px;
+      }
+    }
+
+    .card-content {
+      padding: 10px 0;
+      color: #606266;
+      
+      p {
+        margin: 5px 0;
+        font-size: 14px;
+      }
+    }
+
+    .card-actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      margin-top: auto;
+      
+      .el-button {
+        min-width: 70px;
+      }
+    }
+  }
+} 

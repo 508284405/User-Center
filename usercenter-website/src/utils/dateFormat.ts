@@ -80,4 +80,14 @@ export function formatShortTime(timestamp: number | string): string {
   const minutes = String(date.getMinutes()).padStart(2, '0');
   
   return `${month}-${day} ${hours}:${minutes}`;
+}
+
+/**
+ * 格式化日期时间 - formatDateTime别名函数
+ * @param timestamp 时间戳（毫秒）
+ * @returns 格式化后的时间字符串
+ */
+export function formatDateTime(timestamp: number | string | undefined | null): string {
+  if (!timestamp) return '';
+  return formatTimestamp(timestamp);
 } 

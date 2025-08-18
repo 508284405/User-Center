@@ -98,10 +98,21 @@ const applyTheme = (theme) => {
   if (theme === THEMES.DARK) {
     root.classList.add('dark-theme')
     root.setAttribute('data-theme', 'dark')
+    console.log('Applied dark theme to document root')
   } else {
     root.classList.add('light-theme')  
     root.setAttribute('data-theme', 'light')
+    console.log('Applied light theme to document root')
   }
+  
+  // 确保主题类正确应用
+  setTimeout(() => {
+    const hasTheme = root.classList.contains('dark-theme') || root.classList.contains('light-theme')
+    if (!hasTheme) {
+      console.warn('Theme class not applied correctly, retrying...')
+      applyTheme(theme)
+    }
+  }, 100)
 }
 
 export function useTheme() {
@@ -200,16 +211,33 @@ export function useTheme() {
 
 // 全局主题状态（单例模式）
 let globalThemeCleanup = null
+let globalThemeInitialized = false
 
 export const initGlobalTheme = () => {
+  // 防止重复初始化
+  if (globalThemeInitialized) {
+    console.log('Global theme already initialized, skipping...')
+    return globalThemeCleanup
+  }
+  
   if (globalThemeCleanup) {
     globalThemeCleanup()
   }
   
+  console.log('Initializing global theme...')
   const { initializeTheme } = useTheme()
   globalThemeCleanup = initializeTheme()
+  globalThemeInitialized = true
+  console.log('Global theme initialized successfully')
   
   return globalThemeCleanup
+}
+
+// 强制重新初始化主题（用于页面切换后确保主题状态）
+export const reinitializeTheme = () => {
+  console.log('Reinitializing theme...')
+  globalThemeInitialized = false
+  return initGlobalTheme()
 }
 
 // 在应用卸载时清理
@@ -218,4 +246,5 @@ export const cleanupGlobalTheme = () => {
     globalThemeCleanup()
     globalThemeCleanup = null
   }
+  globalThemeInitialized = false
 }

@@ -1,6 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { reinitializeTheme } from '@/composables/useTheme'
 
 const routes = [
+    // Auth routes
     {
         path: '/',
         redirect: '/login'
@@ -8,507 +10,576 @@ const routes = [
     {
         path: '/login',
         name: 'Login',
-        component: () => import('../views/Login.vue')
+        component: () => import('../views/auth/Login.vue')
     },
     {
         path: '/register',
         name: 'Register',
-        component: () => import('../views/Register.vue')
-    },
-    {
-        path: '/theme-demo',
-        name: 'ThemeDemo',
-        component: () => import('../views/ThemeDemo.vue')
+        component: () => import('../views/auth/Register.vue')
     },
     {
         path: '/google-callback',
         name: 'GoogleCallback',
-        component: () => import('../views/GoogleCallback.vue')
+        component: () => import('../views/auth/GoogleCallback.vue')
     },
+    
+    // Error pages
     {
         path: '/403',
         name: 'Forbidden',
-        component: () => import('../views/error/403.vue')
+        component: () => import('../views/shared/error/403.vue')
     },
+    
+    // Shared utilities
+    {
+        path: '/theme-demo',
+        name: 'ThemeDemo',
+        component: () => import('../views/shared/demo/ThemeDemo.vue')
+    },
+    
+    // Legacy dashboard redirect for backward compatibility
     {
         path: '/dashboard',
+        redirect: '/platform/usercenter/identity'
+    },
+    
+    // Main platform routes
+    {
+        path: '/platform',
         component: () => import('../components/layout/MainLayout.vue'),
         meta: { requiresAuth: true },
         children: [
             {
                 path: '',
-                redirect: '/dashboard/user'
+                redirect: '/platform/usercenter/identity'
             },
+            
+            // SmartCS AI Platform
             {
-                path: 'user',
-                name: 'UserManagement',
-                component: () => import('../views/user/UserManagement.vue'),
-                meta: {
-                    requiresAuth: true,
-                    permission: 'user:view',
-                    title: '用户管理'
-                }
-            },
-            {
-                path: 'role',
-                name: 'RoleManagement',
-                component: () => import('../views/role/RoleManagement.vue'),
-                meta: {
-                    requiresAuth: true,
-                    permission: 'role:view',
-                    title: '角色管理'
-                }
-            },
-            {
-                path: 'menu',
-                name: 'MenuManagement',
-                component: () => import('../views/menu/MenuManagement.vue'),
-                meta: {
-                    requiresAuth: true,
-                    permission: 'menu:view',
-                    title: '菜单管理'
-                }
-            },
-            {
-                path: 'log',
-                name: 'OperationLog',
-                component: () => import('../views/log/OperationLog.vue'),
-                meta: {
-                    requiresAuth: true,
-                    permission: 'log:view',
-                    title: '操作日志'
-                }
-            },
-            {
-                path: 'profile',
-                name: 'Profile',
-                component: () => import('../views/profile/Profile.vue'),
-                meta: {
-                    requiresAuth: true,
-                    title: '个人资料'
-                }
-            },
-            {
-                path: 'product',
-                name: 'ProductList',
-                component: () => import('../views/product/ProductList.vue'),
-                meta: {
-                    requiresAuth: true,
-                    permission: 'product:view',
-                    title: '商品列表'
-                }
-            },
-            {
-                path: 'product/category',
-                name: 'CategoryManagement',
-                component: () => import('../views/product/CategoryManagement.vue'),
-                meta: {
-                    requiresAuth: true,
-                    permission: 'product:category:view',
-                    title: '商品分类管理'
-                }
-            },
-            {
-                path: 'order/list',
-                name: 'OrderList',
-                component: () => import('../views/order/OrderList.vue'),
-                meta: {
-                    requiresAuth: true,
-                    permission: 'order:view',
-                    title: '订单列表'
-                }
-            },
-            {
-                path: 'order/detail/:orderNumber',
-                name: 'OrderDetail',
-                component: () => import('../views/order/OrderDetail.vue'),
-                meta: {
-                    requiresAuth: true,
-                    permission: 'order:view',
-                    title: '订单详情'
-                }
-            },
-            {
-                path: 'points',
-                name: 'PointsManagement',
-                component: () => import('../views/points/UserPointsManagement.vue'),
-                meta: {
-                    requiresAuth: true,
-                    permission: 'points:view',
-                    title: '用户积分管理'
-                }
-            },
-            {
-                path: 'points/product',
-                name: 'PointsProductManagement',
-                component: () => import('../views/points/PointsProductList.vue'),
-                meta: {
-                    requiresAuth: true,
-                    permission: 'points:product:view',
-                    title: '积分商品管理'
-                }
-            },
-            {
-                path: 'points/exchange',
-                name: 'ExchangeRecordList',
-                component: () => import('../views/points/ExchangeRecordList.vue'),
-                meta: {
-                    requiresAuth: true,
-                    permission: 'points:exchange:view',
-                    title: '兑换记录管理'
-                }
-            },
-            {
-                path: '/after-sales',
-                name: 'AfterSalesList',
-                component: () => import('../views/after-sales/AfterSalesList.vue'),
-                meta: { requiresAuth: true, title: '售后管理' }
-            },
-            {
-                path: '/after-sales/:id',
-                name: 'AfterSalesDetail',
-                component: () => import('../views/after-sales/AfterSalesDetail.vue'),
-                meta: { requiresAuth: true, title: '售后详情' }
-            },
-            {
-                path: '/after-sales/refund',
-                name: 'RefundList',
-                component: () => import('../views/after-sales/RefundList.vue'),
-                meta: {
-                    requiresAuth: true,
-                    permission: 'aftersale:refund:view',
-                    title: '售后退款管理'
-                }
-            },
-            {
-                path: '/after-sales/refund/:id',
-                name: 'RefundDetail',
-                component: () => import('../views/after-sales/RefundDetail.vue'),
-                meta: {
-                    requiresAuth: true,
-                    permission: 'aftersale:refund:view',
-                    title: '售后退款详情'
-                }
-            },
-            // 物流管理路由
-            {
-                path: '/logistics',
-                component: () => import('../views/logistics/Layout.vue'),
+                path: 'smartcs',
+                component: () => import('../views/smartcs/SmartCSLayout.vue'),
                 meta: { requiresAuth: true },
                 children: [
                     {
                         path: '',
-                        redirect: '/logistics/packages'
-                    },
-                    {
-                        path: 'packages',
-                        name: 'LogisticsPackages',
-                        component: () => import('../views/logistics/packages/List.vue'),
-                        meta: {
-                            requiresAuth: true,
-                            permission: 'logistics:packages:view',
-                            title: '包裹管理'
-                        }
-                    },
-                    {
-                        path: 'packages/:id',
-                        name: 'LogisticsPackageDetail',
-                        component: () => import('../views/logistics/packages/Detail.vue'),
-                        meta: {
-                            requiresAuth: true,
-                            permission: 'logistics:packages:view',
-                            title: '包裹详情'
-                        }
-                    },
-                    {
-                        path: 'orders',
-                        name: 'LogisticsOrders',
-                        component: () => import('../views/logistics/orders/List.vue'),
-                        meta: {
-                            requiresAuth: true,
-                            permission: 'logistics:orders:view',
-                            title: '物流订单管理'
-                        }
-                    },
-                    {
-                        path: 'orders/create',
-                        name: 'LogisticsOrderCreate',
-                        component: () => import('../views/logistics/orders/Create.vue'),
-                        meta: {
-                            requiresAuth: true,
-                            permission: 'logistics:orders:create',
-                            title: '创建物流订单'
-                        }
-                    },
-                    {
-                        path: 'orders/:id',
-                        name: 'LogisticsOrderDetail',
-                        component: () => import('../views/logistics/orders/Detail.vue'),
-                        meta: {
-                            requiresAuth: true,
-                            permission: 'logistics:orders:view',
-                            title: '物流订单详情'
-                        }
-                    },
-                    {
-                        path: 'analysis',
-                        name: 'LogisticsAnalysis',
-                        component: () => import('../views/logistics/analysis/Analysis.vue'),
-                        meta: {
-                            requiresAuth: true,
-                            permission: 'logistics:analysis:view',
-                            title: '物流分析'
-                        }
-                    }
-                ]
-            },
-            // 客服管理路由
-            {
-                path: '/customer-service',
-                component: () => import('../views/customer-service/CustomerServiceLayout.vue'),
-                meta: { requiresAuth: true },
-                children: [
-                    {
-                        path: '',
-                        redirect: '/customer-service/pending'
-                    },
-                    {
-                        path: 'sessions',
-                        name: 'SessionsList',
-                        component: () => import('../views/customer-service/SessionsListView.vue'),
-                        meta: {
-                            requiresAuth: true,
-                            permission: 'customer-service:view',
-                            title: '会话列表'
-                        }
-                    },
-                    {
-                        path: 'agents',
-                        name: 'OnlineAgents',
-                        component: () => import('../views/customer-service/AgentsView.vue'),
-                        meta: {
-                            requiresAuth: true,
-                            permission: 'customer-service:view',
-                            title: '在线客服'
-                        }
-                    },
-                    {
-                        path: 'chat/:sessionId?',
-                        name: 'AgentChat',
-                        component: () => import('../views/customer-service/ChatView.vue'),
-                        meta: {
-                            requiresAuth: true,
-                            permission: 'customer-service:chat',
-                            title: '客服对话'
-                        }
-                    }
-                ]
-            },
-            // 知识库管理路由
-            {
-                path: 'knowledge',
-                component: () => import('../views/dashboard/knowledge/KnowledgeLayout.vue'),
-                meta: { requiresAuth: true },
-                children: [
-                    {
-                        path: '',
-                        redirect: '/dashboard/knowledge/faq'
-                    },
-                    {
-                        path: 'index',
-                        name: 'KnowledgeIndex',
-                        component: () => import('../views/dashboard/infrastructure/index/IndexListView.vue'),
-                        meta: {
-                            requiresAuth: true,
-                            permission: 'knowledge:index:view',
-                            title: '索引管理'
-                        }
-                    },
-                    {
-                        path: 'faq',
-                        name: 'FaqManagement',
-                        component: () => import('../views/dashboard/knowledge/FaqManagementView.vue'),
-                        meta: {
-                            requiresAuth: true,
-                            permission: 'knowledge:faq:view',
-                            title: 'FAQ管理'
-                        }
-                    },
-                    {
-                        path: 'base',
-                        name: 'KnowledgeBaseManagement',
-                        component: () => import('../views/dashboard/knowledge/KnowledgeBaseManagementView.vue'),
-                        meta: {
-                            requiresAuth: true,
-                            permission: 'knowledge:base:view',
-                            title: '知识库管理'
-                        }
-                    },
-                    {
-                        path: 'base/:id',
-                        name: 'KnowledgeBaseDetail',
-                        component: () => import('../views/dashboard/knowledge/KnowledgeBaseDetailView.vue'),
-                        meta: {
-                            requiresAuth: true,
-                            permission: 'knowledge:base:view',
-                            title: '知识库详情'
-                        }
-                    },
-                    {
-                        path: 'base/:knowledgeBaseId/contents',
-                        name: 'ContentList',
-                        component: () => import('../views/dashboard/knowledge/ContentListView.vue'),
-                        meta: {
-                            requiresAuth: true,
-                            permission: 'knowledge:content:view',
-                            title: '文档列表'
-                        }
-                    },
-                    {
-                        path: 'content',
-                        name: 'ContentManagement',
-                        component: () => import('../views/dashboard/knowledge/ContentManagementView.vue'),
-                        meta: {
-                            requiresAuth: true,
-                            permission: 'knowledge:content:view',
-                            title: '内容管理'
-                        }
-                    },
-                    {
-                        path: 'content/:contentId/chunks',
-                        name: 'ChunkManagement',
-                        component: () => import('../views/dashboard/knowledge/ChunkManagementView.vue'),
-                        meta: {
-                            requiresAuth: true,
-                            permission: 'knowledge:chunk:view',
-                            title: '切片管理'
-                        }
-                    },
-                    {
-                        path: 'document/:id',
-                        name: 'DocumentDetail',
-                        component: () => import('../views/dashboard/knowledge/DocumentDetailView.vue'),
-                        meta: {
-                            requiresAuth: true,
-                            permission: 'knowledge:content:view',
-                            title: '文档详情'
-                        }
-                    },
-                    {
-                        path: 'embeddings',
-                        name: 'EmbeddingList',
-                        component: () => import('../views/dashboard/knowledge/EmbeddingListView.vue'),
-                        meta: {
-                            requiresAuth: true,
-                            permission: 'knowledge:doc:view',
-                            title: '向量列表'
-                        }
+                        redirect: '/platform/smartcs/knowledge'
                     },
                     
+                    // Knowledge Management
                     {
-                        path: 'chat',
-                        name: 'ChatTest',
-                        component: () => import('../views/dashboard/knowledge/ChatView.vue'),
-                        meta: {
-                            requiresAuth: true,
-                            permission: 'knowledge:chat:view',
-                            title: '智能聊天'
-                        }
+                        path: 'knowledge',
+                        component: () => import('../views/smartcs/knowledge/KnowledgeLayout.vue'),
+                        meta: { requiresAuth: true },
+                        children: [
+                            {
+                                path: '',
+                                redirect: '/platform/smartcs/knowledge/bases'
+                            },
+                            {
+                                path: 'bases',
+                                name: 'KnowledgeBases',
+                                component: () => import('../views/smartcs/knowledge/KnowledgeBaseManagementView.vue'),
+                                meta: {
+                                    requiresAuth: true,
+                                    permission: 'knowledge:base:view',
+                                    title: '知识库管理'
+                                }
+                            },
+                            {
+                                path: 'bases/:id',
+                                name: 'KnowledgeBaseDetail',
+                                component: () => import('../views/smartcs/knowledge/KnowledgeBaseDetailView.vue'),
+                                meta: {
+                                    requiresAuth: true,
+                                    permission: 'knowledge:base:view',
+                                    title: '知识库详情'
+                                }
+                            },
+                            {
+                                path: 'content',
+                                name: 'KnowledgeContent',
+                                component: () => import('../views/smartcs/knowledge/ContentManagementView.vue'),
+                                meta: {
+                                    requiresAuth: true,
+                                    permission: 'knowledge:content:view',
+                                    title: '内容管理'
+                                }
+                            },
+                            {
+                                path: 'content/:id',
+                                name: 'DocumentDetail',
+                                component: () => import('../views/smartcs/knowledge/DocumentDetailView.vue'),
+                                meta: {
+                                    requiresAuth: true,
+                                    permission: 'knowledge:content:view',
+                                    title: '文档详情'
+                                }
+                            },
+                            {
+                                path: 'content/:id/chunks',
+                                name: 'ChunkManagement',
+                                component: () => import('../views/smartcs/knowledge/ChunkManagementView.vue'),
+                                meta: {
+                                    requiresAuth: true,
+                                    permission: 'knowledge:content:view',
+                                    title: '切片管理'
+                                }
+                            },
+                            {
+                                path: 'faq',
+                                name: 'KnowledgeFAQ',
+                                component: () => import('../views/smartcs/knowledge/FaqManagementView.vue'),
+                                meta: {
+                                    requiresAuth: true,
+                                    permission: 'knowledge:faq:view',
+                                    title: 'FAQ管理'
+                                }
+                            },
+                            {
+                                path: 'index',
+                                name: 'KnowledgeIndex',
+                                component: () => import('../views/smartcs/infrastructure/index/IndexListView.vue'),
+                                meta: {
+                                    requiresAuth: true,
+                                    permission: 'knowledge:index:view',
+                                    title: '索引管理'
+                                }
+                            },
+                            {
+                                path: 'provider',
+                                name: 'ModelProvider',
+                                component: () => import('../views/smartcs/knowledge/ProviderManagementView.vue'),
+                                meta: {
+                                    requiresAuth: true,
+                                    permission: 'knowledge:provider:view',
+                                    title: '模型提供商管理'
+                                }
+                            },
+                            {
+                                path: 'model',
+                                name: 'ModelManagement',
+                                component: () => import('../views/smartcs/knowledge/ModelManagementView.vue'),
+                                meta: {
+                                    requiresAuth: true,
+                                    permission: 'knowledge:model:view',
+                                    title: '模型管理'
+                                }
+                            },
+                            {
+                                path: 'app',
+                                name: 'AppManagement',
+                                component: () => import('../views/smartcs/knowledge/AppManagementView.vue'),
+                                meta: {
+                                    requiresAuth: true,
+                                    permission: 'app:view',
+                                    title: 'APP管理'
+                                }
+                            },
+                            {
+                                path: 'app/:id',
+                                name: 'AppDetail',
+                                component: () => import('../views/smartcs/knowledge/AppDetailView.vue'),
+                                meta: {
+                                    requiresAuth: true,
+                                    permission: 'app:view',
+                                    title: 'APP详情'
+                                }
+                            },
+                            {
+                                path: 'chat',
+                                name: 'SmartChat',
+                                component: () => import('../views/smartcs/knowledge/ChatView.vue'),
+                                meta: {
+                                    requiresAuth: true,
+                                    permission: 'knowledge:chat:view',
+                                    title: '智能聊天'
+                                }
+                            }
+                        ]
                     },
+                    
+                    // Intent Management
                     {
-                        path: 'provider',
-                        name: 'ProviderManagement',
-                        component: () => import('../views/dashboard/knowledge/ProviderManagementView.vue'),
-                        meta: {
-                            requiresAuth: true,
-                            permission: 'knowledge:provider:view',
-                            title: '模型提供商管理'
-                        }
+                        path: 'intent',
+                        component: () => import('../views/smartcs/intent/IntentLayout.vue'),
+                        meta: { requiresAuth: true },
+                        children: [
+                            {
+                                path: '',
+                                redirect: '/platform/smartcs/intent/classification'
+                            },
+                            {
+                                path: 'classification',
+                                name: 'IntentClassification',
+                                component: () => import('../views/smartcs/intent/classification/IntentManagementView.vue'),
+                                meta: {
+                                    requiresAuth: true,
+                                    permission: 'intent:view',
+                                    title: '意图分类管理'
+                                }
+                            },
+                            {
+                                path: 'catalog',
+                                name: 'IntentCatalog',
+                                component: () => import('../views/smartcs/intent/catalog/CatalogManagementView.vue'),
+                                meta: {
+                                    requiresAuth: true,
+                                    permission: 'intent:catalog:view',
+                                    title: '意图目录管理'
+                                }
+                            },
+                            {
+                                path: 'testing',
+                                name: 'IntentTesting',
+                                component: () => import('../views/smartcs/intent/testing/ClassificationTestView.vue'),
+                                meta: {
+                                    requiresAuth: true,
+                                    permission: 'intent:test:view',
+                                    title: '分类测试'
+                                }
+                            },
+                            {
+                                path: 'snapshots',
+                                name: 'IntentSnapshots',
+                                component: () => import('../views/smartcs/intent/snapshots/SnapshotManagementView.vue'),
+                                meta: {
+                                    requiresAuth: true,
+                                    permission: 'intent:snapshot:view',
+                                    title: '快照管理'
+                                }
+                            }
+                        ]
                     },
+                    
+                    // Moderation Management
                     {
-                        path: 'model',
-                        name: 'ModelManagement',
-                        component: () => import('../views/dashboard/knowledge/ModelManagementView.vue'),
-                        meta: {
-                            requiresAuth: true,
-                            permission: 'knowledge:model:view',
-                            title: '模型管理'
-                        }
-                    },
-                    {
-                        path: 'app',
-                        name: 'AppManagement',
-                        component: () => import('../views/dashboard/knowledge/AppManagementView.vue'),
-                        meta: {
-                            requiresAuth: true,
-                            permission: 'app:view',
-                            title: 'APP管理'
-                        }
-                    },
-                    {
-                        path: 'app/:id',
-                        name: 'AppDetail',
-                        component: () => import('../views/dashboard/knowledge/AppDetailView.vue'),
-                        meta: {
-                            requiresAuth: true,
-                            permission: 'app:edit',
-                            title: '应用编辑'
-                        }
+                        path: 'moderation',
+                        component: () => import('../views/smartcs/moderation/ModerationLayout.vue'),
+                        meta: { requiresAuth: true },
+                        children: [
+                            {
+                                path: '',
+                                redirect: '/platform/smartcs/moderation/review'
+                            },
+                            {
+                                path: 'review',
+                                name: 'ModerationReview',
+                                component: () => import('../views/smartcs/moderation/ManualReviewView.vue'),
+                                meta: {
+                                    requiresAuth: true,
+                                    permission: 'moderation:review:view',
+                                    title: '人工审核'
+                                }
+                            },
+                            {
+                                path: 'records',
+                                name: 'ModerationRecords',
+                                component: () => import('../views/smartcs/moderation/RecordManagementView.vue'),
+                                meta: {
+                                    requiresAuth: true,
+                                    permission: 'moderation:record:view',
+                                    title: '审核记录'
+                                }
+                            },
+                            {
+                                path: 'config',
+                                name: 'ModerationConfig',
+                                component: () => import('../views/smartcs/moderation/ConfigManagementView.vue'),
+                                meta: {
+                                    requiresAuth: true,
+                                    permission: 'moderation:config:view',
+                                    title: '审核配置'
+                                }
+                            }
+                        ]
                     }
                 ]
             },
-            // 秒杀管理路由
+            
+            // E-commerce Platform
             {
-                path: '/seckill',
-                component: () => import('../components/layout/MainLayout.vue'),
+                path: 'ecommerce',
+                component: () => import('../views/ecommerce/EcommerceLayout.vue'),
                 meta: { requiresAuth: true },
                 children: [
                     {
                         path: '',
-                        redirect: '/seckill/activities'
+                        redirect: '/platform/ecommerce/catalog'
                     },
+                    
+                    // Product Catalog
                     {
-                        path: 'activities',
-                        name: 'SeckillActivityList',
-                        component: () => import('../views/seckill/ActivityList.vue'),
-                        meta: {
-                            requiresAuth: true,
-                            title: '秒杀活动管理'
-                        }
+                        path: 'catalog',
+                        children: [
+                            {
+                                path: '',
+                                redirect: '/platform/ecommerce/catalog/products'
+                            },
+                            {
+                                path: 'products',
+                                name: 'ProductManagement',
+                                component: () => import('../views/ecommerce/catalog/products/ProductList.vue'),
+                                meta: {
+                                    requiresAuth: true,
+                                    permission: 'product:view',
+                                    title: '商品管理'
+                                }
+                            },
+                            {
+                                path: 'products/:id',
+                                name: 'ProductDetail',
+                                component: () => import('../views/ecommerce/catalog/products/ProductDetail.vue'),
+                                meta: {
+                                    requiresAuth: true,
+                                    permission: 'product:view',
+                                    title: '商品详情'
+                                }
+                            },
+                            {
+                                path: 'categories',
+                                name: 'CategoryManagement',
+                                component: () => import('../views/ecommerce/catalog/products/CategoryManagement.vue'),
+                                meta: {
+                                    requiresAuth: true,
+                                    permission: 'product:category:view',
+                                    title: '分类管理'
+                                }
+                            },
+                            {
+                                path: 'promotions',
+                                name: 'PromotionManagement',
+                                component: () => import('../views/ecommerce/catalog/promotions/ActivityList.vue'),
+                                meta: {
+                                    requiresAuth: true,
+                                    permission: 'promotion:view',
+                                    title: '促销管理'
+                                }
+                            }
+                        ]
                     },
+                    
+                    // Order Management
                     {
                         path: 'orders',
-                        name: 'SeckillOrderList',
-                        component: () => import('../views/seckill/OrderList.vue'),
+                        children: [
+                            {
+                                path: '',
+                                redirect: '/platform/ecommerce/orders/management'
+                            },
+                            {
+                                path: 'management',
+                                name: 'OrderManagement',
+                                component: () => import('../views/ecommerce/orders/management/OrderList.vue'),
+                                meta: {
+                                    requiresAuth: true,
+                                    permission: 'order:view',
+                                    title: '订单管理'
+                                }
+                            },
+                            {
+                                path: 'management/:id',
+                                name: 'OrderDetail',
+                                component: () => import('../views/ecommerce/orders/management/OrderDetail.vue'),
+                                meta: {
+                                    requiresAuth: true,
+                                    permission: 'order:view',
+                                    title: '订单详情'
+                                }
+                            },
+                            {
+                                path: 'after-sales',
+                                name: 'AfterSalesManagement',
+                                component: () => import('../views/ecommerce/orders/after-sales/AfterSalesList.vue'),
+                                meta: {
+                                    requiresAuth: true,
+                                    permission: 'after-sales:view',
+                                    title: '售后管理'
+                                }
+                            }
+                        ]
+                    },
+                    
+                    // Logistics Management
+                    {
+                        path: 'logistics',
+                        component: () => import('../views/ecommerce/logistics/Layout.vue'),
+                        children: [
+                            {
+                                path: '',
+                                redirect: '/platform/ecommerce/logistics/packages'
+                            },
+                            {
+                                path: 'packages',
+                                name: 'LogisticsPackages',
+                                component: () => import('../views/ecommerce/logistics/packages/List.vue'),
+                                meta: {
+                                    requiresAuth: true,
+                                    permission: 'logistics:packages:view',
+                                    title: '包裹管理'
+                                }
+                            },
+                            {
+                                path: 'orders',
+                                name: 'LogisticsOrders',
+                                component: () => import('../views/ecommerce/logistics/orders/List.vue'),
+                                meta: {
+                                    requiresAuth: true,
+                                    permission: 'logistics:orders:view',
+                                    title: '物流订单管理'
+                                }
+                            }
+                        ]
+                    },
+                    
+                    // Loyalty Management
+                    {
+                        path: 'loyalty',
+                        children: [
+                            {
+                                path: '',
+                                redirect: '/platform/ecommerce/loyalty/points'
+                            },
+                            {
+                                path: 'points',
+                                name: 'PointsManagement',
+                                component: () => import('../views/ecommerce/loyalty/UserPointsManagement.vue'),
+                                meta: {
+                                    requiresAuth: true,
+                                    permission: 'points:view',
+                                    title: '积分管理'
+                                }
+                            },
+                            {
+                                path: 'products',
+                                name: 'PointsProducts',
+                                component: () => import('../views/ecommerce/loyalty/PointsProductList.vue'),
+                                meta: {
+                                    requiresAuth: true,
+                                    permission: 'points:product:view',
+                                    title: '积分商品'
+                                }
+                            }
+                        ]
+                    }
+                ]
+            },
+            
+            // User Center
+            {
+                path: 'usercenter',
+                component: () => import('../views/usercenter/UserCenterLayout.vue'),
+                meta: { requiresAuth: true },
+                children: [
+                    {
+                        path: '',
+                        redirect: '/platform/usercenter/identity'
+                    },
+                    
+                    // Identity Management
+                    {
+                        path: 'identity',
+                        children: [
+                            {
+                                path: '',
+                                redirect: '/platform/usercenter/identity/users'
+                            },
+                            {
+                                path: 'users',
+                                name: 'UserManagement',
+                                component: () => import('../views/usercenter/identity/users/UserManagementView.vue'),
+                                meta: {
+                                    requiresAuth: true,
+                                    permission: 'user:view',
+                                    title: '用户管理'
+                                }
+                            },
+                            {
+                                path: 'roles',
+                                name: 'RoleManagement',
+                                component: () => import('../views/usercenter/identity/roles/RoleManagementView.vue'),
+                                meta: {
+                                    requiresAuth: true,
+                                    permission: 'role:view',
+                                    title: '角色管理'
+                                }
+                            }
+                        ]
+                    },
+                    
+                    // System Management
+                    {
+                        path: 'system',
+                        children: [
+                            {
+                                path: '',
+                                redirect: '/platform/usercenter/system/menu'
+                            },
+                            {
+                                path: 'menu',
+                                name: 'MenuManagement',
+                                component: () => import('../views/usercenter/system/menu/MenuManagementView.vue'),
+                                meta: {
+                                    requiresAuth: true,
+                                    permission: 'menu:view',
+                                    title: '菜单管理'
+                                }
+                            },
+                            {
+                                path: 'logs',
+                                name: 'OperationLog',
+                                component: () => import('../views/usercenter/system/logs/OperationLogView.vue'),
+                                meta: {
+                                    requiresAuth: true,
+                                    permission: 'log:view',
+                                    title: '操作日志'
+                                }
+                            }
+                        ]
+                    },
+                    
+                    // Profile
+                    {
+                        path: 'profile',
+                        name: 'Profile',
+                        component: () => import('../views/usercenter/identity/ProfileView.vue'),
                         meta: {
                             requiresAuth: true,
-                            title: '秒杀订单管理'
+                            title: '个人资料'
                         }
                     }
                 ]
             }
         ]
     },
-    // 应用预览和运行路由（无需认证）
+    
+    // Legacy route redirects for backward compatibility
     {
-        path: '/app/preview/:id',
-        name: 'AppPreview',
-        component: () => import('../views/app/AppPreview.vue'),
-        meta: {
-            title: '应用预览'
-        }
+        path: '/dashboard/intent-management',
+        redirect: '/platform/smartcs/intent'
     },
     {
-        path: '/app/run/:id',
-        name: 'AppRun',
-        component: () => import('../views/app/AppRun.vue'),
-        meta: {
-            title: '运行应用'
-        }
+        path: '/dashboard/intent-management/classification',
+        redirect: '/platform/smartcs/intent/classification'
     },
     {
-        path: '/:pathMatch(.*)*',
-        redirect: '/dashboard'
+        path: '/dashboard/intent-management/catalog',
+        redirect: '/platform/smartcs/intent/catalog'
+    },
+    {
+        path: '/dashboard/intent-management/test',
+        redirect: '/platform/smartcs/intent/testing'
+    },
+    {
+        path: '/dashboard/intent-management/snapshot',
+        redirect: '/platform/smartcs/intent/snapshots'
+    },
+    {
+        path: '/dashboard/knowledge',
+        redirect: '/platform/smartcs/knowledge'
+    },
+    {
+        path: '/dashboard/moderation',
+        redirect: '/platform/smartcs/moderation'
     }
 ]
 
@@ -517,14 +588,20 @@ const router = createRouter({
     routes
 })
 
-// 不再需要这个路由守卫，已在permission.ts中定义
-// 保留用于调试日志
-router.afterEach((to, from) => {
-    console.log(`路由跳转完成: 从 ${from.path} 到 ${to.path}`)
+// Navigation guard for authentication
+router.beforeEach((to, from, next) => {
+    const isAuthenticated = !!localStorage.getItem('access_token')
+    
+    if (to.meta.requiresAuth && !isAuthenticated) {
+        next('/login')
+    } else {
+        next()
+    }
 })
 
-router.onError((error) => {
-    console.error('路由错误:', error)
+// Theme reinitialization after route change
+router.afterEach(() => {
+    reinitializeTheme()
 })
 
 export default router

@@ -242,5 +242,5 @@ watch(() => props.indexName, (newValue, oldValue) => {
 </script>
 
 <style scoped lang="scss">
-@import './index-detail.scss';
-</style> 
+@use './index-detail.scss' as *;
+</style>

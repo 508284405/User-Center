@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watch, computed } from 'vue'
+import { ref, onMounted, watch, computed, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { User, Setting, Menu, Document } from '@element-plus/icons-vue'
 import 'element-plus/dist/index.css'
@@ -9,6 +9,8 @@ import { authApi } from '@/api/usercenter/auth'
 import { hasPermission, userPermissionState, initPermissions } from '@/utils/permission'
 // 导入主题切换组件
 import ThemeToggle from '@/components/ThemeToggle.vue'
+// 导入主题管理
+import { useTheme, reinitializeTheme } from '@/composables/useTheme'
 
 interface MenuItem {
   key: string
@@ -24,6 +26,10 @@ const activeMenu = ref('user-management')
 const showDropdown = ref(false)
 const userName = ref('管理员') // 用户名
 const userAvatar = ref('https://via.placeholder.com/40') // 用户头像
+
+// 主题管理
+const { currentTheme, resolvedTheme, isDark, initializeTheme } = useTheme()
+let themeCleanup: (() => void) | null = null
 
 // 菜单项定义，添加需要的权限
 const allMenuItems: MenuItem[] = [
@@ -79,7 +85,8 @@ const allMenuItems: MenuItem[] = [
       { key: 'provider-management', label: '模型提供商管理', permission: 'knowledge:provider:view' },
       { key: 'model-management', label: '模型管理', permission: 'knowledge:model:view' },
       { key: 'app-management', label: 'APP管理', permission: 'app:view' },
-      
+      { key: 'moderation-management', label: '审核管理', permission: 'moderation:view' },
+      { key: 'intent-catalog-management', label: '意图目录管理', permission: 'smartcs:intent:catalog:view' },
       { key: 'chat-test', label: '智能聊天', permission: 'knowledge:chat:view' }
     ]
   },
@@ -127,7 +134,8 @@ const menuKeyToIdMap: Record<string, number> = {
   'provider-management': 62, // 模型提供商管理
   'model-management': 63, // 模型管理
   'app-management': 64, // APP管理
-  
+  'moderation-management': 65, // 审核管理
+  'intent-catalog-management': 67, // 意图目录管理
   'chat-test': 61, // 智能聊天
   'seckill-management': 70, // 秒杀管理
   'seckill-activity': 71, // 秒杀活动管理
@@ -275,7 +283,7 @@ const setActiveMenu = () => {
     activeMenu.value = 'online-agents'
   } else if (path.includes('/customer-service/chat')) {
     activeMenu.value = 'agent-chat'
-  } else if (path.includes('/dashboard/knowledge/faq')) {
+  } else if (path.includes('/platform/smartcs/knowledge/faq')) {
     activeMenu.value = 'faq-management';
     // Ensure parent menu is opened
     setTimeout(() => {
@@ -284,7 +292,15 @@ const setActiveMenu = () => {
         knowledgeSubMenu.classList.add('is-opened');
       }
     }, 100);
-  } else if (path.includes('/dashboard/knowledge/content')) {
+  } else if (path.includes('/platform/smartcs/knowledge/bases')) {
+    activeMenu.value = 'knowledge-base-management';
+    setTimeout(() => {
+      const knowledgeSubMenu = document.querySelector('.el-sub-menu[data-menu-key="knowledge-management-parent"]');
+      if (knowledgeSubMenu) {
+        knowledgeSubMenu.classList.add('is-opened');
+      }
+    }, 100);
+  } else if (path.includes('/platform/smartcs/knowledge/content')) {
     activeMenu.value = 'content-management';
     setTimeout(() => {
       const knowledgeSubMenu = document.querySelector('.el-sub-menu[data-menu-key="knowledge-management-parent"]');
@@ -292,16 +308,15 @@ const setActiveMenu = () => {
         knowledgeSubMenu.classList.add('is-opened');
       }
     }, 100);
-  } else if (path.includes('/dashboard/knowledge/search')) {
-    activeMenu.value = 'knowledge-search';
+  } else if (path.includes('/platform/smartcs/knowledge/index')) {
+    activeMenu.value = 'KnowledgeIndex';
     setTimeout(() => {
       const knowledgeSubMenu = document.querySelector('.el-sub-menu[data-menu-key="knowledge-management-parent"]');
       if (knowledgeSubMenu) {
         knowledgeSubMenu.classList.add('is-opened');
       }
     }, 100);
-  
-  } else if (path.includes('/dashboard/knowledge/chat')) {
+  } else if (path.includes('/platform/smartcs/knowledge/chat')) {
     activeMenu.value = 'chat-test';
     setTimeout(() => {
       const knowledgeSubMenu = document.querySelector('.el-sub-menu[data-menu-key="knowledge-management-parent"]');
@@ -309,7 +324,7 @@ const setActiveMenu = () => {
         knowledgeSubMenu.classList.add('is-opened');
       }
     }, 100);
-  } else if (path.includes('/dashboard/knowledge/provider')) {
+  } else if (path.includes('/platform/smartcs/knowledge/provider')) {
     activeMenu.value = 'provider-management';
     setTimeout(() => {
       const knowledgeSubMenu = document.querySelector('.el-sub-menu[data-menu-key="knowledge-management-parent"]');
@@ -317,7 +332,7 @@ const setActiveMenu = () => {
         knowledgeSubMenu.classList.add('is-opened');
       }
     }, 100);
-  } else if (path.includes('/dashboard/knowledge/model')) {
+  } else if (path.includes('/platform/smartcs/knowledge/model')) {
     activeMenu.value = 'model-management';
     setTimeout(() => {
       const knowledgeSubMenu = document.querySelector('.el-sub-menu[data-menu-key="knowledge-management-parent"]');
@@ -325,8 +340,24 @@ const setActiveMenu = () => {
         knowledgeSubMenu.classList.add('is-opened');
       }
     }, 100);
-  } else if (path.includes('/dashboard/knowledge/app')) {
+  } else if (path.includes('/platform/smartcs/knowledge/app')) {
     activeMenu.value = 'app-management';
+    setTimeout(() => {
+      const knowledgeSubMenu = document.querySelector('.el-sub-menu[data-menu-key="knowledge-management-parent"]');
+      if (knowledgeSubMenu) {
+        knowledgeSubMenu.classList.add('is-opened');
+      }
+    }, 100);
+  } else if (path.includes('/platform/smartcs/moderation')) {
+    activeMenu.value = 'moderation-management';
+    setTimeout(() => {
+      const knowledgeSubMenu = document.querySelector('.el-sub-menu[data-menu-key="knowledge-management-parent"]');
+      if (knowledgeSubMenu) {
+        knowledgeSubMenu.classList.add('is-opened');
+      }
+    }, 100);
+  } else if (path.includes('/platform/smartcs/intent/catalog')) {
+    activeMenu.value = 'intent-catalog-management';
     setTimeout(() => {
       const knowledgeSubMenu = document.querySelector('.el-sub-menu[data-menu-key="knowledge-management-parent"]');
       if (knowledgeSubMenu) {
@@ -449,29 +480,35 @@ function handleMenuClick(key: string) {
       router.push('/customer-service/chat').catch(err => console.error('路由跳转失败:', err))
       break
     case 'faq-management':
-      router.push('/dashboard/knowledge/faq').catch(err => console.error('路由跳转失败:', err));
+      router.push('/platform/smartcs/knowledge/faq').catch(err => console.error('路由跳转失败:', err));
       break;
     case 'knowledge-base-management':
-      router.push('/dashboard/knowledge/base').catch(err => console.error('路由跳转失败:', err));
+      router.push('/platform/smartcs/knowledge/bases').catch(err => console.error('路由跳转失败:', err));
       break;
     case 'content-management':
-      router.push('/dashboard/knowledge/content').catch(err => console.error('路由跳转失败:', err));
+      router.push('/platform/smartcs/knowledge/content').catch(err => console.error('路由跳转失败:', err));
       break;
     case 'KnowledgeIndex':
-      router.push('/dashboard/knowledge/index').catch(err => console.error('路由跳转失败:', err));
+      router.push('/platform/smartcs/knowledge/index').catch(err => console.error('路由跳转失败:', err));
       break;
     case 'provider-management':
-      router.push('/dashboard/knowledge/provider').catch(err => console.error('路由跳转失败:', err));
+      router.push('/platform/smartcs/knowledge/provider').catch(err => console.error('路由跳转失败:', err));
       break;
     case 'model-management':
-      router.push('/dashboard/knowledge/model').catch(err => console.error('路由跳转失败:', err));
+      router.push('/platform/smartcs/knowledge/model').catch(err => console.error('路由跳转失败:', err));
       break;
     case 'app-management':
-      router.push('/dashboard/knowledge/app').catch(err => console.error('路由跳转失败:', err));
+      router.push('/platform/smartcs/knowledge/app').catch(err => console.error('路由跳转失败:', err));
       break;
-    
+    case 'moderation-management':
+      router.push('/platform/smartcs/moderation/review').catch(err => console.error('路由跳转失败:', err));
+      break;
+
+    case 'intent-catalog-management':
+      router.push('/platform/smartcs/intent/catalog').catch(err => console.error('路由跳转失败:', err));
+      break;
     case 'chat-test':
-      router.push('/dashboard/knowledge/chat').catch(err => console.error('路由跳转失败:', err));
+      router.push('/platform/smartcs/knowledge/chat').catch(err => console.error('路由跳转失败:', err));
       break;
     case 'seckill-activity':
       router.push('/seckill/activities').catch(err => console.error('路由跳转失败:', err));
@@ -511,6 +548,10 @@ async function loadUserInfo() {
 onMounted(async () => {
   // console.log('MainLayout组件挂载，开始初始化...')
   
+  // 重新初始化主题系统以确保在路由切换后主题状态正确
+  themeCleanup = reinitializeTheme()
+  console.log('主题系统重新初始化完成, 当前主题:', currentTheme.value, '解析主题:', resolvedTheme.value)
+  
   // 确保权限已初始化
   if (!userPermissionState.initialized) {
     // console.log('权限未初始化，开始初始化权限...')
@@ -530,6 +571,13 @@ onMounted(async () => {
   // console.log('可见菜单项:', visibleMenuItems.value.map(item => item.key))
 })
 
+// 组件卸载时清理
+onUnmounted(() => {
+  if (themeCleanup) {
+    themeCleanup()
+  }
+})
+
 // 监听路由变化，更新活动菜单
 watch(() => route.path, (newPath, oldPath) => {
   console.log(`路由变化: 从 ${oldPath} 到 ${newPath}`)
@@ -538,8 +586,8 @@ watch(() => route.path, (newPath, oldPath) => {
 </script>
 
 <template>
-  <div class="layout-container">
-    <header class="header">
+  <div class="layout-container" :class="{ 'dark-theme': isDark }">
+    <header class="header" :class="{ 'dark-header': isDark }">
       <div class="logo">用户中心</div>
       <div class="header-actions">
         <ThemeToggle mode="compact" :show-label="false" />
@@ -554,21 +602,21 @@ watch(() => route.path, (newPath, oldPath) => {
                 <el-dropdown-item @click="handleMenuClick('profile')">个人信息</el-dropdown-item>
                 <el-dropdown-item @click="handleLogout">退出登录</el-dropdown-item>
               </el-dropdown-menu>
-            </el-dropdown>
+            </template>
           </el-dropdown>
         </div>
       </div>
     </header>
 
     <div class="main-container">
-      <aside class="sidebar">
+      <aside class="sidebar" :class="{ 'dark-sidebar': isDark }">
         <el-menu
           :default-active="activeMenu"
           class="el-menu-vertical"
           @select="handleMenuClick"
-          background-color="#304156"
-          text-color="#bfcbd9"
-          active-text-color="#409EFF"
+          :background-color="isDark ? '#1a1a1a' : '#304156'"
+          :text-color="isDark ? '#a0a0a0' : '#bfcbd9'"
+          :active-text-color="isDark ? '#22D3EE' : '#409EFF'"
           unique-opened
         >
           <template v-for="item in visibleMenuItems" :key="item.key">
@@ -601,7 +649,7 @@ watch(() => route.path, (newPath, oldPath) => {
         </el-menu>
       </aside>
 
-      <main class="content">
+      <main class="content" :class="{ 'dark-content': isDark }">
         <Suspense>
           <template #default>
             <router-view></router-view>
@@ -624,6 +672,7 @@ watch(() => route.path, (newPath, oldPath) => {
   flex-direction: column;
   height: 100vh;
   overflow: hidden;
+  transition: var(--transition-colors, color 0.2s ease, background-color 0.2s ease);
 }
 
 .header {
@@ -635,6 +684,13 @@ watch(() => route.path, (newPath, oldPath) => {
   color: white;
   padding: 0 20px;
   box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
+  transition: var(--transition-colors, color 0.2s ease, background-color 0.2s ease);
+}
+
+.header.dark-header {
+  background-color: var(--color-bg-secondary, #1a1a1a);
+  border-bottom: 1px solid var(--color-border, #333);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
 }
 
 .logo {
@@ -675,6 +731,12 @@ watch(() => route.path, (newPath, oldPath) => {
   background-color: #304156;
   height: 100%;
   overflow-y: auto;
+  transition: var(--transition-colors, color 0.2s ease, background-color 0.2s ease);
+}
+
+.sidebar.dark-sidebar {
+  background-color: var(--color-bg-secondary, #1a1a1a);
+  border-right: 1px solid var(--color-border, #333);
 }
 
 .content {
@@ -682,6 +744,12 @@ watch(() => route.path, (newPath, oldPath) => {
   padding: 20px;
   overflow-y: auto;
   background-color: #f0f2f5;
+  transition: var(--transition-colors, color 0.2s ease, background-color 0.2s ease);
+}
+
+.content.dark-content {
+  background-color: var(--color-bg-primary, #0f0f0f);
+  color: var(--color-text-primary, #ffffff);
 }
 
 .el-menu-vertical {
@@ -694,5 +762,40 @@ watch(() => route.path, (newPath, oldPath) => {
   justify-content: center;
   align-items: center;
   height: 100%;
+}
+
+/* Dark theme styles */
+.layout-container.dark-theme {
+  background-color: var(--color-bg-primary, #0f0f0f);
+  color: var(--color-text-primary, #ffffff);
+}
+
+/* Force Element Plus menu theme in dark mode */
+.layout-container.dark-theme :deep(.el-menu) {
+  background-color: var(--color-bg-secondary, #1a1a1a) !important;
+  color: var(--color-text-primary, #ffffff) !important;
+}
+
+.layout-container.dark-theme :deep(.el-menu-item) {
+  color: var(--color-text-secondary, #a0a0a0) !important;
+}
+
+.layout-container.dark-theme :deep(.el-menu-item:hover) {
+  background-color: var(--color-interactive-primary, #22D3EE) !important;
+  color: white !important;
+}
+
+.layout-container.dark-theme :deep(.el-menu-item.is-active) {
+  background-color: var(--color-interactive-primary, #22D3EE) !important;
+  color: white !important;
+}
+
+.layout-container.dark-theme :deep(.el-sub-menu__title) {
+  color: var(--color-text-secondary, #a0a0a0) !important;
+}
+
+.layout-container.dark-theme :deep(.el-sub-menu__title:hover) {
+  background-color: rgba(34, 211, 238, 0.1) !important;
+  color: var(--color-interactive-primary, #22D3EE) !important;
 }
 </style>

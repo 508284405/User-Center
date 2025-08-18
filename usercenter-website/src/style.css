@@ -1,11 +1,15 @@
+/* 导入设计系统 */
+@import './styles/design-tokens.scss';
+@import './styles/auth-theme.scss';
+
 :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+  font-family: var(--font-family-primary, Inter, system-ui, Avenir, Helvetica, Arial, sans-serif);
+  line-height: var(--line-height-normal, 1.5);
+  font-weight: var(--font-weight-normal, 400);
 
   color-scheme: dark light;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #0a0e1a;
+  color: var(--color-text-primary, rgba(255, 255, 255, 0.87));
+  background-color: var(--color-bg-primary, #0a0e1a);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -13,6 +17,15 @@
   -moz-osx-font-smoothing: grayscale;
   -webkit-text-size-adjust: 100%;
   -ms-text-size-adjust: 100%;
+
+  /* 设置滚动行为 */
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    scroll-behavior: auto;
+  }
 }
 
 /* Auth page specific link styles - avoid conflicts */

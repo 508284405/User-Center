@@ -1,0 +1,608 @@
+// SmartCS 管理控制台样式
+// 基于项目设计 Token 系统的管理控制台专用样式
+
+// ========== 导入设计 Token ==========
+@use '@/styles/design-tokens.scss' as *;
+
+// ========== 管理控制台主题变量 ==========
+:root {
+  // 专门为 SmartCS 管理控制台定制的颜色
+  --smartcs-primary: var(--color-primary);
+  --smartcs-success: var(--color-success);
+  --smartcs-warning: var(--color-warning);
+  --smartcs-error: var(--color-error);
+  --smartcs-info: var(--color-info);
+  
+  // 管理控制台特定的背景色
+  --smartcs-bg-dashboard: var(--color-bg-secondary);
+  --smartcs-bg-card: var(--color-surface);
+  --smartcs-bg-sidebar: var(--color-surface);
+  
+  // 边框和分割线
+  --smartcs-border: var(--color-border);
+  --smartcs-border-light: rgba(var(--color-border), 0.5);
+  
+  // 文本颜色
+  --smartcs-text-primary: var(--color-text-primary);
+  --smartcs-text-secondary: var(--color-text-secondary);
+  --smartcs-text-muted: var(--color-text-muted);
+}
+
+// ========== 全局布局样式 ==========
+.smartcs-admin-layout {
+  font-family: var(--font-family-primary);
+  background-color: var(--smartcs-bg-dashboard);
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+  transition: var(--transition-all);
+}
+
+// ========== 侧边栏样式优化 ==========
+.admin-sidebar {
+  background: var(--smartcs-bg-sidebar);
+  border-right: 1px solid var(--smartcs-border);
+  box-shadow: var(--shadow-sm);
+  
+  // 毛玻璃效果
+  backdrop-filter: var(--backdrop-blur-sm);
+  
+  .sidebar-header {
+    background: linear-gradient(135deg, 
+      var(--color-primary-50) 0%, 
+      var(--color-secondary-50) 100%);
+    border-bottom: 1px solid var(--smartcs-border);
+    padding: var(--spacing-4);
+    
+    .sidebar-title {
+      font-size: var(--text-lg);
+      font-weight: var(--font-weight-semibold);
+      color: var(--smartcs-text-primary);
+      letter-spacing: var(--letter-spacing-tight);
+    }
+  }
+  
+  .sidebar-menu {
+    padding: var(--spacing-2);
+    
+    .el-menu-item {
+      margin: var(--spacing-1) 0;
+      border-radius: var(--radius-lg);
+      transition: var(--transition-all);
+      font-weight: var(--font-weight-medium);
+      
+      &:hover {
+        background: linear-gradient(135deg, 
+          var(--color-primary-50) 0%, 
+          var(--color-secondary-50) 100%);
+        transform: translateX(var(--spacing-1));
+        box-shadow: var(--shadow-sm);
+      }
+      
+      &.is-active {
+        background: linear-gradient(135deg, 
+          var(--color-primary-100) 0%, 
+          var(--color-secondary-100) 100%);
+        box-shadow: var(--shadow-primary);
+        transform: translateX(var(--spacing-1));
+        
+        &::before {
+          content: '';
+          position: absolute;
+          left: 0;
+          top: 50%;
+          transform: translateY(-50%);
+          width: 3px;
+          height: 60%;
+          background: linear-gradient(to bottom, 
+            var(--color-primary) 0%, 
+            var(--color-secondary) 100%);
+          border-radius: var(--radius-full);
+        }
+      }
+    }
+  }
+}
+
+// ========== 主内容区域样式 ==========
+.admin-main {
+  background-color: var(--smartcs-bg-dashboard);
+  overflow-y: auto;
+  position: relative;
+  
+  // 添加微妙的纹理背景
+  &::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: 
+      radial-gradient(circle at 1px 1px, rgba(var(--color-primary-500), 0.03) 1px, transparent 0);
+    background-size: 20px 20px;
+    pointer-events: none;
+    z-index: 0;
+  }
+  
+  .main-content {
+    position: relative;
+    z-index: 1;
+    padding: var(--spacing-8);
+    max-width: var(--container-2xl);
+    margin: 0 auto;
+  }
+}
+
+// ========== 横向 TAB 样式 ==========
+.intent-tabs {
+  margin-bottom: var(--spacing-6);
+
+  .el-tabs__header {
+    background: var(--smartcs-bg-card);
+    border: 1px solid var(--smartcs-border);
+    border-radius: var(--radius-xl);
+    padding: var(--spacing-2) var(--spacing-3);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .el-tabs__item {
+    border-radius: var(--radius-lg);
+    margin-right: var(--spacing-1);
+    padding: var(--spacing-2) var(--spacing-4);
+    transition: var(--transition-all);
+    font-weight: var(--font-weight-medium);
+    color: var(--smartcs-text-secondary);
+    
+    &:hover {
+      background: var(--color-primary-50);
+      color: var(--color-primary-700);
+    }
+    &.is-active {
+      background: linear-gradient(135deg,
+        var(--color-primary-100) 0%,
+        var(--color-secondary-100) 100%);
+      color: var(--smartcs-text-primary);
+      box-shadow: var(--shadow-primary);
+    }
+  }
+}
+
+// ========== 页面头部样式 ==========
+.page-header {
+  margin-bottom: var(--spacing-8);
+  
+  .page-title {
+    font-size: var(--text-3xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--smartcs-text-primary);
+    margin: 0 0 var(--spacing-2) 0;
+    line-height: var(--line-height-tight);
+    letter-spacing: var(--letter-spacing-tight);
+    
+    // 添加文字渐变效果
+    background: linear-gradient(135deg, 
+      var(--color-primary-600) 0%, 
+      var(--color-secondary-600) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  .page-description {
+    font-size: var(--text-lg);
+    color: var(--smartcs-text-secondary);
+    margin: 0;
+    line-height: var(--line-height-relaxed);
+  }
+  
+  .header-actions {
+    display: flex;
+    gap: var(--spacing-3);
+    align-items: center;
+  }
+}
+
+// ========== 卡片样式优化 ==========
+.el-card {
+  border: 1px solid var(--smartcs-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+  background: var(--smartcs-bg-card);
+  transition: var(--transition-all);
+  
+  &:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+  }
+  
+  .el-card__header {
+    background: linear-gradient(135deg, 
+      var(--color-bg-secondary) 0%, 
+      var(--color-bg-muted) 100%);
+    border-bottom: 1px solid var(--smartcs-border);
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  }
+  
+  .el-card__body {
+    padding: var(--spacing-6);
+  }
+}
+
+// ========== 统计卡片特殊样式 ==========
+.stat-card {
+  position: relative;
+  overflow: hidden;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, 
+      var(--color-primary) 0%, 
+      var(--color-secondary) 50%,
+      var(--color-accent) 100%);
+  }
+  
+  .stat-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-4);
+  }
+  
+  .stat-icon {
+    border-radius: var(--radius-2xl);
+    position: relative;
+    overflow: hidden;
+    
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: var(--backdrop-blur-sm);
+    }
+  }
+  
+  .stat-value {
+    font-size: var(--text-3xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--smartcs-text-primary);
+  }
+  
+  .stat-label {
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--smartcs-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: var(--letter-spacing-wide);
+  }
+}
+
+// ========== 表格样式优化 ==========
+.table-card {
+  .el-table {
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    
+    th {
+      background: var(--color-bg-muted);
+      color: var(--smartcs-text-primary);
+      font-weight: var(--font-weight-semibold);
+      border-bottom: 2px solid var(--smartcs-border);
+    }
+    
+    tr:hover {
+      background: var(--color-primary-50);
+    }
+  }
+  
+  .action-buttons {
+    display: flex;
+    gap: var(--spacing-2);
+    justify-content: center;
+    flex-wrap: wrap;
+    
+    .el-button {
+      transition: var(--transition-all);
+      
+      &:hover {
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-sm);
+      }
+    }
+  }
+}
+
+// ========== 搜索表单样式 ==========
+.search-card {
+  .el-form {
+    .el-form-item {
+      margin-bottom: var(--spacing-4);
+      
+      .el-form-item__label {
+        font-weight: var(--font-weight-medium);
+        color: var(--smartcs-text-primary);
+      }
+    }
+    
+    .el-input,
+    .el-select {
+      .el-input__inner,
+      .el-input__wrapper {
+        border-radius: var(--radius-lg);
+        transition: var(--transition-all);
+        
+        &:focus {
+          box-shadow: 0 0 0 2px var(--color-primary-200);
+        }
+      }
+    }
+  }
+}
+
+// ========== 分页样式优化 ==========
+.pagination-wrapper {
+  margin-top: var(--spacing-6);
+  display: flex;
+  justify-content: flex-end;
+  
+  .el-pagination {
+    .el-pagination__total {
+      color: var(--smartcs-text-secondary);
+      font-weight: var(--font-weight-medium);
+    }
+    
+    .btn-next,
+    .btn-prev,
+    .el-pager li {
+      border-radius: var(--radius-md);
+      transition: var(--transition-all);
+      
+      &:hover {
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-sm);
+      }
+    }
+  }
+}
+
+// ========== 模态框样式优化 ==========
+.el-dialog {
+  border-radius: var(--radius-2xl);
+  overflow: hidden;
+  box-shadow: var(--shadow-2xl);
+  
+  .el-dialog__header {
+    background: linear-gradient(135deg, 
+      var(--color-bg-secondary) 0%, 
+      var(--color-bg-muted) 100%);
+    border-bottom: 1px solid var(--smartcs-border);
+    padding: var(--spacing-6);
+    
+    .el-dialog__title {
+      font-size: var(--text-xl);
+      font-weight: var(--font-weight-semibold);
+      color: var(--smartcs-text-primary);
+    }
+  }
+  
+  .el-dialog__body {
+    padding: var(--spacing-6);
+  }
+  
+  .el-dialog__footer {
+    background: var(--color-bg-secondary);
+    border-top: 1px solid var(--smartcs-border);
+    padding: var(--spacing-4) var(--spacing-6);
+  }
+}
+
+// ========== 标签和徽章样式 ==========
+.el-tag {
+  border-radius: var(--radius-lg);
+  font-weight: var(--font-weight-medium);
+  border: none;
+  
+  &.el-tag--primary {
+    background: linear-gradient(135deg, 
+      var(--color-primary-100) 0%, 
+      var(--color-primary-50) 100%);
+    color: var(--color-primary-700);
+  }
+  
+  &.el-tag--success {
+    background: linear-gradient(135deg, 
+      var(--color-success-100) 0%, 
+      var(--color-success-50) 100%);
+    color: var(--color-success-700);
+  }
+  
+  &.el-tag--warning {
+    background: linear-gradient(135deg, 
+      var(--color-warning-100) 0%, 
+      var(--color-warning-50) 100%);
+    color: var(--color-warning-700);
+  }
+  
+  &.el-tag--danger {
+    background: linear-gradient(135deg, 
+      var(--color-error-100) 0%, 
+      var(--color-error-50) 100%);
+    color: var(--color-error-700);
+  }
+}
+
+// ========== 按钮样式增强 ==========
+.el-button {
+  border-radius: var(--radius-lg);
+  font-weight: var(--font-weight-medium);
+  transition: var(--transition-all);
+  
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+  }
+  
+  &.el-button--primary {
+    background: linear-gradient(135deg, 
+      var(--color-primary) 0%, 
+      var(--color-secondary) 100%);
+    border: none;
+    
+    &:hover {
+      background: linear-gradient(135deg, 
+        var(--color-primary-600) 0%, 
+        var(--color-secondary-600) 100%);
+      box-shadow: var(--shadow-primary);
+    }
+  }
+}
+
+// ========== 进度条样式 ==========
+.el-progress {
+  .el-progress-bar__outer {
+    border-radius: var(--radius-full);
+    background: var(--color-bg-muted);
+  }
+  
+  .el-progress-bar__inner {
+    border-radius: var(--radius-full);
+    background: linear-gradient(90deg, 
+      var(--color-primary) 0%, 
+      var(--color-secondary) 100%);
+  }
+}
+
+// ========== 响应式设计 ==========
+@media (max-width: 768px) {
+  .smartcs-admin-layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+  }
+  
+  .admin-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: var(--z-index-overlay);
+    height: 100vh;
+    transform: translateX(-100%);
+    transition: transform var(--duration-normal) var(--ease-out);
+    
+    &.show {
+      transform: translateX(0);
+    }
+  }
+  
+  .admin-main {
+    .main-content {
+      padding: var(--spacing-4);
+    }
+  }
+  
+  .page-header {
+    .page-title {
+      font-size: var(--text-2xl);
+    }
+    
+    .header-actions {
+      flex-direction: column;
+      align-items: stretch;
+      gap: var(--spacing-2);
+    }
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+    gap: var(--spacing-1);
+  }
+  
+  .pagination-wrapper {
+    justify-content: center;
+  }
+}
+
+// ========== 暗色主题适配 ==========
+:root[data-theme="dark"] {
+  --smartcs-bg-dashboard: var(--color-bg-primary);
+  --smartcs-bg-card: var(--color-surface);
+  --smartcs-bg-sidebar: var(--color-surface-raised);
+}
+
+// ========== 动画效果 ==========
+@keyframes slideInFromRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.slide-in-right {
+  animation: slideInFromRight var(--duration-normal) var(--ease-out);
+}
+
+.fade-in-up {
+  animation: fadeInUp var(--duration-normal) var(--ease-out);
+}
+
+// ========== 加载状态样式 ==========
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(var(--color-surface), 0.8);
+  backdrop-filter: var(--backdrop-blur-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-index-overlay);
+}
+
+// ========== 空状态样式 ==========
+.empty-state {
+  text-align: center;
+  padding: var(--spacing-12) var(--spacing-6);
+  color: var(--smartcs-text-muted);
+  
+  .empty-icon {
+    font-size: var(--text-6xl);
+    margin-bottom: var(--spacing-4);
+    opacity: 0.5;
+  }
+  
+  .empty-text {
+    font-size: var(--text-lg);
+    margin-bottom: var(--spacing-2);
+  }
+  
+  .empty-description {
+    font-size: var(--text-sm);
+    color: var(--smartcs-text-muted);
+  }
+}

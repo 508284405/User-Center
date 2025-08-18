@@ -234,3 +234,29 @@ export interface DocumentProcessResult {
   status: string;
   errorMessage?: string;
 } 
+
+// 新增：通过URL导入文档请求
+export interface UrlDocumentImportRequest {
+  knowledgeBaseId: number;
+  modelId: number;
+  url: string;
+  title?: string;
+  fileType?: string;
+  fileSize?: number;
+  originalFileName?: string;
+  segmentMode?: 'general' | 'parent_child';
+  segmentSettings?: any;
+  parentChildSettings?: any;
+  indexMethod?: string;
+  retrievalSettings?: any;
+  useKbDefaults?: boolean;
+}
+
+// 新增：通过URL导入
+export const importByUrl = (data: UrlDocumentImportRequest): Promise<Response & { data?: DocumentProcessResult }> => {
+  return request({
+    url: '/smartcs/api/admin/content/import-url',
+    method: 'POST',
+    data,
+  });
+};

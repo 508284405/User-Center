@@ -645,7 +645,7 @@ const resetProcessingState = () => {
 const navigateToChunkPage = (contentId: number) => {
   try {
     router.push({
-      path: `/dashboard/knowledge/chunk/${contentId}`,
+      path: `/platform/smartcs/knowledge/content/${contentId}/chunks`,
       query: {
         from: 'upload'
       }
