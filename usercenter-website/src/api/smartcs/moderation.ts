@@ -1,23 +1,6 @@
 import request from '../config'
 
 // 审核相关的类型定义
-export interface ModerationCategory {
-  id?: number
-  parentId?: number
-  name: string
-  code: string
-  description?: string
-  severityLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'
-  actionType: 'WARN' | 'REVIEW' | 'BLOCK' | 'ESCALATE'
-  isActive: boolean
-  sortOrder: number
-  children?: ModerationCategory[]
-  createdBy?: string
-  updatedBy?: string
-  createdAt?: number
-  updatedAt?: number
-}
-
 export interface ModerationTestResult {
   content: string
   result: 'APPROVED' | 'REJECTED' | 'NEEDS_REVIEW' | 'PENDING'
@@ -31,208 +14,140 @@ export interface ModerationTestResult {
   debugInfo?: Record<string, any>
 }
 
-export interface ModerationRecord {
+// 策略相关类型定义
+export interface ModerationPolicy {
   id?: number
-  contentHash: string
-  originalContent: string
-  contentType: 'MESSAGE' | 'KNOWLEDGE' | 'DOCUMENT' | 'FAQ' | 'RAG_QUERY'
-  sourceId?: string
-  sourceType: 'CHAT' | 'KNOWLEDGE_BASE' | 'RAG_QUERY' | 'FILE_UPLOAD'
-  userId?: string
-  sessionId?: string
-  moderationResult: 'APPROVED' | 'REJECTED' | 'NEEDS_REVIEW' | 'PENDING'
-  riskLevel?: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'
-  confidenceScore?: number
-  isBlocked: boolean
-  violationCategories?: ViolationCategory[]
-  keywordMatches?: string[]
-  moderationMethods?: string
-  aiModelUsed?: string
-  processingTimeMs?: number
-  manualReviewStatus?: string
-  manualReviewerId?: string
-  manualReviewNotes?: string
-  manualReviewedAt?: number
-  actionTaken?: 'WARN' | 'REVIEW' | 'BLOCK' | 'ESCALATE'
-  clientIp?: string
-  requestId?: string
+  name: string
+  code: string
+  description?: string
+  scenario: string
+  policyType: string
+  defaultRiskLevel?: string
+  defaultAction?: string
+  isActive?: boolean
+  priority?: number
+  configParams?: Record<string, any>
+  templateId?: number
+  template?: ModerationPolicyTemplate
+  dimensions?: ModerationDimension[]
+  createdBy?: string
+  updatedBy?: string
   createdAt?: number
   updatedAt?: number
 }
 
-export interface ViolationCategory {
-  categoryId: number
-  categoryName: string
-  categoryCode: string
-  confidence: number
-  triggerRule?: string
-}
-
-export interface KeywordRule {
+export interface ModerationDimension {
   id?: number
-  ruleName: string
-  keyword: string
-  categoryId: number
-  ruleType: 'EXACT' | 'FUZZY' | 'REGEX' | 'SUBSTRING'
-  matchMode: 'FULL' | 'PARTIAL' | 'WORD_BOUNDARY'
-  caseSensitive: boolean
-  severityWeight: number
-  similarityThreshold?: number
-  contextWindow?: number
-  isActive: boolean
-  priority: number
-  actionOverride?: 'WARN' | 'REVIEW' | 'BLOCK' | 'ESCALATE'
-  hitCount: number
-  lastHitAt?: number
+  name: string
+  code: string
   description?: string
-  source: 'SYSTEM' | 'MANUAL' | 'IMPORT' | 'AI_GENERATED'
-  language: string
-  tags?: string
-  effectiveFrom?: number
-  effectiveUntil?: number
-  createdBy?: string
-  createdAt?: number
-}
-
-export interface ModerationConfig {
-  id?: number
-  configKey: string
-  configName: string
-  configValue: string
-  configType: 'BOOLEAN' | 'INTEGER' | 'STRING' | 'JSON' | 'DECIMAL'
-  description?: string
-  category: 'GENERAL' | 'AI_MODEL' | 'KEYWORD_FILTER' | 'THRESHOLD' | 'CACHE'
-  isActive: boolean
-  isSystem: boolean
-  validationRule?: string
-  defaultValue?: string
-}
-
-export interface ModerationStatistics {
-  totalRecords: number
-  approvedCount: number
-  rejectedCount: number
-  pendingCount: number
-  blockedCount: number
-  averageProcessingTime: number
-  todayRecords: number
-  riskLevelDistribution: {
-    lowCount: number
-    mediumCount: number
-    highCount: number
-    criticalCount: number
-  }
-}
-
-export interface ViolationTrend {
-  timestamp: number
-  date: string
-  violationCount: number
-  topViolationType?: string
-}
-
-// 查询参数接口
-export interface CategoryQuery {
-  parentId?: number
-  isActive?: boolean
+  checkGuideline?: string
   severityLevel?: string
+  actionType?: string
+  confidenceThreshold?: number
+  isActive?: boolean
+  sortOrder?: number
+  category?: string
+  categoryId?: number
+  configParams?: Record<string, any>
+  createdBy?: string
+  updatedBy?: string
+  createdAt?: number
+  updatedAt?: number
 }
 
-export interface RecordQuery {
-  contentType?: string
-  sourceType?: string
-  moderationResult?: string
-  riskLevel?: string
-  userId?: string
-  sessionId?: string
-  isBlocked?: boolean
-  startTime?: number
-  endTime?: number
-  pageNumber?: number
+export interface ModerationPolicyTemplate {
+  id?: number
+  name: string
+  code: string
+  description?: string
+  templateType: string
+  promptTemplate: string
+  dimensionTemplate?: string
+  responseTemplate?: string
+  language?: string
+  variables?: Record<string, any>
+  defaultValues?: Record<string, any>
+  isActive?: boolean
+  version?: string
+  createdBy?: string
+  updatedBy?: string
+  createdAt?: number
+  updatedAt?: number
+}
+
+export interface PolicyDimensionConfig {
+  dimensionId: number
+  isActive: boolean
+  weight?: number
+  customThreshold?: number
+}
+
+export interface ModerationPolicyPageQuery {
+  name?: string
+  code?: string
+  scenario?: string
+  policyType?: string
+  isActive?: boolean
+  templateId?: number
+  pageNum?: number
   pageSize?: number
   sortBy?: string
-  sortOrder?: 'ASC' | 'DESC'
+  sortOrder?: string
 }
 
-export interface RuleQuery {
-  categoryId?: number
-  ruleType?: string
-  language?: string
+// 审核分类相关类型定义
+export interface ModerationCategory {
+  id?: number
+  parentId?: number
+  name: string
+  code: string
+  description?: string
+  severityLevel: string
+  actionType: string
   isActive?: boolean
-  pageNumber?: number
+  sortOrder?: number
+  children?: ModerationCategory[]
+  createdBy?: string
+  updatedBy?: string
+  createdAt?: number
+  updatedAt?: number
+}
+
+export interface ModerationCategoryCreateCmd {
+  name: string
+  code: string
+  description?: string
+  parentId?: number
+  severityLevel: string
+  actionType: string
+  sortOrder?: number
+  isActive?: boolean
+}
+
+export interface ModerationCategoryUpdateCmd {
+  id: number
+  name: string
+  description?: string
+  severityLevel: string
+  actionType: string
+  sortOrder?: number
+  isActive?: boolean
+}
+
+export interface ModerationCategoryPageQuery {
+  name?: string
+  code?: string
+  parentId?: number
+  severityLevel?: string
+  actionType?: string
+  isActive?: boolean
+  pageIndex?: number
   pageSize?: number
 }
 
 // API接口定义
 export const moderationApi = {
-  // ================ 违规分类管理 ================
-  
-  // 获取分类树
-  getCategoryTree: () => {
-    return request.get<ModerationCategory[]>('/api/admin/moderation/categories/tree')
-  },
-
-  // 获取顶级分类
-  getTopCategories: () => {
-    return request.get<ModerationCategory[]>('/api/admin/moderation/categories/top')
-  },
-
-  // 获取子分类
-  getSubCategories: (parentId: number) => {
-    return request.get<ModerationCategory[]>(`/api/admin/moderation/categories/${parentId}/children`)
-  },
-
-  // 创建分类
-  createCategory: (data: Partial<ModerationCategory>) => {
-    return request.post<ModerationCategory>('/api/admin/moderation/categories', data)
-  },
-
-  // 更新分类
-  updateCategory: (id: number, data: Partial<ModerationCategory>) => {
-    return request.put<ModerationCategory>(`/api/admin/moderation/categories/${id}`, data)
-  },
-
-  // 删除分类
-  deleteCategory: (id: number) => {
-    return request.delete(`/api/admin/moderation/categories/${id}`)
-  },
-
-  // 启用/禁用分类
-  toggleCategoryStatus: (id: number, isActive: boolean) => {
-    return request.patch(`/api/admin/moderation/categories/${id}/status`, { isActive })
-  },
-
-  // ================ 审核记录管理 ================
-
-  // 分页查询审核记录
-  getRecords: (query: RecordQuery = {}) => {
-    return request.get('/api/admin/moderation/records', { params: query })
-  },
-
-  // 获取记录详情
-  getRecordDetail: (id: number) => {
-    return request.get<ModerationRecord>(`/api/admin/moderation/records/${id}`)
-  },
-
-  // 人工审核处理
-  manualReview: (id: number, data: {
-    result: 'APPROVED' | 'REJECTED'
-    action: 'WARN' | 'REVIEW' | 'BLOCK' | 'ESCALATE'
-    notes?: string
-  }) => {
-    return request.post(`/api/admin/moderation/records/${id}/review`, data)
-  },
-
-  // 批量处理记录
-  batchProcess: (ids: number[], action: string) => {
-    return request.post('/api/admin/moderation/records/batch', { ids, action })
-  },
-
-  // 获取需要人工审核的记录
-  getPendingReviews: (query: RecordQuery = {}) => {
-    return request.get('/api/admin/moderation/records/pending', { params: query })
-  },
-
   // ================ AI模型审核接口 ================
 
   // 使用指定AI模型进行内容审核
@@ -245,7 +160,7 @@ export const moderationApi = {
     userId?: string
     sessionId?: string
   }) => {
-    return request.post<ModerationTestResult>('/api/admin/moderation/content/ai', data)
+    return request.post<ModerationTestResult>('/smartcs/api/admin/moderation/content/ai', data)
   },
 
   // 使用指定AI模型进行快速内容预检
@@ -258,7 +173,140 @@ export const moderationApi = {
     userId?: string
     sessionId?: string
   }) => {
-    return request.post<ModerationTestResult>('/api/admin/moderation/content/ai/quick', data)
+    return request.post<ModerationTestResult>('/smartcs/api/admin/moderation/content/ai/quick', data)
+  },
+
+  // ================ 策略管理接口 ================
+
+  // 创建策略
+  createPolicy: (data: Omit<ModerationPolicy, 'id'>) => {
+    return request.post<{ id: number }>('/smartcs/api/admin/moderation/policies', data)
+  },
+
+  // 更新策略
+  updatePolicy: (id: number, data: Partial<ModerationPolicy>) => {
+    return request.put(`/smartcs/api/admin/moderation/policies/${id}`, data)
+  },
+
+  // 启用策略
+  enablePolicy: (id: number) => {
+    return request.post(`/smartcs/api/admin/moderation/policies/${id}/enable`)
+  },
+
+  // 禁用策略
+  disablePolicy: (id: number) => {
+    return request.post(`/smartcs/api/admin/moderation/policies/${id}/disable`)
+  },
+
+  // 删除策略
+  deletePolicy: (id: number) => {
+    return request.delete(`/smartcs/api/admin/moderation/policies/${id}`)
+  },
+
+  // 获取策略详情
+  getPolicyById: (id: number) => {
+    return request.get<ModerationPolicy>(`/smartcs/api/admin/moderation/policies/${id}`)
+  },
+
+  // 根据编码获取策略
+  getPolicyByCode: (code: string) => {
+    return request.get<ModerationPolicy>(`/smartcs/api/admin/moderation/policies/code/${code}`)
+  },
+
+  // 分页查询策略列表
+  queryPolicies: (params: ModerationPolicyPageQuery) => {
+    return request.get<{
+      data: ModerationPolicy[]
+      totalCount: number
+      pageSize: number
+      pageIndex: number
+      success: boolean
+    }>('/smartcs/api/admin/moderation/policies', { params })
+  },
+
+  // 查询场景策略
+  getPoliciesByScenario: (scenario: string) => {
+    return request.get<ModerationPolicy[]>(`/smartcs/api/admin/moderation/policies/scenario/${scenario}`)
+  },
+
+  // 获取策略维度
+  getPolicyDimensions: (id: number) => {
+    return request.get<ModerationDimension[]>(`/smartcs/api/admin/moderation/policies/${id}/dimensions`)
+  },
+
+  // 配置策略维度
+  configurePolicyDimensions: (id: number, configs: PolicyDimensionConfig[]) => {
+    return request.post(`/smartcs/api/admin/moderation/policies/${id}/dimensions`, configs)
+  },
+
+  // 获取所有维度
+  getAllActiveDimensions: () => {
+    return request.get<ModerationDimension[]>('/smartcs/api/admin/moderation/policies/dimensions')
+  },
+
+  // 获取所有模板
+  getAllActiveTemplates: () => {
+    return request.get<ModerationPolicyTemplate[]>('/smartcs/api/admin/moderation/policies/templates')
+  },
+
+  // ================ 审核分类管理接口 ================
+
+  // 创建审核分类
+  createCategory: (data: ModerationCategoryCreateCmd) => {
+    return request.post<number>('/smartcs/api/admin/moderation/categories', data)
+  },
+
+  // 更新审核分类
+  updateCategory: (id: number, data: ModerationCategoryUpdateCmd) => {
+    return request.put(`/smartcs/api/admin/moderation/categories/${id}`, { ...data, id })
+  },
+
+  // 删除审核分类
+  deleteCategory: (id: number) => {
+    return request.delete(`/smartcs/api/admin/moderation/categories/${id}`)
+  },
+
+  // 根据ID查询审核分类
+  getCategoryById: (id: number) => {
+    return request.get<ModerationCategory>(`/smartcs/api/admin/moderation/categories/${id}`)
+  },
+
+  // 分页查询审核分类
+  listCategories: (params: ModerationCategoryPageQuery) => {
+    return request.get<{
+      data: ModerationCategory[]
+      totalCount: number
+      pageSize: number
+      pageIndex: number
+      success: boolean
+    }>('/smartcs/api/admin/moderation/categories', { params })
+  },
+
+  // 获取审核分类树形结构
+  getCategoryTree: () => {
+    return request.get<ModerationCategory[]>('/smartcs/api/admin/moderation/categories/tree')
+  },
+
+  // ================ 模板管理接口 ================
+
+  // 创建模板
+  createTemplate: (data: Omit<ModerationPolicyTemplate, 'id'>) => {
+    return request.post<number>('/smartcs/api/admin/moderation/templates', data)
+  },
+
+  // 更新模板
+  updateTemplate: (id: number, data: Partial<ModerationPolicyTemplate>) => {
+    return request.put(`/smartcs/api/admin/moderation/templates/${id}`, { ...data, id })
+  },
+
+  // 删除模板
+  deleteTemplate: (id: number) => {
+    return request.delete(`/smartcs/api/admin/moderation/templates/${id}`)
+  },
+
+  // 获取模板详情
+  getTemplateById: (id: number) => {
+    return request.get<ModerationPolicyTemplate>(`/smartcs/api/admin/moderation/templates/${id}`)
   }
 }
 

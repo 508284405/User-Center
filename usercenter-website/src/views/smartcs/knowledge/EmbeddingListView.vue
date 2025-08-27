@@ -97,7 +97,7 @@ const handleSizeChange = (size: number) => {
 
 // 返回文档管理页面
 const goBack = () => {
-  router.push('/platform/smartcs/knowledge/content');
+  router.push('/platform/ai-management/content');
 };
 
 // 格式化时间戳

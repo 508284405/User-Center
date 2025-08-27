@@ -111,15 +111,27 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="标签数量" width="100" align="center">
+        <el-table-column label="标签数量" width="120" align="center">
           <template #default="scope">
-            <el-badge 
-              :value="(scope.row.labels || []).length" 
-              :max="99"
-              type="primary"
-            >
-              <el-button size="small" text>查看</el-button>
-            </el-badge>
+            <div class="label-count-cell">
+              <el-tag 
+                :type="(scope.row.labels || []).length > 0 ? 'primary' : 'info'" 
+                size="small"
+                class="count-tag"
+              >
+                {{ (scope.row.labels || []).length }}
+              </el-tag>
+              <el-button 
+                size="small" 
+                text 
+                type="primary"
+                @click="viewLabels(scope.row)"
+                :disabled="!(scope.row.labels || []).length"
+                class="view-btn"
+              >
+                查看
+              </el-button>
+            </div>
           </template>
         </el-table-column>
         <el-table-column prop="createdAt" label="创建时间" width="180">
@@ -203,7 +215,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { 
   Plus, 
   RefreshRight, 
@@ -219,6 +231,7 @@ import CorpusManagementModal from './components/CorpusManagementModal.vue'
 
 const store = useSmartCSAdminStore()
 const router = useRouter()
+const route = useRoute()
 
 // 响应式数据
 const modalVisible = ref(false)
@@ -278,8 +291,18 @@ const deleteIntent = async (intent) => {
 }
 
 const viewVersions = (intent) => {
-  // TODO: 实现版本查看功能
-  ElMessage.info('版本查看功能开发中...')
+  if (!intent.id) {
+    ElMessage.warning('无效的意图数据')
+    return
+  }
+  
+  // 暂时显示版本信息，可以后续扩展为详细的版本管理弹窗
+  ElMessage({
+    message: `意图版本管理功能\n意图ID: ${intent.id}\n意图名称: ${intent.name}\n当前状态: ${intent.status}`,
+    type: 'info',
+    duration: 3000,
+    dangerouslyUseHTMLString: false
+  })
 }
 
 const manageCorpus = (intent) => {
@@ -357,11 +380,64 @@ const getStatusText = (status) => {
 
 const formatDate = (timestamp) => {
   if (!timestamp) return ''
-  return new Date(timestamp).toLocaleString('zh-CN')
+  
+  try {
+    // 检查时间戳是否为毫秒级（13位数字）
+    let date
+    if (typeof timestamp === 'number') {
+      // 如果是毫秒级时间戳，直接使用
+      if (timestamp.toString().length === 13) {
+        date = new Date(timestamp)
+      } else if (timestamp.toString().length === 10) {
+        // 如果是秒级时间戳，转换为毫秒
+        date = new Date(timestamp * 1000)
+      } else {
+        date = new Date(timestamp)
+      }
+    } else {
+      date = new Date(timestamp)
+    }
+    
+    // 检查日期是否有效
+    if (isNaN(date.getTime())) {
+      return '时间格式错误'
+    }
+    
+    return date.toLocaleString('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    })
+  } catch (error) {
+    console.error('时间格式化错误:', error, '时间戳:', timestamp)
+    return '时间格式错误'
+  }
+}
+
+const viewLabels = (intent) => {
+  if (!intent.labels || intent.labels.length === 0) {
+    ElMessage.info('该意图暂无标签')
+    return
+  }
+  
+  const labelsText = intent.labels.join(', ')
+  ElMessage.info(`标签：${labelsText}`)
 }
 
 // 生命周期
 onMounted(() => {
+  // 处理从目录管理页面传来的查询参数
+  if (route.query.catalogId) {
+    searchForm.catalogId = route.query.catalogId
+    // 如果有目录名称，可以显示一个提示
+    if (route.query.catalogName) {
+      ElMessage.success(`已筛选目录：${route.query.catalogName}`)
+    }
+  }
+  
   loadIntentList()
   store.loadCatalogList()
 })
@@ -408,6 +484,23 @@ onMounted(() => {
 
 .table-card {
   border-radius: 8px;
+}
+
+.label-count-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.label-count-cell .count-tag {
+  min-width: 24px;
+  text-align: center;
+}
+
+.label-count-cell .view-btn {
+  padding: 2px 4px;
+  font-size: 12px;
 }
 
 .action-buttons {

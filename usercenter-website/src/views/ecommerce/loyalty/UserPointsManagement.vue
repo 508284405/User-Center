@@ -286,8 +286,8 @@ import {
   adjustUserPoints,
   getUserPointsList,
   rechargeUserPoints
-} from '../../api/client-web/points'
-import { userApi } from '../../api/usercenter/user'
+} from '../../../api/client-web/points'
+import { userApi } from '../../../api/usercenter/user'
 
 const userPointsDetail = ref(null)
 const pointsHistoryList = ref([])

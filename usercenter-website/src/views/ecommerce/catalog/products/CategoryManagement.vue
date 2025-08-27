@@ -144,7 +144,7 @@ import {
   updateCategory,
   deleteCategory,
   moveCategory,
-} from '../../api/client-web/category'
+} from '../../../../api/client-web/category'
 
 // 树形数据
 const categoryTree = ref([])

@@ -2,7 +2,8 @@
 export enum MessageType {
   USER = 'USER',
   ASSISTANT = 'ASSISTANT',
-  SYSTEM = 'SYSTEM'
+  SYSTEM = 'SYSTEM',
+  CLARIFICATION = 'CLARIFICATION'
 }
 
 // 消息状态枚举
@@ -283,4 +284,90 @@ export interface RagConfigValidationResult {
 // 扩展聊天请求以包含RAG配置
 export interface BotChatSSERequestWithRag extends BotChatSSERequest {
   ragConfig?: RagComponentConfig;
+}
+
+// ==================== 槽位填充相关类型定义 ====================
+
+// 槽位类型枚举
+export enum SlotType {
+  STRING = 'STRING',
+  NUMBER = 'NUMBER', 
+  DATE = 'DATE',
+  TIME = 'TIME',
+  EMAIL = 'EMAIL',
+  PHONE = 'PHONE',
+  URL = 'URL',
+  BOOLEAN = 'BOOLEAN',
+  ENUM = 'ENUM',
+  JSON = 'JSON',
+  LIST = 'LIST',
+  ENTITY = 'ENTITY',
+  CUSTOM = 'CUSTOM'
+}
+
+// 槽位定义DTO
+export interface SlotDefinitionDTO {
+  name: string;
+  label: string;
+  type: SlotType;
+  required?: boolean;
+  validation?: Record<string, any>;
+  hint?: string;
+  examples?: string[];
+  defaultValue?: string;
+  dependencies?: string[];
+  order?: number;
+  multiple?: boolean;
+  minValue?: number;
+  maxValue?: number;
+  minLength?: number;
+  maxLength?: number;
+  enumOptions?: string[];
+  pattern?: string;
+  unit?: string;
+  extensions?: Record<string, any>;
+}
+
+// 槽位模板DTO
+export interface SlotTemplateDTO {
+  templateId?: string;
+  templateName: string;
+  description?: string;
+  intentCode: string;
+  slotDefinitions: SlotDefinitionDTO[];
+  promptTemplate?: string;
+  clarificationTemplates?: Record<string, string>;
+  slotFillingEnabled?: boolean;
+  maxClarificationAttempts?: number;
+  blockRetrievalOnMissing?: boolean;
+  completenessThreshold?: number;
+  language?: string;
+  version?: string;
+  extensions?: Record<string, any>;
+}
+
+// 槽位填充元数据
+export interface SlotFillingMetadata {
+  slotTemplateId?: string;
+  missingSlots?: string[];
+  filledSlots?: Record<string, any>;
+  clarificationQuestions?: string[];
+  completenessScore?: number;
+  nextRequiredSlot?: string;
+}
+
+// 澄清问题界面数据
+export interface ClarificationData {
+  questions: string[];
+  suggestedResponses?: string[];
+  contextHint?: string;
+  slotName?: string;
+  slotLabel?: string;
+  examples?: string[];
+}
+
+// 扩展消息接口以支持槽位填充
+export interface MessageWithSlotFilling extends Message {
+  slotFillingMetadata?: SlotFillingMetadata;
+  clarificationData?: ClarificationData;
 } 

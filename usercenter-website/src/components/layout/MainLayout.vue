@@ -85,8 +85,10 @@ const allMenuItems: MenuItem[] = [
       { key: 'provider-management', label: '模型提供商管理', permission: 'knowledge:provider:view' },
       { key: 'model-management', label: '模型管理', permission: 'knowledge:model:view' },
       { key: 'app-management', label: 'APP管理', permission: 'app:view' },
-      { key: 'moderation-management', label: '审核管理', permission: 'moderation:view' },
+
+      { key: 'dictionary-management', label: '字典管理', permission: 'dictionary:view' },
       { key: 'intent-catalog-management', label: '意图目录管理', permission: 'smartcs:intent:catalog:view' },
+      { key: 'moderation-management', label: '审核管理', permission: 'moderation:view' },
       { key: 'chat-test', label: '智能聊天', permission: 'knowledge:chat:view' }
     ]
   },
@@ -134,8 +136,9 @@ const menuKeyToIdMap: Record<string, number> = {
   'provider-management': 62, // 模型提供商管理
   'model-management': 63, // 模型管理
   'app-management': 64, // APP管理
-  'moderation-management': 65, // 审核管理
+
   'intent-catalog-management': 67, // 意图目录管理
+  'moderation-management': 68, // 审核管理
   'chat-test': 61, // 智能聊天
   'seckill-management': 70, // 秒杀管理
   'seckill-activity': 71, // 秒杀活动管理
@@ -222,59 +225,44 @@ const setActiveMenu = () => {
   const path = route.path
   console.log('当前路由路径:', path)
   
-  if (path.includes('/after-sales/refund')) {
-    activeMenu.value = 'after-sales-refund'
-  } else if (path.includes('/after-sales')) {
+  if (path.includes('/platform/ecommerce/orders/after-sales')) {
     activeMenu.value = 'after-sales-list'
-  } else if (path.includes('/dashboard/user')) {
+  } else if (path.includes('/platform/usercenter/identity/users')) {
     activeMenu.value = 'user-management'
-  } else if (path.includes('/dashboard/role')) {
+  } else if (path.includes('/platform/usercenter/identity/roles')) {
     activeMenu.value = 'role-management'
-  } else if (path.includes('/dashboard/menu')) {
+  } else if (path.includes('/platform/usercenter/system/menu')) {
     activeMenu.value = 'menu-management'
-  } else if (path.includes('/dashboard/log')) {
+  } else if (path.includes('/platform/usercenter/system/logs')) {
     activeMenu.value = 'operation-logs'
-  } else if (path.includes('/dashboard/profile')) {
+  } else if (path.includes('/platform/profile')) {
     activeMenu.value = 'profile'
-  } else if (path.includes('/dashboard/product') && !path.includes('/dashboard/product/category')) {
+  } else if (path.includes('/platform/ecommerce/catalog/products')) {
     activeMenu.value = 'product-management'
-  } else if (path.includes('/dashboard/product/category')) {
+  } else if (path.includes('/platform/ecommerce/catalog/categories')) {
     activeMenu.value = 'category-management'
-  } else if (path.includes('/dashboard/points/exchange')) {
-    activeMenu.value = 'exchange-management'
-    // 设置父菜单也为激活状态
-    setTimeout(() => {
-      const pointsSubMenu = document.querySelector('.el-sub-menu[data-menu-key="points-management-parent"]');
-      if (pointsSubMenu) {
-        pointsSubMenu.classList.add('is-opened');
-      }
-    }, 100);
-  } else if (path.includes('/dashboard/points/product')) {
+  } else if (path.includes('/platform/ecommerce/loyalty/products')) {
     activeMenu.value = 'points-product-management'
-    // 设置父菜单也为激活状态
     setTimeout(() => {
       const pointsSubMenu = document.querySelector('.el-sub-menu[data-menu-key="points-management-parent"]');
       if (pointsSubMenu) {
         pointsSubMenu.classList.add('is-opened');
       }
     }, 100);
-  } else if (path.includes('/dashboard/points')) {
+  } else if (path.includes('/platform/ecommerce/loyalty/points')) {
     activeMenu.value = 'points-management'
-    // 设置父菜单也为激活状态
     setTimeout(() => {
       const pointsSubMenu = document.querySelector('.el-sub-menu[data-menu-key="points-management-parent"]');
       if (pointsSubMenu) {
         pointsSubMenu.classList.add('is-opened');
       }
     }, 100);
-  } else if (path.includes('/dashboard/order')) {
+  } else if (path.includes('/platform/ecommerce/orders/management')) {
     activeMenu.value = 'order-management'
-  } else if (path.includes('/logistics/packages')) {
+  } else if (path.includes('/platform/ecommerce/logistics/packages')) {
     activeMenu.value = 'logistics-packages'
-  } else if (path.includes('/logistics/orders')) {
+  } else if (path.includes('/platform/ecommerce/logistics/orders')) {
     activeMenu.value = 'logistics-orders'
-  } else if (path.includes('/logistics/analysis')) {
-    activeMenu.value = 'logistics-analysis'
   } else if (path.includes('/customer-service/pending')) {
     activeMenu.value = 'pending-sessions'
   } else if (path.includes('/customer-service/sessions')) {
@@ -283,7 +271,7 @@ const setActiveMenu = () => {
     activeMenu.value = 'online-agents'
   } else if (path.includes('/customer-service/chat')) {
     activeMenu.value = 'agent-chat'
-  } else if (path.includes('/platform/smartcs/knowledge/faq')) {
+  } else if (path.includes('/platform/ai-management/faq')) {
     activeMenu.value = 'faq-management';
     // Ensure parent menu is opened
     setTimeout(() => {
@@ -292,7 +280,7 @@ const setActiveMenu = () => {
         knowledgeSubMenu.classList.add('is-opened');
       }
     }, 100);
-  } else if (path.includes('/platform/smartcs/knowledge/bases')) {
+  } else if (path.includes('/platform/ai-management/knowledge-bases')) {
     activeMenu.value = 'knowledge-base-management';
     setTimeout(() => {
       const knowledgeSubMenu = document.querySelector('.el-sub-menu[data-menu-key="knowledge-management-parent"]');
@@ -300,7 +288,7 @@ const setActiveMenu = () => {
         knowledgeSubMenu.classList.add('is-opened');
       }
     }, 100);
-  } else if (path.includes('/platform/smartcs/knowledge/content')) {
+  } else if (path.includes('/platform/ai-management/content')) {
     activeMenu.value = 'content-management';
     setTimeout(() => {
       const knowledgeSubMenu = document.querySelector('.el-sub-menu[data-menu-key="knowledge-management-parent"]');
@@ -308,7 +296,7 @@ const setActiveMenu = () => {
         knowledgeSubMenu.classList.add('is-opened');
       }
     }, 100);
-  } else if (path.includes('/platform/smartcs/knowledge/index')) {
+  } else if (path.includes('/platform/ai-management/index')) {
     activeMenu.value = 'KnowledgeIndex';
     setTimeout(() => {
       const knowledgeSubMenu = document.querySelector('.el-sub-menu[data-menu-key="knowledge-management-parent"]');
@@ -316,7 +304,7 @@ const setActiveMenu = () => {
         knowledgeSubMenu.classList.add('is-opened');
       }
     }, 100);
-  } else if (path.includes('/platform/smartcs/knowledge/chat')) {
+  } else if (path.includes('/platform/ai-management/chat')) {
     activeMenu.value = 'chat-test';
     setTimeout(() => {
       const knowledgeSubMenu = document.querySelector('.el-sub-menu[data-menu-key="knowledge-management-parent"]');
@@ -324,7 +312,7 @@ const setActiveMenu = () => {
         knowledgeSubMenu.classList.add('is-opened');
       }
     }, 100);
-  } else if (path.includes('/platform/smartcs/knowledge/provider')) {
+  } else if (path.includes('/platform/ai-management/provider')) {
     activeMenu.value = 'provider-management';
     setTimeout(() => {
       const knowledgeSubMenu = document.querySelector('.el-sub-menu[data-menu-key="knowledge-management-parent"]');
@@ -332,7 +320,7 @@ const setActiveMenu = () => {
         knowledgeSubMenu.classList.add('is-opened');
       }
     }, 100);
-  } else if (path.includes('/platform/smartcs/knowledge/model')) {
+  } else if (path.includes('/platform/ai-management/model')) {
     activeMenu.value = 'model-management';
     setTimeout(() => {
       const knowledgeSubMenu = document.querySelector('.el-sub-menu[data-menu-key="knowledge-management-parent"]');
@@ -340,8 +328,33 @@ const setActiveMenu = () => {
         knowledgeSubMenu.classList.add('is-opened');
       }
     }, 100);
-  } else if (path.includes('/platform/smartcs/knowledge/app')) {
+  } else if (path.includes('/platform/ai-management/app')) {
     activeMenu.value = 'app-management';
+    setTimeout(() => {
+      const knowledgeSubMenu = document.querySelector('.el-sub-menu[data-menu-key="knowledge-management-parent"]');
+      if (knowledgeSubMenu) {
+        knowledgeSubMenu.classList.add('is-opened');
+      }
+    }, 100);
+
+  } else if (path.includes('/platform/ai-management/dictionary')) {
+    activeMenu.value = 'dictionary-management';
+    setTimeout(() => {
+      const knowledgeSubMenu = document.querySelector('.el-sub-menu[data-menu-key="knowledge-management-parent"]');
+      if (knowledgeSubMenu) {
+        knowledgeSubMenu.classList.add('is-opened');
+      }
+    }, 100);
+  } else if (path.includes('/platform/ai-management/intent-catalog')) {
+    activeMenu.value = 'intent-catalog-management';
+    setTimeout(() => {
+      const knowledgeSubMenu = document.querySelector('.el-sub-menu[data-menu-key="knowledge-management-parent"]');
+      if (knowledgeSubMenu) {
+        knowledgeSubMenu.classList.add('is-opened');
+      }
+    }, 100);
+  } else if (path.includes('/platform/ai-management/moderation')) {
+    activeMenu.value = 'moderation-management';
     setTimeout(() => {
       const knowledgeSubMenu = document.querySelector('.el-sub-menu[data-menu-key="knowledge-management-parent"]');
       if (knowledgeSubMenu) {
@@ -350,14 +363,6 @@ const setActiveMenu = () => {
     }, 100);
   } else if (path.includes('/platform/smartcs/moderation')) {
     activeMenu.value = 'moderation-management';
-    setTimeout(() => {
-      const knowledgeSubMenu = document.querySelector('.el-sub-menu[data-menu-key="knowledge-management-parent"]');
-      if (knowledgeSubMenu) {
-        knowledgeSubMenu.classList.add('is-opened');
-      }
-    }, 100);
-  } else if (path.includes('/platform/smartcs/intent/catalog')) {
-    activeMenu.value = 'intent-catalog-management';
     setTimeout(() => {
       const knowledgeSubMenu = document.querySelector('.el-sub-menu[data-menu-key="knowledge-management-parent"]');
       if (knowledgeSubMenu) {
@@ -400,115 +405,112 @@ function handleMenuClick(key: string) {
   // 根据菜单key跳转到对应的路由
   switch (key) {
     case 'after-sales-list':
-      router.push('/after-sales').catch(err => console.error('路由跳转失败:', err))
-      break
-    case 'after-sales-refund':
-      router.push('/after-sales/refund').catch(err => console.error('路由跳转失败:', err))
+      router.push('/platform/ecommerce/orders/after-sales').catch(err => console.error('路由跳转失败:', err))
       break
     case 'user-management':
-      router.push('/dashboard/user').catch(err => {
+      router.push('/platform/usercenter/identity/users').catch(err => {
         console.error('路由跳转失败:', err)
       })
       break
     case 'role-management':
-      router.push('/dashboard/role').catch(err => {
+      router.push('/platform/usercenter/identity/roles').catch(err => {
         console.error('路由跳转失败:', err)
       })
       break
     case 'menu-management':
-      router.push('/dashboard/menu').catch(err => {
+      router.push('/platform/usercenter/system/menu').catch(err => {
         console.error('路由跳转失败:', err)
       })
       break
     case 'operation-logs':
-      router.push('/dashboard/log').catch(err => {
+      router.push('/platform/usercenter/system/logs').catch(err => {
         console.error('路由跳转失败:', err)
       })
       break
     case 'profile':
-      router.push('/dashboard/profile').catch(err => {
+      router.push('/platform/profile').catch(err => {
         console.error('路由跳转失败:', err)
       })
       break
     case 'product-management':
-      router.push('/dashboard/product').catch(err => {
+      router.push('/platform/ecommerce/catalog/products').catch(err => {
         console.error('路由跳转失败:', err)
       })
       break
     case 'category-management':
-      router.push('/dashboard/product/category').catch(err => {
+      router.push('/platform/ecommerce/catalog/categories').catch(err => {
         console.error('路由跳转失败:', err)
       })
       break
     case 'exchange-management':
-      router.push('/dashboard/points/exchange').catch(err => {
-        console.error('路由跳转失败:', err)
-      })
+      // 暂无独立路由，跳转到积分管理
+      router.push('/platform/ecommerce/loyalty/points').catch(err => console.error('路由跳转失败:', err))
       break
     case 'points-management':
-      router.push('/dashboard/points').catch(err => {
-        console.error('路由跳转失败:', err)
-      })
+      router.push('/platform/ecommerce/loyalty/points').catch(err => console.error('路由跳转失败:', err))
       break
     case 'points-product-management':
-      router.push('/dashboard/points/product').catch(err => {
-        console.error('路由跳转失败:', err)
-      })
+      router.push('/platform/ecommerce/loyalty/products').catch(err => console.error('路由跳转失败:', err))
       break
     case 'order-management':
-      router.push('/dashboard/order/list').catch(err => console.error('路由跳转失败:', err))
+      router.push('/platform/ecommerce/orders/management').catch(err => console.error('路由跳转失败:', err))
       break
     case 'logistics-packages':
-      router.push('/logistics/packages').catch(err => console.error('路由跳转失败:', err))
+      router.push('/platform/ecommerce/logistics/packages').catch(err => console.error('路由跳转失败:', err))
       break
     case 'logistics-orders':
-      router.push('/logistics/orders').catch(err => console.error('路由跳转失败:', err))
+      router.push('/platform/ecommerce/logistics/orders').catch(err => console.error('路由跳转失败:', err))
       break
     case 'logistics-analysis':
-      router.push('/logistics/analysis').catch(err => console.error('路由跳转失败:', err))
+      // 暂无分析路由，跳转到物流订单
+      router.push('/platform/ecommerce/logistics/orders').catch(err => console.error('路由跳转失败:', err))
       break
     case 'pending-sessions':
-      router.push('/customer-service/pending').catch(err => console.error('路由跳转失败:', err))
+      router.push('/platform/customer-service/sessions').catch(err => console.error('路由跳转失败:', err))
       break
     case 'all-sessions':
-      router.push('/customer-service/sessions').catch(err => console.error('路由跳转失败:', err))
+      router.push('/platform/customer-service/sessions').catch(err => console.error('路由跳转失败:', err))
       break
     case 'online-agents':
-      router.push('/customer-service/agents').catch(err => console.error('路由跳转失败:', err))
+      router.push('/platform/customer-service/agents').catch(err => console.error('路由跳转失败:', err))
       break
     case 'agent-chat':
-      router.push('/customer-service/chat').catch(err => console.error('路由跳转失败:', err))
+      router.push('/platform/customer-service/chat').catch(err => console.error('路由跳转失败:', err))
       break
     case 'faq-management':
-      router.push('/platform/smartcs/knowledge/faq').catch(err => console.error('路由跳转失败:', err));
+      router.push('/platform/ai-management/faq').catch(err => console.error('路由跳转失败:', err));
       break;
     case 'knowledge-base-management':
-      router.push('/platform/smartcs/knowledge/bases').catch(err => console.error('路由跳转失败:', err));
+      router.push('/platform/ai-management/knowledge-bases').catch(err => console.error('路由跳转失败:', err));
       break;
     case 'content-management':
-      router.push('/platform/smartcs/knowledge/content').catch(err => console.error('路由跳转失败:', err));
+      router.push('/platform/ai-management/content').catch(err => console.error('路由跳转失败:', err));
       break;
     case 'KnowledgeIndex':
-      router.push('/platform/smartcs/knowledge/index').catch(err => console.error('路由跳转失败:', err));
+      router.push('/platform/ai-management/index').catch(err => console.error('路由跳转失败:', err));
       break;
     case 'provider-management':
-      router.push('/platform/smartcs/knowledge/provider').catch(err => console.error('路由跳转失败:', err));
+      router.push('/platform/ai-management/provider').catch(err => console.error('路由跳转失败:', err));
       break;
     case 'model-management':
-      router.push('/platform/smartcs/knowledge/model').catch(err => console.error('路由跳转失败:', err));
+      router.push('/platform/ai-management/model').catch(err => console.error('路由跳转失败:', err));
       break;
     case 'app-management':
-      router.push('/platform/smartcs/knowledge/app').catch(err => console.error('路由跳转失败:', err));
+      router.push('/platform/ai-management/app').catch(err => console.error('路由跳转失败:', err));
       break;
-    case 'moderation-management':
-      router.push('/platform/smartcs/moderation/review').catch(err => console.error('路由跳转失败:', err));
+
+    case 'dictionary-management':
+      router.push('/platform/ai-management/dictionary').catch(err => console.error('路由跳转失败:', err));
       break;
 
     case 'intent-catalog-management':
-      router.push('/platform/smartcs/intent/catalog').catch(err => console.error('路由跳转失败:', err));
+      router.push('/platform/ai-management/intent-catalog').catch(err => console.error('路由跳转失败:', err));
+      break;
+    case 'moderation-management':
+      router.push('/platform/ai-management/moderation').catch(err => console.error('路由跳转失败:', err));
       break;
     case 'chat-test':
-      router.push('/platform/smartcs/knowledge/chat').catch(err => console.error('路由跳转失败:', err));
+      router.push('/platform/ai-management/chat').catch(err => console.error('路由跳转失败:', err));
       break;
     case 'seckill-activity':
       router.push('/seckill/activities').catch(err => console.error('路由跳转失败:', err));

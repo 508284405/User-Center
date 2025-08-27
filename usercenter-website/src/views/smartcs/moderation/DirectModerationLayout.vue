@@ -1,5 +1,15 @@
 <template>
-  <div class="moderation-layout">
+  <div class="direct-moderation-layout">
+    <div class="page-header">
+      <div class="header-content">
+        <h2 class="page-title">
+          <el-icon><Setting /></el-icon>
+          审核策略管理
+        </h2>
+        <p class="page-subtitle">配置不同场景下的内容审核策略，管理审核维度和模板</p>
+      </div>
+    </div>
+
     <!-- 模块导航 -->
     <div class="moderation-nav">
       <el-tabs
@@ -10,9 +20,6 @@
         <el-tab-pane label="审核策略" name="policies" />
         <el-tab-pane label="审核维度" name="dimensions" />
         <el-tab-pane label="模板管理" name="templates" />
-        <el-tab-pane label="人工审核" name="review" />
-        <el-tab-pane label="审核记录" name="records" />
-        <el-tab-pane label="审核配置" name="config" />
       </el-tabs>
     </div>
 
@@ -26,6 +33,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { Setting } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -34,36 +42,23 @@ const router = useRouter()
 const activeTab = computed({
   get() {
     const path = route.path
-    if (path.includes('/platform/smartcs/moderation/policies')) return 'policies'
-    if (path.includes('/platform/smartcs/moderation/dimensions')) return 'dimensions'
-    if (path.includes('/platform/smartcs/moderation/templates')) return 'templates'
-    if (path.includes('/platform/smartcs/moderation/review')) return 'review'
-    if (path.includes('/platform/smartcs/moderation/records')) return 'records'
-    if (path.includes('/platform/smartcs/moderation/config')) return 'config'
+    if (path.includes('/platform/ai-management/moderation/dimensions')) return 'dimensions'
+    if (path.includes('/platform/ai-management/moderation/templates')) return 'templates'
     return 'policies' // 默认
   },
   set(val) {
     switch (val) {
       case 'policies':
-        router.push('/platform/smartcs/moderation/policies')
+        router.push('/platform/ai-management/moderation')
         break
       case 'dimensions':
-        router.push('/platform/smartcs/moderation/dimensions')
+        router.push('/platform/ai-management/moderation/dimensions')
         break
       case 'templates':
-        router.push('/platform/smartcs/moderation/templates')
-        break
-      case 'review':
-        router.push('/platform/smartcs/moderation/review')
-        break
-      case 'records':
-        router.push('/platform/smartcs/moderation/records')
-        break
-      case 'config':
-        router.push('/platform/smartcs/moderation/config')
+        router.push('/platform/ai-management/moderation/templates')
         break
       default:
-        router.push('/platform/smartcs/moderation/policies')
+        router.push('/platform/ai-management/moderation')
     }
   }
 })
@@ -74,7 +69,38 @@ const onTabClick = () => {
 </script>
 
 <style scoped lang="scss">
-.moderation-layout {
+.direct-moderation-layout {
+  padding: 24px;
+  background: #f5f7fa;
+  min-height: 100vh;
+
+  .page-header {
+    margin-bottom: 24px;
+
+    .header-content {
+      .page-title {
+        font-size: 24px;
+        font-weight: 600;
+        color: #303133;
+        margin: 0 0 8px 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        .el-icon {
+          color: #409eff;
+        }
+      }
+
+      .page-subtitle {
+        color: #606266;
+        font-size: 14px;
+        margin: 0;
+        line-height: 1.5;
+      }
+    }
+  }
+
   .moderation-nav {
     margin-bottom: 24px;
   }

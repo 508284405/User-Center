@@ -18,6 +18,7 @@ const props = defineProps<Props>();
 interface Emits {
   (e: 'send-message', content: string): void;
   (e: 'retry-message', messageId: string): void;
+  (e: 'answer-clarification', questionId: string, answer: string): void;
 }
 
 const emit = defineEmits<Emits>();
@@ -45,6 +46,12 @@ const sendMessage = () => {
 const retryMessage = (messageId: string) => {
   if (props.loading) return;
   emit('retry-message', messageId);
+};
+
+// 处理澄清问题回答
+const handleClarificationAnswer = (questionId: string, answer: string) => {
+  if (props.loading) return;
+  emit('answer-clarification', questionId, answer);
 };
 
 // 处理键盘事件
@@ -102,6 +109,7 @@ onMounted(() => {
           :key="message.id"
           :message="message"
           @retry-message="retryMessage"
+          @answer-clarification="handleClarificationAnswer"
         />
       </div>
     </div>

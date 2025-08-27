@@ -279,7 +279,7 @@ const handleCreateSuccess = () => {
 
 // 编辑应用
 const handleEdit = (app: AiAppDTO) => {
-  router.push(`/platform/smartcs/knowledge/app/${app.id}`)
+  router.push(`/platform/ai-management/app/${app.id}`)
 }
 
 // 预览应用（新窗口打开，管理员模式）

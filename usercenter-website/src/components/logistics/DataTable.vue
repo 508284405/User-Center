@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, defineProps, defineEmits, computed } from 'vue'
+import { ref, computed } from 'vue'
 import { ElTable, ElTableColumn, ElPagination, ElButton, ElTooltip } from 'element-plus'
 
 // 定义列配置类型

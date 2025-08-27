@@ -276,6 +276,39 @@ export const classificationApi = {
   }
 }
 
+// 槽位模板管理接口
+export const slotTemplateApi = {
+  // 获取意图的槽位模板
+  getSlotTemplate(intentId: string | number) {
+    return request.get(`${API_BASE}/intent/intents/${intentId}/slot-template`)
+  },
+
+  // 更新意图的槽位模板
+  updateSlotTemplate(intentId: string | number, data: any) {
+    return request.put(`${API_BASE}/intent/intents/${intentId}/slot-template`, data)
+  },
+
+  // 删除意图的槽位模板
+  deleteSlotTemplate(intentId: string | number) {
+    return request.delete(`${API_BASE}/intent/intents/${intentId}/slot-template`)
+  },
+
+  // 测试槽位填充
+  testSlotFilling(intentId: string | number, data: any) {
+    return request.post(`${API_BASE}/intent/intents/${intentId}/slot-template/test`, data)
+  },
+
+  // 获取所有槽位模板
+  getAllSlotTemplates(params?: any) {
+    return request.get(`${API_BASE}/intent/slot-templates`, { params })
+  },
+
+  // 根据意图编码获取槽位模板
+  getSlotTemplateByIntentCode(intentCode: string, params?: any) {
+    return request.get(`${API_BASE}/intent/slot-templates/by-intent/${intentCode}`, { params })
+  }
+}
+
 // 通用工具函数
 export const utils = {
   // 格式化日期

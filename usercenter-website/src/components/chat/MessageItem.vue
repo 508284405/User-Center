@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import { ElMessage } from 'element-plus';
-import { User, Service, CopyDocument, Refresh, Loading, ArrowDown, ArrowUp } from '@element-plus/icons-vue';
-import { Message, MessageType, MessageStatus } from '@/types/chat';
+import { User, Service, CopyDocument, Refresh, Loading, ArrowDown, ArrowUp, QuestionFilled } from '@element-plus/icons-vue';
+import { Message, MessageType, MessageStatus, MessageWithSlotFilling } from '@/types/chat';
 import { formatTimestamp, copyToClipboard } from '@/utils/chat';
 
 // Props
 interface Props {
-  message: Message;
+  message: MessageWithSlotFilling;
 }
 
 const props = defineProps<Props>();
@@ -15,6 +15,7 @@ const props = defineProps<Props>();
 // Emits
 interface Emits {
   (e: 'retry-message', messageId: string): void;
+  (e: 'answer-clarification', questionId: string, answer: string): void;
 }
 
 const emit = defineEmits<Emits>();
@@ -25,6 +26,7 @@ const isThinkingExpanded = ref(false);
 // 计算属性
 const isUser = computed(() => props.message.type === MessageType.USER);
 const isAssistant = computed(() => props.message.type === MessageType.ASSISTANT);
+const isClarification = computed(() => props.message.type === MessageType.CLARIFICATION);
 const isError = computed(() => props.message.status === MessageStatus.ERROR);
 const isSending = computed(() => props.message.status === MessageStatus.SENDING);
 const hasThinkingContent = computed(() => {
@@ -36,6 +38,7 @@ const messageClass = computed(() => ({
   'message-item': true,
   'user-message': isUser.value,
   'assistant-message': isAssistant.value,
+  'clarification-message': isClarification.value,
   'error-message': isError.value,
   'sending-message': isSending.value
 }));
@@ -60,6 +63,16 @@ const toggleThinking = () => {
   isThinkingExpanded.value = !isThinkingExpanded.value;
 };
 
+// 回答澄清问题
+const answerClarificationQuestion = (answer: string) => {
+  emit('answer-clarification', props.message.id, answer);
+};
+
+// 使用建议回答
+const useSuggestedResponse = (response: string) => {
+  answerClarificationQuestion(response);
+};
+
 // 监听关键变化用于调试
 watch(() => props.message.thinkingContent, (newContent) => {
   if (newContent && newContent.length > 0) {
@@ -74,15 +87,18 @@ watch(() => props.message.thinkingContent, (newContent) => {
       <el-avatar :size="32" v-if="isUser">
         <el-icon><User /></el-icon>
       </el-avatar>
-             <el-avatar :size="32" v-else>
-         <el-icon><Service /></el-icon>
-       </el-avatar>
+      <el-avatar :size="32" v-else-if="isClarification" type="warning">
+        <el-icon><QuestionFilled /></el-icon>
+      </el-avatar>
+      <el-avatar :size="32" v-else>
+        <el-icon><Service /></el-icon>
+      </el-avatar>
     </div>
     
     <div class="message-content">
       <div class="message-header">
         <span class="message-sender">
-          {{ isUser ? '我' : 'AI助手' }}
+          {{ isUser ? '我' : isClarification ? '槽位助手' : 'AI助手' }}
         </span>
         <span class="message-time">
           {{ formatTimestamp(message.timestamp) }}
@@ -104,8 +120,64 @@ watch(() => props.message.thinkingContent, (newContent) => {
           </div>
         </div>
         
-        <!-- 消息内容 -->
-        <div class="message-text" v-if="message.content">
+        <!-- 澄清问题界面 -->
+        <div v-if="isClarification && message.clarificationData" class="clarification-content">
+          <div class="clarification-intro">
+            <el-icon class="clarification-icon"><QuestionFilled /></el-icon>
+            <span>为了更好地帮助您，我需要一些额外信息：</span>
+          </div>
+          
+          <!-- 澄清问题列表 -->
+          <div class="clarification-questions">
+            <div 
+              v-for="(question, index) in message.clarificationData.questions" 
+              :key="index"
+              class="clarification-question"
+            >
+              <div class="question-text">{{ question }}</div>
+              
+              <!-- 建议回答 -->
+              <div v-if="message.clarificationData.suggestedResponses && message.clarificationData.suggestedResponses.length > 0" class="suggested-responses">
+                <div class="suggested-label">建议回答：</div>
+                <div class="response-buttons">
+                  <el-button
+                    v-for="response in message.clarificationData.suggestedResponses"
+                    :key="response"
+                    size="small"
+                    type="primary"
+                    plain
+                    @click="useSuggestedResponse(response)"
+                  >
+                    {{ response }}
+                  </el-button>
+                </div>
+              </div>
+              
+              <!-- 示例值显示 -->
+              <div v-if="message.clarificationData.examples && message.clarificationData.examples.length > 0" class="examples">
+                <div class="examples-label">示例：</div>
+                <div class="examples-list">
+                  <el-tag 
+                    v-for="example in message.clarificationData.examples" 
+                    :key="example"
+                    size="small"
+                    type="info"
+                  >
+                    {{ example }}
+                  </el-tag>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 上下文提示 -->
+          <div v-if="message.clarificationData.contextHint" class="context-hint">
+            <el-alert :title="message.clarificationData.contextHint" type="info" :closable="false" />
+          </div>
+        </div>
+
+        <!-- 常规消息内容 -->
+        <div class="message-text" v-else-if="message.content">
           {{ message.content }}
         </div>
         <div class="message-loading" v-else-if="isSending">
@@ -166,6 +238,12 @@ watch(() => props.message.thinkingContent, (newContent) => {
 .assistant-message .message-body {
   background: #f0f0f0;
   color: #303133;
+}
+
+.clarification-message .message-body {
+  background: #fff7e6;
+  color: #303133;
+  border: 1px solid #ffd591;
 }
 
 .error-message .message-body {
@@ -306,5 +384,89 @@ watch(() => props.message.thinkingContent, (newContent) => {
   white-space: pre-wrap;
   line-height: 1.4;
   border-left: 3px solid #409eff;
+}
+
+/* 澄清问题样式 */
+.clarification-content {
+  padding: 0;
+}
+
+.clarification-intro {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  font-weight: 500;
+  color: #e6a23c;
+}
+
+.clarification-icon {
+  font-size: 16px;
+}
+
+.clarification-questions {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.clarification-question {
+  padding: 16px;
+  background: #fafafa;
+  border-radius: 8px;
+  border: 1px solid #e4e7ed;
+}
+
+.question-text {
+  font-weight: 500;
+  margin-bottom: 12px;
+  color: #303133;
+}
+
+.suggested-responses {
+  margin-bottom: 12px;
+}
+
+.suggested-label {
+  font-size: 12px;
+  color: #909399;
+  margin-bottom: 8px;
+}
+
+.response-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.examples {
+  margin-bottom: 12px;
+}
+
+.examples-label {
+  font-size: 12px;
+  color: #909399;
+  margin-bottom: 8px;
+}
+
+.examples-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.context-hint {
+  margin-top: 16px;
+}
+
+@media (max-width: 768px) {
+  .response-buttons {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .response-buttons .el-button {
+    justify-content: flex-start;
+  }
 }
 </style> 

@@ -262,7 +262,7 @@ const handleVectorize = async (row: Chunk) => {
 
 // 返回上一页
 const goBack = () => {
-  router.push('/platform/smartcs/knowledge/content');
+  router.push('/platform/ai-management/content');
 };
 
 // 格式化时间戳

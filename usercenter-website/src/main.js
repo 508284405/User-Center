@@ -10,6 +10,8 @@ import { permissionDirective, setupPermissionGuard } from './utils/permission'
 import './styles/auth-theme.scss'
 // 导入 Element Plus 暗色主题样式
 import './styles/element-plus-theme.scss'
+// 导入审核系统主题样式
+import './styles/moderation-theme.scss'
 // 导入主题系统
 import { initGlobalTheme } from './composables/useTheme'
 

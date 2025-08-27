@@ -7,13 +7,16 @@
     :close-on-click-modal="false"
     destroy-on-close
   >
-    <el-form
-      ref="formRef"
-      :model="formData"
-      :rules="formRules"
-      label-width="120px"
-      label-position="left"
-    >
+    <!-- 选项卡导航 -->
+    <el-tabs v-model="activeTab" type="border-card">
+      <el-tab-pane label="基本信息" name="basic">
+        <el-form
+          ref="formRef"
+          :model="formData"
+          :rules="formRules"
+          label-width="120px"
+          label-position="left"
+        >
       <!-- 基本信息 -->
       <el-row :gutter="20">
         <el-col :span="12">
@@ -153,7 +156,17 @@
           边界用于明确定义不属于此意图的语句，提高分类准确性
         </div>
       </el-form-item>
-    </el-form>
+        </el-form>
+      </el-tab-pane>
+
+      <el-tab-pane label="槽位配置" name="slots">
+        <SlotTemplateEditor 
+          v-model="formData.slotTemplate"
+          :intent-code="formData.code || ''"
+          :intent-id="formData.id"
+        />
+      </el-tab-pane>
+    </el-tabs>
 
     <template #footer>
       <span class="dialog-footer">
@@ -175,6 +188,8 @@ import { ref, reactive, computed, watch, nextTick } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import { useSmartCSAdminStore } from '@/stores/admin/admin.js'
+import { slotTemplateApi } from '@/api/smartcs/intent'
+import SlotTemplateEditor from '@/components/intent/SlotTemplateEditor.vue'
 
 // Props & Emits
 const props = defineProps({
@@ -199,6 +214,7 @@ const saving = ref(false)
 const newLabel = ref('')
 const newBoundary = ref('')
 const codeEditEnabled = ref(false)
+const activeTab = ref('basic')
 
 // 计算属性
 const catalogList = computed(() => store.catalogList)
@@ -207,13 +223,30 @@ const modalTitle = computed(() => isEditMode.value ? '编辑意图' : '新建意
 
 // 表单数据
 const formData = reactive({
+  id: null,
   code: '',
   name: '',
   description: '',
   catalogId: '',
   status: 'ACTIVE',
   labels: [],
-  boundaries: []
+  boundaries: [],
+  slotTemplate: {
+    templateId: '',
+    templateName: '',
+    description: '',
+    intentCode: '',
+    slotDefinitions: [],
+    slotFillingEnabled: false,
+    maxClarificationAttempts: 3,
+    completenessThreshold: 0.8,
+    blockRetrievalOnMissing: false,
+    promptTemplate: '',
+    clarificationTemplates: {},
+    language: 'zh-CN',
+    version: '1.0',
+    extensions: {}
+  }
 })
 
 // 表单验证规则
@@ -237,34 +270,82 @@ const formRules = {
 // 方法
 const resetForm = () => {
   Object.assign(formData, {
+    id: null,
     code: '',
     name: '',
     description: '',
     catalogId: '',
     status: 'ACTIVE',
     labels: [],
-    boundaries: []
+    boundaries: [],
+    slotTemplate: {
+      templateId: '',
+      templateName: '',
+      description: '',
+      intentCode: '',
+      slotDefinitions: [],
+      slotFillingEnabled: false,
+      maxClarificationAttempts: 3,
+      completenessThreshold: 0.8,
+      blockRetrievalOnMissing: false,
+      promptTemplate: '',
+      clarificationTemplates: {},
+      language: 'zh-CN',
+      version: '1.0',
+      extensions: {}
+    }
   })
   newLabel.value = ''
   newBoundary.value = ''
   codeEditEnabled.value = false
+  activeTab.value = 'basic'
   
   nextTick(() => {
     formRef.value?.clearValidate()
   })
 }
 
-const populateForm = (data) => {
+const populateForm = async (data) => {
   Object.assign(formData, {
+    id: data.id || null,
     code: data.code || '',
     name: data.name || '',
     description: data.description || '',
     catalogId: data.catalogId || '',
     status: data.status || 'ACTIVE',
     labels: [...(data.labels || [])],
-    boundaries: [...(data.boundaries || [])]
+    boundaries: [...(data.boundaries || [])],
+    slotTemplate: {
+      templateId: '',
+      templateName: data.code ? `${data.code}槽位模板` : '',
+      description: '',
+      intentCode: data.code || '',
+      slotDefinitions: [],
+      slotFillingEnabled: false,
+      maxClarificationAttempts: 3,
+      completenessThreshold: 0.8,
+      blockRetrievalOnMissing: false,
+      promptTemplate: '',
+      clarificationTemplates: {},
+      language: 'zh-CN',
+      version: '1.0',
+      extensions: {}
+    }
   })
   codeEditEnabled.value = false
+  
+  // 如果是编辑模式，尝试加载槽位模板
+  if (data.id) {
+    try {
+      const slotTemplateResponse = await slotTemplateApi.getSlotTemplate(data.id)
+      if (slotTemplateResponse.success && slotTemplateResponse.data) {
+        Object.assign(formData.slotTemplate, slotTemplateResponse.data)
+      }
+    } catch (error) {
+      console.warn('获取槽位模板失败:', error)
+      // 不阻断正常流程，槽位模板是可选的
+    }
+  }
 }
 
 const generateCode = () => {
@@ -427,12 +508,34 @@ const handleSave = async () => {
       boundaries: formData.boundaries
     }
     
+    let intentId = null
+    
     if (isEditMode.value) {
       await store.updateIntent(props.intentData.id, saveData)
+      intentId = props.intentData.id
       ElMessage.success('意图更新成功')
     } else {
-      await store.createIntent(saveData)
+      const createResult = await store.createIntent(saveData)
+      intentId = createResult?.data?.id || createResult?.id
       ElMessage.success('意图创建成功')
+    }
+    
+    // 保存槽位模板（如果启用了槽位填充）
+    if (intentId && formData.slotTemplate.slotFillingEnabled) {
+      try {
+        // 更新槽位模板的intentCode
+        const slotTemplateData = {
+          ...formData.slotTemplate,
+          intentCode: formData.code,
+          templateName: formData.slotTemplate.templateName || `${formData.code}槽位模板`
+        }
+        
+        await slotTemplateApi.updateSlotTemplate(intentId, slotTemplateData)
+        ElMessage.success('槽位模板保存成功')
+      } catch (slotError) {
+        console.error('槽位模板保存失败:', slotError)
+        ElMessage.warning('意图保存成功，但槽位模板保存失败')
+      }
     }
     
     emit('save')
@@ -454,6 +557,16 @@ watch(() => props.visible, (newVal) => {
       populateForm(props.intentData)
     } else {
       resetForm()
+    }
+  }
+})
+
+// 监听意图代码变化，同步更新槽位模板的intentCode
+watch(() => formData.code, (newCode) => {
+  if (formData.slotTemplate) {
+    formData.slotTemplate.intentCode = newCode
+    if (!formData.slotTemplate.templateName || formData.slotTemplate.templateName.endsWith('槽位模板')) {
+      formData.slotTemplate.templateName = newCode ? `${newCode}槽位模板` : ''
     }
   }
 })

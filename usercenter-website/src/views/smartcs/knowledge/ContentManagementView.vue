@@ -406,7 +406,7 @@ const getKnowledgeBaseName = (id: number | undefined): string => {
 // 查看切片详情
 const handleViewChunks = (row: Content) => {
   if (!row.id) return;
-  router.push(`/platform/smartcs/knowledge/content/${row.id}/chunks`);
+  router.push(`/platform/ai-management/content/${row.id}/chunks`);
 };
 
 // 打开向量检索对话框

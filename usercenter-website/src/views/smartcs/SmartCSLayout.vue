@@ -17,7 +17,7 @@
     >
       <el-tab-pane label="知识管理" name="knowledge" />
       <el-tab-pane label="意图管理" name="intent" />
-      <el-tab-pane label="内容审核" name="moderation" />
+
       <el-tab-pane label="对话管理" name="conversation" />
       <el-tab-pane label="基础设施" name="infrastructure" />
     </el-tabs>
@@ -41,10 +41,7 @@ const isIntentPage = computed(() => {
   return route.path.includes('/platform/smartcs/intent')
 })
 
-// 判断是否为审核管理页面
-const isModerationPage = computed(() => {
-  return route.path.includes('/platform/smartcs/moderation')
-})
+
 
 // 计算当前激活的模块
 const activeModule = computed({
@@ -52,7 +49,7 @@ const activeModule = computed({
     const path = route.path
     if (path.includes('/platform/smartcs/knowledge')) return 'knowledge'
     if (path.includes('/platform/smartcs/intent')) return 'intent'
-    if (path.includes('/platform/smartcs/moderation')) return 'moderation'
+
     if (path.includes('/platform/smartcs/conversation')) return 'conversation'
     if (path.includes('/platform/smartcs/infrastructure')) return 'infrastructure'
     return 'knowledge' // 默认
@@ -65,9 +62,7 @@ const activeModule = computed({
       case 'intent':
         router.push('/platform/smartcs/intent')
         break
-      case 'moderation':
-        router.push('/platform/smartcs/moderation')
-        break
+
       case 'conversation':
         router.push('/platform/smartcs/conversation')
         break

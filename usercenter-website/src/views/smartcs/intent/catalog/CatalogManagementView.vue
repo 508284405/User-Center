@@ -89,15 +89,27 @@
             <el-tag size="small" type="info">{{ scope.row.sortOrder || 0 }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="意图数量" width="100" align="center">
+        <el-table-column label="意图数量" width="120" align="center">
           <template #default="scope">
-            <el-badge 
-              :value="scope.row.intentCount || 0" 
-              :max="99"
-              type="primary"
-            >
-              <el-button size="small" text>查看</el-button>
-            </el-badge>
+            <div class="intent-count-cell">
+              <el-tag 
+                :type="scope.row.intentCount > 0 ? 'primary' : 'info'" 
+                size="small"
+                class="count-tag"
+              >
+                {{ scope.row.intentCount || 0 }}
+              </el-tag>
+              <el-button 
+                size="small" 
+                text 
+                type="primary"
+                @click="viewIntents(scope.row)"
+                :disabled="!scope.row.intentCount || scope.row.intentCount === 0"
+                class="view-btn"
+              >
+                查看
+              </el-button>
+            </div>
           </template>
         </el-table-column>
         <el-table-column prop="createdAt" label="创建时间" width="180">
@@ -167,6 +179,7 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { 
   Plus, 
@@ -178,6 +191,9 @@ import {
 } from '@element-plus/icons-vue'
 import { intentApi, catalogApi } from '@/api/smartcs/intent'
 import CatalogModal from './components/CatalogModal.vue'
+
+// 路由
+const router = useRouter()
 
 // 响应式数据
 const loading = ref(false)
@@ -315,6 +331,22 @@ const handleSave = async () => {
   await loadCatalogOptions()
 }
 
+const viewIntents = (catalog) => {
+  if (!catalog.intentCount || catalog.intentCount === 0) {
+    ElMessage.info('该目录下暂无意图')
+    return
+  }
+  
+  // 跳转到意图管理页面，并传递目录ID作为筛选条件
+  router.push({
+    name: 'IntentClassification',
+    query: {
+      catalogId: catalog.id,
+      catalogName: catalog.name
+    }
+  })
+}
+
 const formatDate = (timestamp) => {
   if (!timestamp) return ''
   
@@ -416,6 +448,23 @@ onMounted(() => {
 
 .file-icon {
   color: #909399;
+}
+
+.intent-count-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.intent-count-cell .count-tag {
+  min-width: 24px;
+  text-align: center;
+}
+
+.intent-count-cell .view-btn {
+  padding: 2px 4px;
+  font-size: 12px;
 }
 
 .action-buttons {

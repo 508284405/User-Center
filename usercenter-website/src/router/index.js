@@ -194,6 +194,16 @@ const routes = [
                                     permission: 'knowledge:chat:view',
                                     title: '智能聊天'
                                 }
+                            },
+                            {
+                                path: 'debug/query-transformer',
+                                name: 'QueryTransformerDebug',
+                                component: () => import('../views/smartcs/debug/QueryTransformerDebugView.vue'),
+                                meta: {
+                                    requiresAuth: true,
+                                    permission: 'knowledge:debug:view',
+                                    title: '查询转换器调试'
+                                }
                             }
                         ]
                     },
@@ -259,16 +269,36 @@ const routes = [
                         children: [
                             {
                                 path: '',
-                                redirect: '/platform/smartcs/moderation/review'
+                                redirect: '/platform/smartcs/moderation/policies'
                             },
                             {
-                                path: 'review',
-                                name: 'ModerationReview',
-                                component: () => import('../views/smartcs/moderation/ManualReviewView.vue'),
+                                path: 'policies',
+                                name: 'ModerationPolicies',
+                                component: () => import('../views/smartcs/moderation/PolicyManagementView.vue'),
                                 meta: {
                                     requiresAuth: true,
-                                    permission: 'moderation:review:view',
-                                    title: '人工审核'
+                                    permission: 'moderation:policy:view',
+                                    title: '审核策略管理'
+                                }
+                            },
+                            {
+                                path: 'dimensions',
+                                name: 'ModerationDimensions',
+                                component: () => import('../views/smartcs/moderation/DimensionManagementView.vue'),
+                                meta: {
+                                    requiresAuth: true,
+                                    permission: 'moderation:dimension:view',
+                                    title: '审核维度管理'
+                                }
+                            },
+                            {
+                                path: 'templates',
+                                name: 'ModerationTemplates',
+                                component: () => import('../views/smartcs/moderation/TemplateManagementView.vue'),
+                                meta: {
+                                    requiresAuth: true,
+                                    permission: 'moderation:template:view',
+                                    title: '模板管理'
                                 }
                             },
                             {
@@ -545,6 +575,246 @@ const routes = [
                         meta: {
                             requiresAuth: true,
                             title: '个人资料'
+                        }
+                    }
+                ]
+            },
+            
+            // Direct AI Management routes (bypass SmartCS platform layout)
+            // These routes are accessed from the sidebar AI management submenu
+            {
+                path: 'ai-management/faq',
+                name: 'DirectFAQManagement',
+                component: () => import('../views/smartcs/knowledge/FaqManagementView.vue'),
+                meta: {
+                    requiresAuth: true,
+                    permission: 'knowledge:faq:view',
+                    title: 'FAQ管理'
+                }
+            },
+            {
+                path: 'ai-management/knowledge-bases',
+                name: 'DirectKnowledgeBases',
+                component: () => import('../views/smartcs/knowledge/KnowledgeBaseManagementView.vue'),
+                meta: {
+                    requiresAuth: true,
+                    permission: 'knowledge:base:view',
+                    title: '知识库管理'
+                }
+            },
+            {
+                path: 'ai-management/knowledge-bases/:id',
+                name: 'DirectKnowledgeBaseDetail',
+                component: () => import('../views/smartcs/knowledge/KnowledgeBaseDetailView.vue'),
+                meta: {
+                    requiresAuth: true,
+                    permission: 'knowledge:base:view',
+                    title: '知识库详情'
+                }
+            },
+            {
+                path: 'ai-management/content',
+                name: 'DirectContentManagement',
+                component: () => import('../views/smartcs/knowledge/ContentManagementView.vue'),
+                meta: {
+                    requiresAuth: true,
+                    permission: 'knowledge:content:view',
+                    title: '内容管理'
+                }
+            },
+            {
+                path: 'ai-management/content/:id',
+                name: 'DirectDocumentDetail',
+                component: () => import('../views/smartcs/knowledge/DocumentDetailView.vue'),
+                meta: {
+                    requiresAuth: true,
+                    permission: 'knowledge:content:view',
+                    title: '文档详情'
+                }
+            },
+            {
+                path: 'ai-management/content/:id/chunks',
+                name: 'DirectChunkManagement',
+                component: () => import('../views/smartcs/knowledge/ChunkManagementView.vue'),
+                meta: {
+                    requiresAuth: true,
+                    permission: 'knowledge:content:view',
+                    title: '切片管理'
+                }
+            },
+            {
+                path: 'ai-management/index',
+                name: 'DirectKnowledgeIndex',
+                component: () => import('../views/smartcs/infrastructure/index/IndexListView.vue'),
+                meta: {
+                    requiresAuth: true,
+                    permission: 'knowledge:index:view',
+                    title: '索引管理'
+                }
+            },
+            {
+                path: 'ai-management/provider',
+                name: 'DirectModelProvider',
+                component: () => import('../views/smartcs/knowledge/ProviderManagementView.vue'),
+                meta: {
+                    requiresAuth: true,
+                    permission: 'knowledge:provider:view',
+                    title: '模型提供商管理'
+                }
+            },
+            {
+                path: 'ai-management/model',
+                name: 'DirectModelManagement',
+                component: () => import('../views/smartcs/knowledge/ModelManagementView.vue'),
+                meta: {
+                    requiresAuth: true,
+                    permission: 'knowledge:model:view',
+                    title: '模型管理'
+                }
+            },
+            {
+                path: 'ai-management/app',
+                name: 'DirectAppManagement',
+                component: () => import('../views/smartcs/knowledge/AppManagementView.vue'),
+                meta: {
+                    requiresAuth: true,
+                    permission: 'app:view',
+                    title: 'APP管理'
+                }
+            },
+            {
+                path: 'ai-management/app/:id',
+                name: 'DirectAppDetail',
+                component: () => import('../views/smartcs/knowledge/AppDetailView.vue'),
+                meta: {
+                    requiresAuth: true,
+                    permission: 'app:view',
+                    title: 'APP详情'
+                }
+            },
+
+            {
+                path: 'ai-management/intent-catalog',
+                name: 'DirectIntentCatalog',
+                component: () => import('../views/smartcs/intent/catalog/CatalogManagementView.vue'),
+                meta: {
+                    requiresAuth: true,
+                    permission: 'intent:catalog:view',
+                    title: '意图目录管理'
+                }
+            },
+            {
+                path: 'ai-management/chat',
+                name: 'DirectSmartChat',
+                component: () => import('../views/smartcs/knowledge/ChatView.vue'),
+                meta: {
+                    requiresAuth: true,
+                    permission: 'knowledge:chat:view',
+                    title: '智能聊天'
+                }
+            },
+
+            // Dictionary Management
+            {
+                path: 'ai-management/dictionary',
+                name: 'DirectDictionaryManagement',
+                component: () => import('../views/smartcs/dictionary/DictionaryManagementView.vue'),
+                meta: {
+                    requiresAuth: true,
+                    permission: 'dictionary:view',
+                    title: '字典管理'
+                }
+            },
+            
+            // Debug Tools
+            {
+                path: 'ai-management/debug/query-transformer',
+                name: 'DirectQueryTransformerDebug',
+                component: () => import('../views/smartcs/debug/QueryTransformerDebugView.vue'),
+                meta: {
+                    requiresAuth: true,
+                    permission: 'knowledge:debug:view',
+                    title: '查询转换器调试'
+                }
+            },
+
+            // Direct Moderation Management routes (bypass SmartCS platform layout)
+            {
+                path: 'ai-management/moderation',
+                component: () => import('../views/smartcs/moderation/DirectModerationLayout.vue'),
+                meta: { requiresAuth: true },
+                children: [
+                    {
+                        path: '',
+                        name: 'DirectModerationPolicies',
+                        component: () => import('../views/smartcs/moderation/PolicyManagementView.vue'),
+                        meta: {
+                            requiresAuth: true,
+                            permission: 'moderation:policy:view',
+                            title: '审核策略管理'
+                        }
+                    },
+                    {
+                        path: 'dimensions',
+                        name: 'DirectModerationDimensions',
+                        component: () => import('../views/smartcs/moderation/DimensionManagementView.vue'),
+                        meta: {
+                            requiresAuth: true,
+                            permission: 'moderation:dimension:view',
+                            title: '审核维度管理'
+                        }
+                    },
+                    {
+                        path: 'templates',
+                        name: 'DirectModerationTemplates',
+                        component: () => import('../views/smartcs/moderation/TemplateManagementView.vue'),
+                        meta: {
+                            requiresAuth: true,
+                            permission: 'moderation:template:view',
+                            title: '模板管理'
+                        }
+                    }
+                ]
+            },
+            
+            // 客服管理路由
+            {
+                path: 'customer-service',
+                component: () => import('../views/customer-service/CustomerServiceLayout.vue'),
+                meta: { requiresAuth: true },
+                children: [
+                    {
+                        path: '',
+                        redirect: '/platform/customer-service/sessions'
+                    },
+                    {
+                        path: 'sessions',
+                        name: 'SessionsList',
+                        component: () => import('../views/customer-service/SessionsListView.vue'),
+                        meta: {
+                            requiresAuth: true,
+                            permission: 'customer-service:view',
+                            title: '会话列表'
+                        }
+                    },
+                    {
+                        path: 'agents',
+                        name: 'OnlineAgents',
+                        component: () => import('../views/customer-service/AgentsView.vue'),
+                        meta: {
+                            requiresAuth: true,
+                            permission: 'customer-service:view',
+                            title: '在线客服'
+                        }
+                    },
+                    {
+                        path: 'chat/:sessionId?',
+                        name: 'AgentChat',
+                        component: () => import('../views/customer-service/ChatView.vue'),
+                        meta: {
+                            requiresAuth: true,
+                            permission: 'customer-service:chat',
+                            title: '客服对话'
                         }
                     }
                 ]
