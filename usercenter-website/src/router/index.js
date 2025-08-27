@@ -695,13 +695,7 @@ const routes = [
 
             {
                 path: 'ai-management/intent-catalog',
-                name: 'DirectIntentCatalog',
-                component: () => import('../views/smartcs/intent/catalog/CatalogManagementView.vue'),
-                meta: {
-                    requiresAuth: true,
-                    permission: 'intent:catalog:view',
-                    title: '意图目录管理'
-                }
+                redirect: '/platform/smartcs/intent/classification'
             },
             {
                 path: 'ai-management/chat',
@@ -833,7 +827,7 @@ const routes = [
     },
     {
         path: '/dashboard/intent-management/catalog',
-        redirect: '/platform/smartcs/intent/catalog'
+        redirect: '/platform/smartcs/intent/classification'
     },
     {
         path: '/dashboard/intent-management/test',
