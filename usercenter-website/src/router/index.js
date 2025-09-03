@@ -407,13 +407,23 @@ const routes = [
                                 }
                             },
                             {
-                                path: 'management/:id',
+                                path: 'management/:orderNumber',
                                 name: 'OrderDetail',
                                 component: () => import('../views/ecommerce/orders/management/OrderDetail.vue'),
                                 meta: {
                                     requiresAuth: true,
                                     permission: 'order:view',
                                     title: '订单详情'
+                                }
+                            },
+                            {
+                                path: 'test-create',
+                                name: 'TestOrderCreate',
+                                component: () => import('../views/order/TestOrderCreate.vue'),
+                                meta: {
+                                    requiresAuth: true,
+                                    permission: 'order:create',
+                                    title: '测试订单创建'
                                 }
                             },
                             {
@@ -562,6 +572,57 @@ const routes = [
                                     requiresAuth: true,
                                     permission: 'log:view',
                                     title: '操作日志'
+                                }
+                            }
+                        ]
+                    },
+                    
+                    // Loyalty Management
+                    {
+                        path: 'loyalty',
+                        children: [
+                            {
+                                path: '',
+                                redirect: '/platform/usercenter/loyalty/points'
+                            },
+                            {
+                                path: 'points',
+                                name: 'UserCenterPointsManagement',
+                                component: () => import('../views/usercenter/loyalty/PointsManagementView.vue'),
+                                meta: {
+                                    requiresAuth: true,
+                                    permission: 'loyalty:points:view',
+                                    title: '积分管理'
+                                }
+                            },
+                            {
+                                path: 'coupons',
+                                name: 'UserCenterCouponManagement',
+                                component: () => import('../views/usercenter/loyalty/CouponManagementView.vue'),
+                                meta: {
+                                    requiresAuth: true,
+                                    permission: 'loyalty:coupon:view',
+                                    title: '优惠券管理'
+                                }
+                            },
+                            {
+                                path: 'levels',
+                                name: 'UserCenterLevelManagement',
+                                component: () => import('../views/usercenter/loyalty/LevelManagementView.vue'),
+                                meta: {
+                                    requiresAuth: true,
+                                    permission: 'loyalty:level:view',
+                                    title: '等级管理'
+                                }
+                            },
+                            {
+                                path: 'benefits',
+                                name: 'UserCenterBenefitManagement',
+                                component: () => import('../views/usercenter/loyalty/BenefitManagementView.vue'),
+                                meta: {
+                                    requiresAuth: true,
+                                    permission: 'loyalty:benefit:view',
+                                    title: '权益管理'
                                 }
                             }
                         ]
@@ -854,7 +915,8 @@ const router = createRouter({
 
 // Navigation guard for authentication
 router.beforeEach((to, from, next) => {
-    const isAuthenticated = !!localStorage.getItem('access_token')
+    // Keep token key consistent with login & request interceptors
+    const isAuthenticated = !!localStorage.getItem('token')
     
     if (to.meta.requiresAuth && !isAuthenticated) {
         next('/login')

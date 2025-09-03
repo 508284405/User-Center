@@ -263,6 +263,61 @@ export const getRagPerformanceStats = async (timeRange: '1h' | '24h' | '7d' = '2
   }
 };
 
+/**
+ * 获取消息表情反应
+ */
+export const getMessageReactions = async (msgId: string): Promise<ApiResponse<any[]>> => {
+  try {
+    const response = await request.get(`/api/chat/messages/${msgId}/reactions`) as any;
+    
+    return {
+      success: response.success || true,
+      data: response.data || []
+    };
+  } catch (error: any) {
+    console.error('获取消息反应失败:', error);
+    
+    return {
+      success: false,
+      errCode: error.code || 'GET_REACTIONS_ERROR',
+      errMessage: error.message || '获取消息反应失败'
+    };
+  }
+};
+
+/**
+ * 添加/移除消息表情反应
+ */
+export const addMessageReaction = async (data: {
+  msgId: string;
+  sessionId: string;
+  emoji: string;
+  name: string;
+  action: 'add' | 'remove';
+}): Promise<ApiResponse<any>> => {
+  try {
+    const response = await request.post(`/api/chat/messages/${data.msgId}/reactions`, {
+      sessionId: data.sessionId,
+      emoji: data.emoji,
+      name: data.name,
+      action: data.action
+    }) as any;
+    
+    return {
+      success: response.success !== false,
+      data: response.data
+    };
+  } catch (error: any) {
+    console.error('操作消息反应失败:', error);
+    
+    return {
+      success: false,
+      errCode: error.code || 'REACTION_ERROR',
+      errMessage: error.message || '操作失败'
+    };
+  }
+};
+
 // 导出便捷函数
 export { validateRagConfig as validateConfig } from '@/utils/ragConfigValidator';
 export { getDefaultRagConfig as getDefaultConfig } from '@/utils/ragConfigValidator';

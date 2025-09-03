@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, ref, watch, onMounted, onUnmounted } from 'vue';
 import { ElMessage } from 'element-plus';
-import { User, Service, CopyDocument, Refresh, Loading, ArrowDown, ArrowUp, QuestionFilled } from '@element-plus/icons-vue';
+import { User, Service, CopyDocument, Refresh, Loading, ArrowDown, ArrowUp, QuestionFilled, RefreshLeft } from '@element-plus/icons-vue';
 import { Message, MessageType, MessageStatus, MessageWithSlotFilling } from '@/types/chat';
-import { formatTimestamp, copyToClipboard } from '@/utils/chat';
+import { formatTimestamp, copyToClipboard, canRecallMessage, getRecallTimeRemaining } from '@/utils/chat';
 
 // Props
 interface Props {
@@ -16,12 +16,15 @@ const props = defineProps<Props>();
 interface Emits {
   (e: 'retry-message', messageId: string): void;
   (e: 'answer-clarification', questionId: string, answer: string): void;
+  (e: 'recall-message', messageId: string): void;
 }
 
 const emit = defineEmits<Emits>();
 
 // 响应式数据
 const isThinkingExpanded = ref(false);
+const recallTimeRemaining = ref(0);
+const recallTimer = ref<number | null>(null);
 
 // 计算属性
 const isUser = computed(() => props.message.type === MessageType.USER);
@@ -32,6 +35,17 @@ const isSending = computed(() => props.message.status === MessageStatus.SENDING)
 const hasThinkingContent = computed(() => {
   const result = isAssistant.value && props.message.thinkingContent && props.message.thinkingContent.trim().length > 0;
   return result;
+});
+
+// 撤回相关计算属性
+const isRecalled = computed(() => props.message.isRecalled || false);
+const canRecall = computed(() => {
+  // 假设当前用户ID，实际应该从用户状态管理中获取
+  const currentUserId = localStorage.getItem('userId') || '';
+  return canRecallMessage(props.message, currentUserId);
+});
+const showRecallButton = computed(() => {
+  return isUser.value && !isRecalled.value && canRecall.value && !isSending.value;
 });
 
 const messageClass = computed(() => ({
@@ -73,11 +87,74 @@ const useSuggestedResponse = (response: string) => {
   answerClarificationQuestion(response);
 };
 
+// 撤回消息
+const recallMessage = () => {
+  if (!canRecall.value) {
+    ElMessage.warning('消息无法撤回');
+    return;
+  }
+  
+  emit('recall-message', props.message.id);
+};
+
+// 启动撤回倒计时
+const startRecallTimer = () => {
+  if (recallTimer.value) {
+    clearInterval(recallTimer.value);
+  }
+  
+  const updateTimer = () => {
+    const remaining = getRecallTimeRemaining(props.message);
+    recallTimeRemaining.value = remaining;
+    
+    if (remaining <= 0) {
+      clearInterval(recallTimer.value!);
+      recallTimer.value = null;
+    }
+  };
+  
+  updateTimer();
+  if (recallTimeRemaining.value > 0) {
+    recallTimer.value = window.setInterval(updateTimer, 1000);
+  }
+};
+
+// 停止撤回倒计时
+const stopRecallTimer = () => {
+  if (recallTimer.value) {
+    clearInterval(recallTimer.value);
+    recallTimer.value = null;
+  }
+};
+
 // 监听关键变化用于调试
 watch(() => props.message.thinkingContent, (newContent) => {
   if (newContent && newContent.length > 0) {
     console.log('思考内容已更新:', newContent.length, '字符');
   }
+});
+
+// 监听消息变化，启动/停止撤回倒计时
+watch(() => props.message, (newMessage) => {
+  if (newMessage.isRecalled) {
+    stopRecallTimer();
+  } else if (showRecallButton.value) {
+    startRecallTimer();
+  } else {
+    stopRecallTimer();
+  }
+}, { immediate: true });
+
+// 组件挂载时启动倒计时
+onMounted(() => {
+  if (showRecallButton.value) {
+    startRecallTimer();
+  }
+});
+
+// 组件卸载时清理倒计时
+onUnmounted(() => {
+  stopRecallTimer();
 });
 </script>
 
@@ -178,7 +255,14 @@ watch(() => props.message.thinkingContent, (newContent) => {
 
         <!-- 常规消息内容 -->
         <div class="message-text" v-else-if="message.content">
-          {{ message.content }}
+          <div v-if="isRecalled" class="recalled-message">
+            <el-icon class="recalled-icon"><RefreshLeft /></el-icon>
+            <span class="recalled-text">{{ message.content }}</span>
+            <div v-if="message.recalledAt" class="recalled-time">
+              {{ formatTimestamp(message.recalledAt) }}
+            </div>
+          </div>
+          <div v-else>{{ message.content }}</div>
         </div>
         <div class="message-loading" v-else-if="isSending">
           <el-icon class="is-loading"><Loading /></el-icon>
@@ -190,14 +274,23 @@ watch(() => props.message.thinkingContent, (newContent) => {
         </div>
       </div>
       
-      <div class="message-actions" v-if="message.content">
-                 <el-button
-           size="small"
-           text
-           :icon="CopyDocument"
-           @click="copyMessage"
-           title="复制"
-         />
+      <div class="message-actions" v-if="message.content && !isRecalled">
+        <el-button
+          size="small"
+          text
+          :icon="CopyDocument"
+          @click="copyMessage"
+          title="复制"
+        />
+        <el-button
+          v-if="showRecallButton"
+          size="small"
+          text
+          :icon="RefreshLeft"
+          @click="recallMessage"
+          :title="`撤回 (${recallTimeRemaining}s)`"
+          class="recall-button"
+        />
         <el-button
           v-if="isError && isUser"
           size="small"
@@ -321,6 +414,45 @@ watch(() => props.message.thinkingContent, (newContent) => {
 
 .user-message .message-actions {
   justify-content: flex-end;
+}
+
+/* 撤回消息样式 */
+.recalled-message {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-style: italic;
+  color: #909399;
+  background: #f5f7fa;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #e4e7ed;
+}
+
+.recalled-icon {
+  font-size: 14px;
+  color: #909399;
+}
+
+.recalled-text {
+  flex: 1;
+  font-size: 13px;
+}
+
+.recalled-time {
+  font-size: 11px;
+  color: #c0c4cc;
+  margin-left: auto;
+}
+
+/* 撤回按钮样式 */
+.recall-button {
+  color: #e6a23c !important;
+}
+
+.recall-button:hover {
+  color: #b88230 !important;
+  background-color: #fdf6ec !important;
 }
 
 /* 响应式设计 */

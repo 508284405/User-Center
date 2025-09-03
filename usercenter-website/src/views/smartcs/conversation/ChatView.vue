@@ -65,110 +65,23 @@
             </div>
           </div>
           
-          <div class="chat-messages" ref="messagesContainer" v-loading="messagesLoading">
-            <div v-if="messages.length === 0" class="empty-messages">
-              <p>暂无消息记录</p>
-            </div>
-            
-            <div v-else>
-              <div v-if="hasMoreMessages" class="load-more-container">
-                <el-button type="primary" plain size="small" @click="loadMoreMessages" :loading="loadingMoreMessages">
-                  加载更多历史消息
-                </el-button>
-              </div>
-              
-              <template v-for="(message, index) in processedMessages" :key="message.msgId || index">
-                <!-- 时间分隔条 -->
-                <div v-if="message.isTimeHeader" class="time-divider">
-                  <span>{{ message.timeHeader }}</span>
-                </div>
-                
-                <!-- 消息项 -->
-                <div v-else class="message-item" :class="{ 
-                  'sender-message': isSender(message), 
-                  'receiver-message': !isSender(message) 
-                }">
-                  <!-- 接收方头像 -->
-                  <div v-if="!isSender(message)" class="avatar-container">
-                    <el-avatar :size="32" :src="message.senderAvatar">
-                      {{ getAvatarFallback(message) }}
-                    </el-avatar>
-                  </div>
-                  
-                  <div class="message-content-wrapper">
-                    <div class="message-sender">
-                      {{ isSender(message) ? '我' : getSenderName(message) }}
-                      <span class="message-time">{{ formatTime(message.createdAt) }}</span>
-                    </div>
-                    
-                    <div class="message-content" @mouseenter="message.showCopy = true" @mouseleave="message.showCopy = false">
-                      <div v-if="message.msgType === 0" class="text-message">
-                        {{ message.content }}
-                        <el-button 
-                          v-if="message.showCopy && message.content" 
-                          class="copy-button" 
-                          size="small" 
-                          circle 
-                          icon="DocumentCopy"
-                          @click="copyMessageContent(message.content)"
-                        />
-                      </div>
-                      <div v-else-if="message.msgType === 1" class="image-message">
-                        <el-image :src="message.content" :preview-src-list="[message.content]" fit="cover" />
-                      </div>
-                      <div v-else class="other-message">
-                        {{ message.content }}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <!-- 发送方头像 -->
-                  <div v-if="isSender(message)" class="avatar-container">
-                    <el-avatar :size="32" :src="message.senderAvatar">
-                      {{ getAvatarFallback(message) }}
-                    </el-avatar>
-                  </div>
-                </div>
-              </template>
-            </div>
-          </div>
-          
-          <div class="chat-input" :class="{ disabled: currentSession.status === 'CLOSED' }">
-            <div class="input-tools">
-              <el-tooltip content="发送图片">
-                <el-button type="primary" :icon="PictureRounded" circle size="small" @click="handleImageUpload" :disabled="currentSession.status === 'CLOSED'" />
-              </el-tooltip>
-              <input
-                ref="fileInput"
-                type="file"
-                accept="image/*"
-                style="display: none"
-                @change="onFileSelected"
-              />
-            </div>
-            
-            <div class="input-area">
-              <el-input
-                v-model="messageInput"
-                type="textarea"
-                :rows="3"
-                placeholder="输入消息..."
-                resize="none"
-                :disabled="currentSession.status === 'CLOSED'"
-                @keydown.enter.prevent="sendMessage"
-              />
-            </div>
-            
-            <div class="input-actions">
-              <el-button
-                type="primary"
-                @click="sendMessage"
-                :disabled="!messageInput.trim() || currentSession.status === 'CLOSED'"
-              >
-                发送
-              </el-button>
-            </div>
-          </div>
+          <!-- 使用增强聊天区域组件 -->
+          <EnhancedChatArea
+            :session-id="currentSession.sessionId"
+            :messages="enhancedMessages"
+            :loading="messagesLoading"
+            :has-more-messages="hasMoreMessages"
+            :disabled="currentSession.status === 'CLOSED'"
+            @send-message="handleSendMessage"
+            @load-more="loadMoreMessages"
+            @recall-message="handleRecallMessage"
+            @edit-message="handleEditMessage"
+            @delete-message="handleDeleteMessage"
+            @reply-message="handleReplyMessage"
+            @retry-message="handleRetryMessage"
+            @mark-read="handleMarkRead"
+            @forward-message="handleForwardMessage"
+          />
         </template>
         
         <div v-else class="no-session-selected">
@@ -186,8 +99,10 @@ import { ElMessage, ElMessageBox } from 'element-plus';
 import { PictureRounded, DocumentCopy } from '@element-plus/icons-vue';
 import { chatSessionApi, SessionVO } from '@/api/smartcs/chatSession';
 import { chatMessageApi, MessageVO, SendMessageRequest, GetMessagesParams } from '@/api/smartcs/chatMessage';
-import { initWebSocketConnection, connectionStatus, sendChatMessage, registerMessageHandler, cleanup } from '@/utils/chatWebSocket';
+import { initWebSocketConnection, connectionStatus, sendChatMessage, registerMessageHandler, cleanup, sendDeleteMessage, sendEditMessage, sendRecallMessage, sendReplyMessage, sendRetryMessage, sendMarkReadMessage, sendForwardMessage } from '@/utils/chatWebSocket';
 import { formatDate } from '@/utils/format';
+import { Message } from '@/types/chat';
+import EnhancedChatArea from '@/components/chat/EnhancedChatArea.vue';
 
 // 路由
 const route = useRoute();
@@ -288,6 +203,37 @@ const copyMessageContent = (content: string) => {
       ElMessage.error('复制失败');
     });
 };
+
+// 增强消息列表 - 转换现有消息为增强格式
+const enhancedMessages = computed(() => {
+  const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+  const currentUserId = userInfo.id?.toString() || '';
+  
+  return messages.value.map(msg => ({
+    ...msg,
+    // 统一消息格式字段
+    msgId: msg.msgId || `temp-${Date.now()}`,
+    sessionId: msg.sessionId || currentSession.value?.sessionId || '',
+    fromUserId: msg.senderId || currentUserId,
+    toUserId: msg.senderId === currentUserId ? currentSession.value?.customerId?.toString() || '' : currentUserId,
+    content: msg.content || '',
+    msgType: msg.msgType || 0,
+    type: msg.msgType === 0 ? 'USER' : 'SYSTEM',
+    timestamp: msg.timestamp || getTimestamp(msg.createdAt),
+    createdAt: msg.timestamp || getTimestamp(msg.createdAt),
+    
+    // IM扩展功能字段（当前设为默认值，实际应从后端获取）
+    isRecalled: false,
+    isDeletedBySender: false,
+    isDeletedByReceiver: false,
+    isEdited: false,
+    isRead: false,
+    sendStatus: 1, // 已送达
+    replyToMsgId: null,
+    quotedContent: null,
+    quotedFromUser: null
+  } as Message));
+});
 
 // 处理消息列表，添加时间分隔条
 const processedMessages = computed(() => {
@@ -643,6 +589,349 @@ const sendMessage = async () => {
   }
 };
 
+// 增强聊天组件事件处理函数
+const handleSendMessage = async (content: string) => {
+  if (!currentSession.value || !content.trim() || currentSession.value.status === 'CLOSED') {
+    return;
+  }
+  
+  try {
+    const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+    const userId = userInfo.id?.toString() || '1';
+    
+    if (connectionStatus.value === 'connected') {
+      sendChatMessage({
+        sessionId: currentSession.value.sessionId,
+        fromUserId: userId,
+        fromUserType: 'AGENT',
+        fromUserName: userInfo.name || userInfo.username || '',
+        toUserId: currentSession.value?.customerId || '',
+        content: content.trim(),
+        contentType: 'TEXT',
+        type: 'CHAT'
+      } as any);
+      
+      // 添加到本地消息列表
+      const newMessage = {
+        msgId: Date.now().toString(),
+        sessionId: currentSession.value.sessionId,
+        senderId: userId,
+        senderName: userInfo.name || userInfo.username || '',
+        senderRole: 1,
+        content: content.trim(),
+        msgType: 0,
+        createdAt: Date.now().toString(),
+        timestamp: Date.now(),
+        showCopy: false
+      };
+      
+      messages.value.push(newMessage as any);
+      
+      if (currentSession.value) {
+        currentSession.value.lastMessage = content.trim();
+        currentSession.value.lastMsgTime = new Date();
+      }
+    } else {
+      // HTTP API发送
+      const request: SendMessageRequest = {
+        sessionId: currentSession.value.sessionId,
+        content: content.trim(),
+        messageType: 'TEXT',
+        fromUserId: userId,
+        fromUserType: 'AGENT'
+      };
+      
+      const result = await chatMessageApi.sendMessage(request);
+      if (result) {
+        const formattedResult = {
+          ...result,
+          senderId: result.fromUserId,
+          senderRole: result.fromUserType === 'CUSTOMER' ? 0 : 1,
+          msgType: result.messageType === 'TEXT' ? 0 : 1,
+          timestamp: getTimestamp(result.createdAt),
+          showCopy: false
+        };
+        
+        messages.value.push(formattedResult as any);
+        
+        if (currentSession.value) {
+          currentSession.value.lastMessage = result.content;
+          currentSession.value.lastMsgTime = result.createdAt;
+        }
+      }
+    }
+  } catch (error) {
+    console.error('发送消息失败:', error);
+    ElMessage.error('发送消息失败');
+  }
+};
+
+const handleRecallMessage = async (msgId: string) => {
+  try {
+    const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+    const userId = userInfo.id?.toString() || '';
+    
+    if (connectionStatus.value === 'connected') {
+      sendRecallMessage({
+        msgId,
+        sessionId: currentSession.value?.sessionId || '',
+        fromUserId: userId,
+        recallReason: '客服撤回消息'
+      });
+      
+      // 本地更新消息状态
+      const messageIndex = messages.value.findIndex(msg => msg.msgId === msgId);
+      if (messageIndex !== -1) {
+        messages.value[messageIndex] = {
+          ...messages.value[messageIndex],
+          content: '[该消息已被撤回]',
+          isRecalled: true,
+          recalledAt: Date.now()
+        };
+      }
+      
+      ElMessage.success('消息已撤回');
+    } else {
+      ElMessage.warning('WebSocket未连接，无法撤回消息');
+    }
+  } catch (error) {
+    console.error('撤回消息失败:', error);
+    ElMessage.error('撤回消息失败');
+  }
+};
+
+const handleEditMessage = async (msgId: string, newContent: string) => {
+  try {
+    const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+    const userId = userInfo.id?.toString() || '';
+    
+    if (connectionStatus.value === 'connected') {
+      sendEditMessage({
+        msgId,
+        sessionId: currentSession.value?.sessionId || '',
+        fromUserId: userId,
+        newContent
+      });
+      
+      // 本地更新消息内容
+      const messageIndex = messages.value.findIndex(msg => msg.msgId === msgId);
+      if (messageIndex !== -1) {
+        const originalContent = messages.value[messageIndex].originalContent || messages.value[messageIndex].content;
+        messages.value[messageIndex] = {
+          ...messages.value[messageIndex],
+          content: newContent,
+          originalContent,
+          isEdited: true,
+          editedAt: Date.now(),
+          editCount: (messages.value[messageIndex].editCount || 0) + 1
+        };
+      }
+      
+      ElMessage.success('消息已编辑');
+    } else {
+      ElMessage.warning('WebSocket未连接，无法编辑消息');
+    }
+  } catch (error) {
+    console.error('编辑消息失败:', error);
+    ElMessage.error('编辑消息失败');
+  }
+};
+
+const handleDeleteMessage = async (msgId: string, deleteType: 'self' | 'both' = 'self') => {
+  try {
+    const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+    const userId = userInfo.id?.toString() || '';
+    
+    if (connectionStatus.value === 'connected') {
+      sendDeleteMessage({
+        msgId,
+        sessionId: currentSession.value?.sessionId || '',
+        fromUserId: userId,
+        deleteType: deleteType === 'both' ? 1 : 0,
+        deleteReason: '客服删除消息'
+      });
+      
+      // 如果是仅自己删除，标记为已删除；如果是双方删除，从列表中移除
+      const messageIndex = messages.value.findIndex(msg => msg.msgId === msgId);
+      if (messageIndex !== -1) {
+        if (deleteType === 'both') {
+          messages.value.splice(messageIndex, 1);
+        } else {
+          messages.value[messageIndex] = {
+            ...messages.value[messageIndex],
+            isDeletedBySender: true,
+            deletedBySenderAt: Date.now()
+          };
+        }
+      }
+      
+      ElMessage.success('消息已删除');
+    } else {
+      ElMessage.warning('WebSocket未连接，无法删除消息');
+    }
+  } catch (error) {
+    console.error('删除消息失败:', error);
+    ElMessage.error('删除消息失败');
+  }
+};
+
+const handleReplyMessage = async (replyToMsgId: string, content: string, quotedContent?: string, quotedFromUser?: string) => {
+  try {
+    const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+    const userId = userInfo.id?.toString() || '';
+    
+    if (connectionStatus.value === 'connected') {
+      sendReplyMessage({
+        sessionId: currentSession.value?.sessionId || '',
+        fromUserId: userId,
+        content,
+        replyToMsgId,
+        quotedContent,
+        quotedFromUser
+      });
+      
+      // 添加回复消息到本地列表
+      const newMessage = {
+        msgId: Date.now().toString(),
+        sessionId: currentSession.value?.sessionId || '',
+        senderId: userId,
+        senderName: userInfo.name || userInfo.username || '',
+        senderRole: 1,
+        content,
+        msgType: 0,
+        createdAt: Date.now().toString(),
+        timestamp: Date.now(),
+        replyToMsgId,
+        quotedContent,
+        quotedFromUser,
+        showCopy: false
+      };
+      
+      messages.value.push(newMessage as any);
+      
+      if (currentSession.value) {
+        currentSession.value.lastMessage = content;
+        currentSession.value.lastMsgTime = new Date();
+      }
+    } else {
+      ElMessage.warning('WebSocket未连接，无法发送回复');
+    }
+  } catch (error) {
+    console.error('回复消息失败:', error);
+    ElMessage.error('回复消息失败');
+  }
+};
+
+const handleRetryMessage = async (msgId: string) => {
+  try {
+    const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+    const userId = userInfo.id?.toString() || '';
+    
+    const messageIndex = messages.value.findIndex(msg => msg.msgId === msgId);
+    if (messageIndex === -1) return;
+    
+    const message = messages.value[messageIndex];
+    
+    if (connectionStatus.value === 'connected') {
+      sendRetryMessage({
+        msgId,
+        sessionId: currentSession.value?.sessionId || '',
+        fromUserId: userId
+      });
+      
+      // 更新本地消息状态
+      messages.value[messageIndex] = {
+        ...message,
+        sendStatus: 0, // 发送中
+        retryCount: (message.retryCount || 0) + 1
+      };
+      
+      ElMessage.info('正在重试发送...');
+    } else {
+      ElMessage.warning('WebSocket未连接，无法重试发送');
+    }
+  } catch (error) {
+    console.error('重试发送失败:', error);
+    ElMessage.error('重试发送失败');
+  }
+};
+
+const handleMarkRead = async (msgId: string) => {
+  try {
+    const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+    const userId = userInfo.id?.toString() || '';
+    
+    if (connectionStatus.value === 'connected') {
+      sendMarkReadMessage({
+        msgId,
+        sessionId: currentSession.value?.sessionId || '',
+        fromUserId: userId
+      });
+      
+      // 本地更新消息已读状态
+      const messageIndex = messages.value.findIndex(msg => msg.msgId === msgId);
+      if (messageIndex !== -1) {
+        messages.value[messageIndex] = {
+          ...messages.value[messageIndex],
+          isRead: true,
+          readAt: Date.now(),
+          readBy: userId
+        };
+      }
+    } else {
+      ElMessage.warning('WebSocket未连接，无法标记已读');
+    }
+  } catch (error) {
+    console.error('标记已读失败:', error);
+    ElMessage.error('标记已读失败');
+  }
+};
+
+const handleForwardMessage = async (targets: any[], messagesToForward: any[], options: any) => {
+  try {
+    console.log('转发消息到目标:', targets, messagesToForward, options);
+    
+    // 处理转发逻辑
+    for (const target of targets) {
+      if (target.type === 'session') {
+        // 转发到其他会话
+        const targetSessionId = target.id;
+        
+        for (const message of messagesToForward) {
+          let forwardContent = '';
+          
+          if (options.includeOriginalSender) {
+            const senderName = message.senderName || `用户${message.senderId}`;
+            const time = formatTime(message.timestamp || message.createdAt);
+            forwardContent = `[转发] [${time}] ${senderName}: ${message.content}`;
+          } else {
+            forwardContent = `[转发] ${message.content}`;
+          }
+          
+          // 发送转发消息
+          if (connectionStatus.value === 'connected') {
+            const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+            sendForwardMessage({
+              sessionId: targetSessionId,
+              fromUserId: userInfo.id?.toString() || '',
+              content: forwardContent,
+              type: 'FORWARD_MESSAGE'
+            });
+          } else {
+            ElMessage.warning('WebSocket未连接，无法转发消息');
+            return;
+          }
+        }
+      }
+    }
+    
+    ElMessage.success(`消息已转发至 ${targets.length} 个目标`);
+  } catch (error) {
+    console.error('转发失败:', error);
+    ElMessage.error('转发失败');
+  }
+};
+
 // 处理图片上传按钮点击
 const handleImageUpload = () => {
   if (fileInput.value) {
@@ -968,153 +1257,10 @@ const loadMoreMessages = async () => {
   gap: 10px;
 }
 
-.chat-messages {
-  flex: 1;
-  padding: 15px;
-  overflow-y: auto;
-  background-color: #f5f7fa;
-}
-
-.message-item {
-  max-width: 70%;
-  margin-bottom: 15px;
-  clear: both;
-  display: flex;
-  align-items: flex-start;
-}
-
-.sender-message {
-  float: right;
-  flex-direction: row-reverse;
-  margin-left: auto;
-}
-
-.receiver-message {
-  float: left;
-  flex-direction: row;
-}
-
-.avatar-container {
-  margin: 0 8px;
-  flex-shrink: 0;
-}
-
-.message-content-wrapper {
-  display: flex;
-  flex-direction: column;
-  max-width: calc(100% - 56px);
-}
-
-.message-sender {
-  font-size: 12px;
-  margin-bottom: 4px;
-}
-
-.message-time {
-  margin-left: 5px;
-  color: #909399;
-}
-
-.message-content {
-  padding: 10px;
-  border-radius: 8px;
-  position: relative;
-}
-
-.sender-message .message-content {
-  background: linear-gradient(135deg, #1890ff, #40a9ff);
-  color: white;
-}
-
-.receiver-message .message-content {
-  background: linear-gradient(135deg, #fafafa, #f0f2f5);
-  color: #303133;
-}
-
-.text-message {
-  word-break: break-word;
-  white-space: pre-wrap;
-  position: relative;
-}
-
-.copy-button {
-  position: absolute;
-  top: -18px;
-  right: -18px;
-  opacity: 0.8;
-  transition: opacity 0.2s;
-}
-
-.copy-button:hover {
-  opacity: 1;
-}
-
-.image-message {
-  max-width: 250px;
-}
-
-.empty-messages {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100px;
-  color: #909399;
-}
-
-.chat-input {
-  padding: 15px;
-  border-top: 1px solid #e6e6e6;
-  display: flex;
-  flex-direction: column;
-}
-
-.chat-input.disabled {
-  background-color: #f5f7fa;
-}
-
-.input-tools {
-  margin-bottom: 10px;
-}
-
-.input-area {
-  margin-bottom: 10px;
-}
-
-.input-actions {
-  display: flex;
-  justify-content: flex-end;
-}
-
 .no-session-selected {
   flex: 1;
   display: flex;
   justify-content: center;
   align-items: center;
-}
-
-/* 时间分隔条样式 */
-.time-divider {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin: 10px 0;
-  clear: both;
-  width: 100%;
-}
-
-.time-divider span {
-  background: #f0f2f5;
-  padding: 2px 10px;
-  border-radius: 10px;
-  font-size: 12px;
-  color: #8c8c8c;
-}
-
-.load-more-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 10px;
-  border-bottom: 1px solid #e6e6e6;
 }
 </style>

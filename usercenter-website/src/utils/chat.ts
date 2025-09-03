@@ -71,13 +71,18 @@ export function formatTimestampWithDash(timestamp: number): string {
  * 创建用户消息
  */
 export function createUserMessage(content: string, sessionId: string): Message {
+  // 获取当前用户ID
+  const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+  const userId = userInfo.id?.toString() || '';
+  
   return {
     id: generateId(),
     sessionId,
     content,
     type: MessageType.USER,
     status: MessageStatus.SENDING,
-    timestamp: Date.now()
+    timestamp: Date.now(),
+    fromUserId: userId
   };
 }
 
@@ -246,5 +251,63 @@ export function throttle<T extends (...args: any[]) => any>(
       inThrottle = true;
       setTimeout(() => inThrottle = false, limit);
     }
+  };
+}
+
+/**
+ * 检查消息是否可以撤回
+ */
+export function canRecallMessage(message: Message, currentUserId: string): boolean {
+  // 已撤回的消息不能再次撤回
+  if (message.isRecalled) {
+    return false;
+  }
+  
+  // 只有发送者可以撤回自己的消息
+  if (message.fromUserId !== currentUserId && message.type === MessageType.USER) {
+    return false;
+  }
+  
+  // 检查时间限制 (2分钟内可撤回)
+  const currentTime = Date.now();
+  const messageTime = message.timestamp;
+  const timeDiff = currentTime - messageTime;
+  
+  return timeDiff <= 120_000; // 120秒 = 2分钟
+}
+
+/**
+ * 获取撤回时间限制剩余时间（秒）
+ */
+export function getRecallTimeRemaining(message: Message): number {
+  const currentTime = Date.now();
+  const messageTime = message.timestamp;
+  const timeDiff = currentTime - messageTime;
+  const timeLimit = 120_000; // 2分钟
+  
+  if (timeDiff >= timeLimit) {
+    return 0;
+  }
+  
+  return Math.ceil((timeLimit - timeDiff) / 1000);
+}
+
+/**
+ * 处理消息撤回状态更新
+ */
+export function updateMessageRecallStatus(message: Message, recallData: {
+  isRecalled: boolean;
+  recalledAt?: number;
+  recalledBy?: string;
+  recallReason?: string;
+}): Message {
+  return {
+    ...message,
+    isRecalled: recallData.isRecalled,
+    recalledAt: recallData.recalledAt,
+    recalledBy: recallData.recalledBy,
+    recallReason: recallData.recallReason,
+    // 撤回后清空原内容，显示撤回提示
+    content: recallData.isRecalled ? '[消息已撤回]' : message.content
   };
 } 

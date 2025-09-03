@@ -110,6 +110,7 @@
       :current-prompt="promptConfig.content"
       :app-id="appData?.id || 0"
       @optimized="handlePromptOptimized"
+      @accepted="handlePromptOptimized"
     />
 
     <!-- 功能管理弹窗 -->
@@ -188,8 +189,18 @@ const fetchAppDetail = async () => {
       if (response.data.config) {
         const config = response.data.config
         
-        // 提示词配置
-        if (config.prompt_template) {
+        // 提示词配置 - 优先使用优化后的提示词
+        const optimizedPrompt = (response.data as any).optimizedPrompt
+        console.log('优化提示词:', optimizedPrompt, typeof optimizedPrompt)
+        
+        if (optimizedPrompt) {
+          // 如果 optimizedPrompt 是对象，尝试获取其文本内容
+          if (typeof optimizedPrompt === 'object' && optimizedPrompt !== null) {
+            promptConfig.content = String(optimizedPrompt.content || optimizedPrompt.text || optimizedPrompt.prompt || optimizedPrompt)
+          } else {
+            promptConfig.content = String(optimizedPrompt)
+          }
+        } else if (config.prompt_template) {
           promptConfig.content = String(config.prompt_template)
         } else {
           promptConfig.content = ''

@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { ElMessage } from 'element-plus';
+import { setupIdempotencyInterceptor } from './idempotencyInterceptor';
 
 // 声明Vite环境变量的类型
 interface ImportMetaEnv {
@@ -12,6 +13,9 @@ const service = axios.create({
   baseURL: '/api', // 默认以/api为前缀
   timeout: 15000 // 请求超时时间
 });
+
+// 安装幂等性拦截器
+setupIdempotencyInterceptor(service);
 
 // request拦截器
 service.interceptors.request.use(

@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { ref, nextTick, watch, onMounted } from 'vue';
+import { ref, nextTick, watch, onMounted, onUnmounted } from 'vue';
 import { Promotion, Refresh } from '@element-plus/icons-vue';
 import { Message } from '@/types/chat';
 import MessageItem from './MessageItem.vue';
+import TypingIndicator from './TypingIndicator.vue';
 import { scrollToBottom } from '@/utils/chat';
+import { useTyping } from '@/composables/useTyping';
 
 // Props
 interface Props {
@@ -19,6 +21,7 @@ interface Emits {
   (e: 'send-message', content: string): void;
   (e: 'retry-message', messageId: string): void;
   (e: 'answer-clarification', questionId: string, answer: string): void;
+  (e: 'recall-message', messageId: string): void;
 }
 
 const emit = defineEmits<Emits>();
@@ -28,10 +31,25 @@ const messageInput = ref('');
 const messagesContainer = ref<HTMLElement>();
 const inputRef = ref<HTMLTextAreaElement>();
 
+// 使用输入状态功能
+const {
+  typingText,
+  hasTypingUsers,
+  handleInputEvent,
+  stopTyping,
+  registerTypingHandler,
+  cleanup: cleanupTyping
+} = useTyping(props.sessionId);
+
 // 发送消息
 const sendMessage = () => {
   const content = messageInput.value.trim();
   if (!content || props.loading) return;
+  
+  // 停止输入状态
+  if (props.sessionId) {
+    stopTyping(props.sessionId);
+  }
   
   emit('send-message', content);
   messageInput.value = '';
@@ -54,6 +72,12 @@ const handleClarificationAnswer = (questionId: string, answer: string) => {
   emit('answer-clarification', questionId, answer);
 };
 
+// 处理撤回消息
+const handleRecallMessage = (messageId: string) => {
+  if (props.loading) return;
+  emit('recall-message', messageId);
+};
+
 // 处理键盘事件
 const handleKeydown = (event: KeyboardEvent) => {
   if (event.key === 'Enter' && !event.shiftKey) {
@@ -61,6 +85,13 @@ const handleKeydown = (event: KeyboardEvent) => {
     if (!props.loading) {
       sendMessage();
     }
+  }
+};
+
+// 处理输入事件
+const handleInput = () => {
+  if (props.sessionId) {
+    handleInputEvent(props.sessionId);
   }
 };
 
@@ -87,6 +118,14 @@ watch(() => props.sessionId, () => {
 onMounted(() => {
   inputRef.value?.focus();
   autoScrollToBottom();
+  
+  // 注册输入状态处理器
+  registerTypingHandler();
+});
+
+// 组件卸载时清理
+onUnmounted(() => {
+  cleanupTyping();
 });
 </script>
 
@@ -110,6 +149,13 @@ onMounted(() => {
           :message="message"
           @retry-message="retryMessage"
           @answer-clarification="handleClarificationAnswer"
+          @recall-message="handleRecallMessage"
+        />
+        
+        <!-- 输入状态指示器 -->
+        <TypingIndicator 
+          :typing-text="typingText"
+          :visible="hasTypingUsers"
         />
       </div>
     </div>
@@ -126,6 +172,7 @@ onMounted(() => {
           resize="none"
           :disabled="loading"
           @keydown="handleKeydown"
+          @input="handleInput"
           class="message-input"
         />
         <div class="input-actions">

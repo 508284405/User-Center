@@ -14,17 +14,82 @@ export enum MessageStatus {
   ERROR = 'error'
 }
 
+// 消息发送状态枚举
+export enum MessageSendStatus {
+  SENDING = 0,    // 发送中
+  DELIVERED = 1,  // 已送达
+  SEND_FAILED = 2, // 发送失败
+  READ = 3        // 已读
+}
+
+// 消息内容类型枚举
+export enum MessageContentType {
+  TEXT = 0,
+  IMAGE = 1,
+  ORDER_CARD = 2,
+  SYSTEM = 3
+}
+
+// 消息删除类型
+export enum MessageDeleteType {
+  SELF_ONLY = 0,  // 仅自己可见删除
+  BOTH_SIDES = 1  // 双方删除
+}
+
 // 消息接口
 export interface Message {
-  id: string;
+  id?: string; // 兼容旧版本
+  msgId: string;
   sessionId: string;
   content: string;
   type: MessageType;
-  status: MessageStatus;
+  status?: MessageStatus; // 兼容旧版本
   timestamp: number;
   metadata?: Record<string, any>;
   thinkingContent?: string; // 思考过程内容
   isThinkingExpanded?: boolean; // 思考内容是否展开
+  
+  // IM消息扩展字段
+  msgType?: number; // 消息内容类型
+  chatType?: string;
+  fromUserId?: string; // 发送者用户ID
+  fromUserType?: string; // 发送者用户类型
+  createdAt?: number; // 创建时间
+  
+  // 消息撤回相关字段
+  isRecalled?: boolean; // 是否已撤回
+  recalledAt?: number; // 撤回时间戳
+  recalledBy?: string; // 撤回操作者ID
+  recallReason?: string; // 撤回原因
+  
+  // 删除相关字段
+  isDeletedBySender?: boolean;
+  isDeletedByReceiver?: boolean;
+  deletedBySenderAt?: number;
+  deletedByReceiverAt?: number;
+  deleteType?: number;
+  deletedReason?: string;
+  
+  // 编辑相关字段
+  isEdited?: boolean;
+  editedAt?: number;
+  originalContent?: string;
+  editCount?: number;
+  
+  // 已读回执相关字段
+  isRead?: boolean;
+  readAt?: number;
+  readBy?: string;
+  
+  // 消息状态相关字段
+  sendStatus?: number;
+  sendFailReason?: string;
+  retryCount?: number;
+  
+  // 回复/引用相关字段
+  replyToMsgId?: string;
+  quotedContent?: string;
+  quotedFromUser?: string;
 }
 
 // 会话接口
@@ -144,6 +209,7 @@ export interface ChatAreaEmits {
 export interface MessageItemEmits {
   'copy-message': [content: string];
   'retry-message': [messageId: string];
+  'recall-message': [messageId: string];
 }
 
 export interface SessionListEmits {
@@ -364,6 +430,14 @@ export interface ClarificationData {
   slotName?: string;
   slotLabel?: string;
   examples?: string[];
+}
+
+// 消息表情反应接口
+export interface MessageReaction {
+  emoji: string;
+  name: string;
+  count: number;
+  userIds: string[];
 }
 
 // 扩展消息接口以支持槽位填充

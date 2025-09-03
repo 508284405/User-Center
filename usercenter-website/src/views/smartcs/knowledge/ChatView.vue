@@ -1,13 +1,16 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue';
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { Setting, ChatDotRound, Plus, Edit } from '@element-plus/icons-vue';
 import { useChatConfig } from '@/composables/useChatConfig';
 import { useChat } from '@/composables/useChat';
+import { useRecall } from '@/composables/useRecall';
+import { useUserStatus } from '@/composables/useUserStatus';
 import { chatSessionApi, SessionVO } from '@/api/smartcs/chatSession';
 import { Session } from '@/types/chat';
 import ConfigPanel from '@/components/chat/ConfigPanel.vue';
 import ChatArea from '@/components/chat/ChatArea.vue';
+import UserStatusSelector from '@/components/chat/UserStatusSelector.vue';
 
 // 抽屉状态
 const drawerVisible = ref(false);
@@ -45,6 +48,25 @@ const {
   setCurrentSessionId,
   clearMessages
 } = useChat();
+
+// 使用撤回功能
+const {
+  isRecalling,
+  recallMessage,
+  registerRecallHandler
+} = useRecall();
+
+// 使用用户状态功能
+const {
+  currentUserStatus,
+  onlineUserCount,
+  setCurrentUserStatus,
+  registerUserStatusHandler,
+  initializeUserStatus,
+  setUserOffline,
+  cleanup: cleanupUserStatus,
+  UserStatus
+} = useUserStatus();
 
 // 计算属性
 const selectedBotName = computed(() => {
@@ -262,6 +284,23 @@ const handleSendMessage = async (content: string) => {
   await sendMessage(content, botId, knowledgeBaseId, contentId);
 };
 
+// 处理撤回消息
+const handleRecallMessage = async (messageId: string) => {
+  if (!currentSession.value) {
+    ElMessage.warning('请先选择会话');
+    return;
+  }
+  
+  console.log('撤回消息:', messageId);
+  await recallMessage(messageId, currentSession.value.sessionId);
+};
+
+// 处理用户状态变更
+const handleStatusChange = async (status: UserStatus) => {
+  console.log('用户状态变更:', status);
+  await setCurrentUserStatus(status);
+};
+
 // 监听知识库选择变化
 watch(() => config.selectedKnowledgeBaseId, (newKnowledgeBaseId, oldKnowledgeBaseId) => {
   if (newKnowledgeBaseId && newKnowledgeBaseId !== oldKnowledgeBaseId) {
@@ -278,6 +317,15 @@ onMounted(async () => {
   await initializeConfig();
   console.log('✅ 配置初始化完成');
   
+  // 注册消息处理器
+  console.log('2️⃣ 注册消息处理器...');
+  registerRecallHandler(messages.value);
+  registerUserStatusHandler();
+  
+  // 初始化用户状态
+  console.log('3️⃣ 初始化用户状态...');
+  await initializeUserStatus();
+  
   // 如果有选中的知识库，加载其内容
   if (config.selectedKnowledgeBaseId) {
     console.log('3️⃣ 加载选中知识库的内容...');
@@ -287,6 +335,19 @@ onMounted(async () => {
   console.log('4️⃣ 初始化会话列表...');
   await initializeSessions();
   console.log('✅ 页面初始化完成');
+});
+
+// 页面卸载时清理
+onUnmounted(async () => {
+  console.log('🧹 页面卸载，清理资源...');
+  
+  // 设置用户离线状态
+  await setUserOffline();
+  
+  // 清理用户状态管理
+  cleanupUserStatus();
+  
+  console.log('✅ 资源清理完成');
 });
 </script>
 
@@ -314,20 +375,30 @@ onMounted(async () => {
         </div>
       </div>
       <div class="header-actions">
-        <el-button 
-          type="primary" 
-          :icon="Plus" 
-          @click="createNewSession"
-          :loading="botLoading || knowledgeLoading"
-        >
-          新建会话
-        </el-button>
-        <el-button 
-          :icon="Setting" 
-          @click="drawerVisible = true"
-        >
-          配置
-        </el-button>
+        <div class="status-info">
+          <UserStatusSelector 
+            :current-status="currentUserStatus"
+            @status-change="handleStatusChange"
+          />
+          <span class="online-count">{{ onlineUserCount }} 在线</span>
+        </div>
+        
+        <div class="action-buttons">
+          <el-button 
+            type="primary" 
+            :icon="Plus" 
+            @click="createNewSession"
+            :loading="botLoading || knowledgeLoading"
+          >
+            新建会话
+          </el-button>
+          <el-button 
+            :icon="Setting" 
+            @click="drawerVisible = true"
+          >
+            配置
+          </el-button>
+        </div>
       </div>
     </div>
 
@@ -352,6 +423,7 @@ onMounted(async () => {
         :messages="messages as any"
         :loading="isLoading"
         @send-message="handleSendMessage"
+        @recall-message="handleRecallMessage"
       />
     </div>
 
@@ -441,6 +513,28 @@ onMounted(async () => {
 
 .header-actions {
   display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.status-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e4e7ed;
+}
+
+.online-count {
+  font-size: 12px;
+  color: #909399;
+  white-space: nowrap;
+}
+
+.action-buttons {
+  display: flex;
   gap: 12px;
 }
 
@@ -468,6 +562,16 @@ onMounted(async () => {
   
   .header-actions {
     width: 100%;
+    flex-direction: column;
+    gap: 8px;
+    align-items: stretch;
+  }
+  
+  .status-info {
+    justify-content: space-between;
+  }
+  
+  .action-buttons {
     justify-content: flex-end;
   }
   

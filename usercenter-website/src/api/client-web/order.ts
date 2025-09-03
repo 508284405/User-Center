@@ -156,3 +156,29 @@ export interface OrderStatistics {
 export const getOrderStatistics = (params: OrderStatisticsQuery): Promise<ApiResponse<OrderStatistics>> => {
   return request.get('/client-web/api/admin/orders/statistics', { params });
 };
+
+// 创建订单请求参数
+export interface CreateOrderRequest {
+  userId: number;
+  addressId?: number;
+  receiverName?: string;
+  receiverPhone?: string;
+  receiverAddress?: string;
+  items: OrderItemRequest[];
+}
+
+// 订单项请求参数
+export interface OrderItemRequest {
+  productId: number;
+  skuId: number;
+  productName: string;
+  skuProperties?: Record<string, string>;
+  unitPrice: number;
+  quantity: number;
+  totalPrice: number;
+}
+
+// 创建订单
+export const createOrder = (params: CreateOrderRequest): Promise<ApiResponse<string>> => {
+  return request.post('/client-web/api/orders', params);
+};

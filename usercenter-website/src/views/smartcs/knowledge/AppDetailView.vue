@@ -110,6 +110,7 @@
       :current-prompt="promptConfig.content"
       :app-id="appData?.id || 0"
       @optimized="handlePromptOptimized"
+      @accepted="handlePromptOptimized"
     />
 
     <!-- 功能管理弹窗 -->
@@ -188,9 +189,39 @@ const fetchAppDetail = async () => {
       if (response.data.config) {
         const config = response.data.config
         
-        // 提示词配置
+        // 提示词配置 - 优先使用优化后的提示词
+        // 后端返回有两种格式：
+        // 1) 旧版：config.prompt_template 为字符串
+        // 2) 新版：config.prompt_template 为对象，包含 optimizedPrompt / originalPrompt 等字段
+        let resolvedPrompt: any = undefined
+
+        // 兼容极少数情况下 optimizedPrompt 置于顶层的返回
+        const topLevelOptimized = (response.data as any).optimizedPrompt
+
         if (config.prompt_template) {
-          promptConfig.content = String(config.prompt_template)
+          const pt = config.prompt_template
+          if (typeof pt === 'object') {
+            // 新版结构：优先取 optimizedPrompt，其次 originalPrompt，再退化到可能的 content/text/prompt
+            const candidate = pt.optimizedPrompt ?? pt.originalPrompt ?? pt.content ?? pt.text ?? pt.prompt
+            resolvedPrompt = candidate
+          } else {
+            // 旧版：直接是字符串
+            resolvedPrompt = pt
+          }
+        }
+
+        // 顶层字段作为兜底（保持兼容性）
+        if (!resolvedPrompt && topLevelOptimized) {
+          resolvedPrompt = topLevelOptimized
+        }
+
+        if (resolvedPrompt) {
+          // 避免把对象直接转成 [object Object]
+          if (typeof resolvedPrompt === 'object') {
+            promptConfig.content = String(resolvedPrompt.content || resolvedPrompt.text || resolvedPrompt.prompt || '')
+          } else {
+            promptConfig.content = String(resolvedPrompt)
+          }
         } else {
           promptConfig.content = ''
         }
