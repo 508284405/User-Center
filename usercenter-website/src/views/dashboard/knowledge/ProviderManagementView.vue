@@ -32,7 +32,6 @@
     </div>
 
     <el-table :data="tableData" v-loading="loading" stripe>
-      <el-table-column prop="id" label="ID" width="80" />
       <el-table-column prop="providerType" label="提供商名称">
         <template #default="{ row }">
           {{ getProviderTypeLabel(row.providerType) }}
@@ -115,7 +114,7 @@
         <el-form-item label="大图标URL" prop="iconLarge">
           <el-input v-model="form.iconLarge" placeholder="请输入大图标URL" />
         </el-form-item>
-        <el-form-item label="API Key" prop="apiKey">
+        <el-form-item v-if="requiresApiKey(form.providerType)" label="API Key" prop="apiKey">
           <el-input
             v-model="form.apiKey"
             type="password"
@@ -127,8 +126,19 @@
             留空表示保持原有API Key不变
           </div>
         </el-form-item>
+        <el-form-item v-else label="配置说明">
+          <el-alert
+            :title="getProviderConfigHint(form.providerType)"
+            type="info"
+            show-icon
+            :closable="false"
+          />
+        </el-form-item>
         <el-form-item label="API端点" prop="endpoint">
-          <el-input v-model="form.endpoint" placeholder="请输入API端点" />
+          <el-input 
+            v-model="form.endpoint" 
+            :placeholder="getEndpointPlaceholder(form.providerType)" 
+          />
         </el-form-item>
         <el-form-item label="支持的模型类型" prop="supportedModelTypes">
           <el-input
@@ -153,7 +163,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Search, Refresh, Edit, Delete } from '@element-plus/icons-vue'
-import { providerApi, type Provider, type CreateProviderRequest, type UpdateProviderRequest, providerTypeOptions } from '@/api/smartcs/provider'
+import { providerApi, type Provider, type CreateProviderRequest, type UpdateProviderRequest, providerTypeOptions, requiresApiKey, getProviderConfigHint } from '@/api/smartcs/provider'
 import { formatTime } from '@/utils/format'
 
 const loading = ref(false)
@@ -189,7 +199,7 @@ const formRules = {
   ],
   apiKey: [
     { 
-      required: () => !isEdit.value, 
+      required: () => !isEdit.value && requiresApiKey(form.providerType), 
       message: '请输入API Key', 
       trigger: 'blur' 
     }
@@ -334,6 +344,16 @@ const resetForm = () => {
 const getProviderTypeLabel = (providerType: string) => {
   const option = providerTypeOptions.find(opt => opt.value === providerType)
   return option ? option.label : providerType
+}
+
+// 获取端点输入框占位符
+const getEndpointPlaceholder = (providerType: string) => {
+  switch (providerType) {
+    case 'OLLAMA':
+      return '请输入Ollama服务地址（如：http://localhost:11434）'
+    default:
+      return '请输入API端点'
+  }
 }
 
 onMounted(() => {

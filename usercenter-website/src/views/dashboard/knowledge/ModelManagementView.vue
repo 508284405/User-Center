@@ -14,7 +14,7 @@
             <el-option
               v-for="provider in providerOptions"
               :key="provider.id"
-              :label="provider.providerType"
+              :label="getProviderTypeLabel(provider.providerType)"
               :value="provider.id"
             />
           </el-select>
@@ -158,7 +158,7 @@
             <el-option
               v-for="provider in providerOptions"
               :key="provider.id"
-              :label="provider.providerType"
+              :label="getProviderTypeLabel(provider.providerType)"
               :value="provider.id"
             />
           </el-select>
@@ -232,7 +232,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Search, Refresh, Edit, Delete } from '@element-plus/icons-vue'
 import { modelApi, type Model, type CreateModelRequest, type UpdateModelRequest, ModelType, ModelStatus, FetchFrom } from '@/api/smartcs/model'
-import { providerApi, type Provider } from '@/api/smartcs/provider'
+import { providerApi, type Provider, getProviderTypeLabel } from '@/api/smartcs/provider'
 import { formatTime } from '@/utils/format'
 
 const loading = ref(false)
@@ -500,7 +500,7 @@ const resetForm = () => {
 // 获取提供商名称
 const getProviderName = (providerId: number) => {
   const provider = providerOptions.value.find(p => p.id === providerId)
-  return provider ? provider.providerType : '-'
+  return provider ? getProviderTypeLabel(provider.providerType) : '-'
 }
 
 // 获取模型类型标签样式

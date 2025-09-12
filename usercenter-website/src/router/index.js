@@ -500,6 +500,37 @@ const routes = [
                                 }
                             }
                         ]
+                    },
+                    
+                    // Merchant Management
+                    {
+                        path: 'merchant',
+                        children: [
+                            {
+                                path: '',
+                                redirect: '/platform/ecommerce/merchant/management'
+                            },
+                            {
+                                path: 'management',
+                                name: 'MerchantManagement',
+                                component: () => import('../views/ecommerce/merchant/MerchantManagement.vue'),
+                                meta: {
+                                    requiresAuth: true,
+                                    permission: 'merchant:view',
+                                    title: '商家管理'
+                                }
+                            },
+                            {
+                                path: 'analytics',
+                                name: 'MerchantAnalytics',
+                                component: () => import('../views/ecommerce/merchant/MerchantAnalytics.vue'),
+                                meta: {
+                                    requiresAuth: true,
+                                    permission: 'merchant:analytics:view',
+                                    title: '商家分析'
+                                }
+                            }
+                        ]
                     }
                 ]
             },

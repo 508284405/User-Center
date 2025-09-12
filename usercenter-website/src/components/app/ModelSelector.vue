@@ -75,7 +75,10 @@
       >
         <div class="model-option">
           <div class="model-info">
-            <span class="model-name">{{ model.label }}</span>
+            <div class="model-name-row">
+              <span class="model-name">{{ model.label }}</span>
+              <span class="provider-name">{{ getProviderName(model.providerId) }}</span>
+            </div>
             <div class="model-meta">
               <el-tag 
                 v-for="type in model.modelType" 
@@ -166,6 +169,7 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Refresh as RefreshIcon } from '@element-plus/icons-vue'
 import { modelApi, type Model } from '@/api/smartcs/model'
+import { providerApi, type Provider, getProviderTypeLabel } from '@/api/smartcs/provider'
 
 interface Props {
   modelValue?: number | string
@@ -209,6 +213,7 @@ const emit = defineEmits<Emits>()
 // 状态管理
 const loading = ref(false)
 const models = ref<Model[]>([])
+const providers = ref<Provider[]>([])
 const showDetails = ref(props.showDetails)
 
 // 选中的模型ID
@@ -250,8 +255,14 @@ const groupedModels = computed(() => {
   filteredModels.value.forEach(model => {
     const providerId = model.providerId
     if (!groups.has(providerId)) {
+      // 查找对应的提供商信息
+      const provider = providers.value.find(p => p.id === providerId)
+      const providerLabel = provider 
+        ? getProviderTypeLabel(provider.providerType)
+        : `提供商 ${providerId}`
+        
       groups.set(providerId, {
-        label: `提供商 ${providerId}`, // 实际应用中应该获取提供商名称
+        label: providerLabel,
         models: []
       })
     }
@@ -261,14 +272,32 @@ const groupedModels = computed(() => {
   return Array.from(groups.values())
 })
 
+// 加载提供商列表
+const loadProviders = async () => {
+  try {
+    const response = await providerApi.getAll()
+    if (response.data && Array.isArray(response.data)) {
+      providers.value = response.data
+    }
+  } catch (error) {
+    console.error('加载提供商列表失败:', error)
+    // 提供商加载失败不影响主流程，只是分组显示会受影响
+  }
+}
+
 // 加载模型列表
 const loadModels = async () => {
   try {
     loading.value = true
-    const response = await modelApi.getAvailableModels()
     
-    if (response.data && Array.isArray(response.data)) {
-      models.value = response.data
+    // 并行加载模型和提供商列表
+    const [modelResponse] = await Promise.all([
+      modelApi.getAvailableModels(),
+      loadProviders()
+    ])
+    
+    if (modelResponse.data && Array.isArray(modelResponse.data)) {
+      models.value = modelResponse.data
       
       // 自动选择第一个可用模型
       if (props.autoSelectFirst && !props.modelValue && filteredModels.value.length > 0) {
@@ -347,6 +376,12 @@ const getPlaceholder = () => {
   return props.placeholder
 }
 
+// 根据提供商ID获取提供商名称
+const getProviderName = (providerId: number) => {
+  const provider = providers.value.find(p => p.id === providerId)
+  return provider ? getProviderTypeLabel(provider.providerType) : `提供商 ${providerId}`
+}
+
 // 监听选中模型变化，显示详情
 watch(selectedModel, (newModel) => {
   if (newModel && props.showDetails) {
@@ -399,9 +434,26 @@ defineExpose({
   gap: 4px;
 }
 
+.model-name-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
 .model-name {
   font-weight: 500;
   color: #303133;
+  flex: 1;
+}
+
+.provider-name {
+  font-size: 12px;
+  color: #909399;
+  background: #f0f2f5;
+  padding: 2px 6px;
+  border-radius: 4px;
+  flex-shrink: 0;
 }
 
 .model-meta {
@@ -473,6 +525,12 @@ defineExpose({
     flex-direction: column;
     align-items: flex-start;
     gap: 8px;
+  }
+  
+  .model-name-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
   }
   
   .model-meta {

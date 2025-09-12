@@ -58,17 +58,41 @@ export function formatDate(
  * @returns string
  */
 export function formatTime(input: Date | number | string): string {
-  console.log("input",input)
   if (!input) return '--';
   
-  let date: Date;
+  let timestamp: number;
+  
   if (input instanceof Date) {
-    date = input;
-  } else if (typeof input === 'number' || typeof input === 'string') {
-    date = new Date(input);
+    timestamp = input.getTime();
+  } else if (typeof input === 'number') {
+    timestamp = input;
+  } else if (typeof input === 'string') {
+    timestamp = parseInt(input);
+    if (isNaN(timestamp)) {
+      // 如果不是数字字符串，尝试作为日期字符串解析
+      const date = new Date(input);
+      if (isNaN(date.getTime())) {
+        return '--';
+      }
+      timestamp = date.getTime();
+    }
   } else {
     return '--';
   }
+  
+  // 处理时间戳格式：如果是10位数字（秒），转换为13位（毫秒）
+  if (timestamp.toString().length === 10) {
+    timestamp = timestamp * 1000;
+  }
+  
+  // 验证时间戳范围（确保是合理的日期范围，比如1970年到2100年之间）
+  const minTimestamp = 0; // 1970-01-01
+  const maxTimestamp = 4102444800000; // 2100-01-01
+  if (timestamp < minTimestamp || timestamp > maxTimestamp) {
+    return '--';
+  }
+  
+  const date = new Date(timestamp);
   
   // 检查日期是否有效
   if (isNaN(date.getTime())) {

@@ -50,6 +50,7 @@ const allMenuItems: MenuItem[] = [
     ]
   },
   { key: 'order-management', label: '订单管理', permission: 'order:view' },
+  { key: 'merchant-management', label: '商家管理', permission: 'merchant:view' },
   { key: 'logistics-management', label: '物流管理', permission: 'logistics:view', children: [
     { key: 'logistics-packages', label: '包裹管理', permission: 'logistics:packages:view' },
     { key: 'logistics-orders', label: '物流订单管理', permission: 'logistics:orders:view' },
@@ -454,6 +455,9 @@ function handleMenuClick(key: string) {
       break
     case 'order-management':
       router.push('/platform/ecommerce/orders/management').catch(err => console.error('路由跳转失败:', err))
+      break
+    case 'merchant-management':
+      router.push('/platform/ecommerce/merchant/management').catch(err => console.error('路由跳转失败:', err))
       break
     case 'logistics-packages':
       router.push('/platform/ecommerce/logistics/packages').catch(err => console.error('路由跳转失败:', err))
